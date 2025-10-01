@@ -1,0 +1,10 @@
+# Core dependencies for Fuzzy Attention Networks
+torch>=2.0.0
+numpy>=1.21.0
+
+# Optional dependencies (uncomment as needed)
+# transformers>=4.21.0  # For enhanced rule extraction
+# clip-by-openai        # For CLIP integration
+# matplotlib>=3.5.0     # For visualizations
+# plotly>=5.0.0         # For interactive plots
+# streamlit>=1.25.0     # For web interface
