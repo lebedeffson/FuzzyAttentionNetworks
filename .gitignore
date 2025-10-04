@@ -44,9 +44,6 @@ venv.bak/
 
 # Data and models
 data/
-models/
-results/
-temp_logs/
 *.log
 
 # OS
