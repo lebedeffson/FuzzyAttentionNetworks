@@ -107,7 +107,8 @@ class MultimodalFuzzyTransformer(nn.Module):
                  max_text_len: int = 128,
                  max_image_patches: int = 196,  # 14x14 for 224x224 image
                  num_classes: int = 1000,
-                 fuzzy_type: str = 'product'):
+                 fuzzy_type: str = 'product',
+                 dropout: float = 0.1):
         super().__init__()
         
         self.text_dim = text_dim
@@ -115,6 +116,7 @@ class MultimodalFuzzyTransformer(nn.Module):
         self.hidden_dim = hidden_dim
         self.max_text_len = max_text_len
         self.max_image_patches = max_image_patches
+        self.dropout = dropout
         
         # Text processing
         self.text_embedding = nn.Embedding(vocab_size, text_dim)
@@ -174,6 +176,7 @@ class MultimodalFuzzyTransformer(nn.Module):
         text_emb = self.text_embedding(text_tokens)  # [batch, text_seq, text_dim]
         text_pos = self.text_pos_embedding(torch.arange(text_seq_len, device=text_tokens.device))
         text_features = text_emb + text_pos.unsqueeze(0)
+        text_features = F.dropout(text_features, p=self.dropout, training=self.training)
         
         # Image processing
         image_proj = self.image_projection(image_features)  # [batch, image_seq, hidden_dim]
@@ -219,16 +222,39 @@ class MultimodalFuzzyTransformer(nn.Module):
             result['attention_weights'] = all_attention_weights
         
         if return_rules:
-            # Extract rules from cross-modal attention
+            # Extract rules from all attention layers
             if return_attention and len(all_attention_weights) > 0:
-                # Use the last cross-modal attention for rule extraction
-                cross_modal_attention = all_attention_weights[-1]['avg_attention']
-                rules = self.rule_extractor.extract_rules(cross_modal_attention)
-                result['fuzzy_rules'] = rules
+                # Combine all attention weights for rule extraction
+                all_rules = []
+                all_patterns = {}
                 
-                # Extract attention patterns
-                patterns = self.rule_extractor.extract_attention_patterns(cross_modal_attention)
-                result['attention_patterns'] = patterns
+                for layer_idx, attn_data in enumerate(all_attention_weights):
+                    if 'avg_attention' in attn_data:
+                        attention = attn_data['avg_attention']
+                        
+                        # Extract rules from this layer
+                        layer_rules = self.rule_extractor.extract_rules(attention)
+                        all_rules.extend(layer_rules)
+                        
+                        # Extract patterns from this layer
+                        layer_patterns = self.rule_extractor.extract_attention_patterns(attention)
+                        for key, value in layer_patterns.items():
+                            if key not in all_patterns:
+                                all_patterns[key] = []
+                            all_patterns[key].append(value)
+                
+                # Combine patterns (average across layers)
+                for key in all_patterns:
+                    if all_patterns[key]:
+                        # Handle both numeric and list values
+                        if isinstance(all_patterns[key][0], (int, float)):
+                            all_patterns[key] = sum(all_patterns[key]) / len(all_patterns[key])
+                        else:
+                            # For non-numeric values, just take the first one
+                            all_patterns[key] = all_patterns[key][0]
+                
+                result['fuzzy_rules'] = all_rules
+                result['attention_patterns'] = all_patterns
         
         return result
 
@@ -243,7 +269,8 @@ class VQAFuzzyModel(nn.Module):
                  hidden_dim: int = 512,
                  n_heads: int = 8,
                  n_layers: int = 3,
-                 fuzzy_type: str = 'product'):
+                 fuzzy_type: str = 'product',
+                 dropout: float = 0.1):
         super().__init__()
         
         self.multimodal_transformer = MultimodalFuzzyTransformer(
@@ -254,7 +281,8 @@ class VQAFuzzyModel(nn.Module):
             n_heads=n_heads,
             n_layers=n_layers,
             num_classes=answer_vocab_size,
-            fuzzy_type=fuzzy_type
+            fuzzy_type=fuzzy_type,
+            dropout=dropout
         )
         
         self.rule_extractor = RuleExtractor()

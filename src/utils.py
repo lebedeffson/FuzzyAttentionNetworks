@@ -10,6 +10,8 @@ import random
 import logging
 from typing import Tuple, Optional, Dict, Any
 from datetime import datetime
+import os
+from huggingface_hub import login as hf_login
 
 def set_seed(seed: int = 42):
     """Set random seeds for reproducibility"""
@@ -166,3 +168,13 @@ def load_model_checkpoint(model: nn.Module, optimizer: torch.optim.Optimizer,
     if optimizer:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     return checkpoint
+
+def hf_auth_login(token: str = None):
+    """Login to Hugging Face Hub using a token (env HF_TOKEN if not provided)."""
+    token = token or os.environ.get('HF_TOKEN') or os.environ.get('HUGGINGFACE_TOKEN')
+    if not token:
+        raise RuntimeError("HF token not provided. Set HF_TOKEN or pass token explicitly.")
+    hf_login(token=token)
+
+def ensure_dir(path: str):
+    os.makedirs(path, exist_ok=True)

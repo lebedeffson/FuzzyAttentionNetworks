@@ -171,7 +171,7 @@ class AdaptiveExplanationSystem:
             'user_level': expertise_level.value,
             'confidence': user_profile.confidence_score,
             'content': {
-                'intro': template['intro'].format(len(shown_rules)),
+                'intro': template['intro'].format(len(shown_rules), 'product'),
                 'rules': [],
                 'summary': template['summary'],
                 'technical_details': template['technical_details']

@@ -14,10 +14,18 @@ from typing import Dict, List, Any, Tuple, Optional
 from dataclasses import dataclass
 import time
 from pathlib import Path
+from datasets import load_dataset, load_from_disk
+from torchvision import models, transforms
+from PIL import Image
+from tqdm import tqdm
 
-from src.multimodal_fuzzy_attention import VQAFuzzyModel, MultimodalFuzzyTransformer
-from src.rule_extractor import RuleExtractor, FuzzyRule
-from src.adaptive_interface import InteractiveInterface, UserExpertiseLevel
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+from multimodal_fuzzy_attention import VQAFuzzyModel, MultimodalFuzzyTransformer
+from rule_extractor import RuleExtractor, FuzzyRule
+from adaptive_interface import InteractiveInterface, UserExpertiseLevel
 
 @dataclass
 class EvaluationMetrics:
@@ -73,17 +81,78 @@ class VQAXDataset(Dataset):
     def __getitem__(self, idx):
         return self.data[idx]
 
+class HatefulMemesLocalDataset(Dataset):
+    """Load hateful_memes from local folder after authenticated download."""
+    def __init__(self, root_dir: str, split: str = 'train', max_samples: int = 1000, device: str = 'cpu'):
+        super().__init__()
+        self.root_dir = Path(root_dir)
+        self.split = split
+        self.max_samples = max_samples
+        self.device = device
+        # Expect structure: root/img/*.png and jsonl files
+        import json
+        split_map = {
+            'train': 'train.jsonl',
+            'validation': 'dev_seen.jsonl',
+            'test': 'test_seen.jsonl'
+        }
+        jsonl_path = self.root_dir / split_map.get(split, 'train.jsonl')
+        self.items = []
+        with open(jsonl_path, 'r') as f:
+            for i, line in enumerate(f):
+                if max_samples and i >= max_samples:
+                    break
+                ex = json.loads(line)
+                self.items.append(ex)
+
+        # Feature extractor
+        self.cnn = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+        self.cnn.fc = nn.Identity()
+        self.cnn.eval()
+        self.cnn.to(device)
+        self.transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+        self.vocab_size = 10000
+        self._tokenize = lambda s: torch.tensor([abs(hash(tok)) % self.vocab_size for tok in s.lower().split()][:20], dtype=torch.long)
+
+    def __len__(self):
+        return len(self.items)
+
+    def __getitem__(self, idx):
+        item = self.items[idx]
+        text = item.get('text', '')
+        img_rel = item.get('img')
+        image_path = self.root_dir / img_rel
+        question_tokens = self._tokenize(text)
+        if question_tokens.numel() == 0:
+            question_tokens = torch.tensor([0], dtype=torch.long)
+        with Image.open(image_path).convert('RGB') as img:
+            img_t = self.transform(img).unsqueeze(0).to(self.device)
+            with torch.no_grad():
+                feats = self.cnn(img_t)
+            image_features = feats.unsqueeze(1).repeat(1, 49, 1).squeeze(0).cpu()
+        return {
+            'question': text,
+            'answer': str(item.get('label', 0)),
+            'label': int(item.get('label', 0)),
+            'question_tokens': question_tokens,
+            'image_features': image_features
+        }
+
 class ESNLIVEDataset(Dataset):
-    """e-SNLI-VE dataset for visual entailment with explanations"""
+    """e-SNLI-VE dataset for visual entailment with explanations (mock)."""
     
     def __init__(self, data_path: str, split: str = 'train', max_samples: int = 1000):
         self.data_path = data_path
         self.split = split
         self.max_samples = max_samples
-        
         # Load data (mock implementation)
         self.data = self._load_data()
-        
+    
     def _load_data(self) -> List[Dict[str, Any]]:
         """Load e-SNLI-VE dataset (mock implementation)"""
         mock_data = []
@@ -108,6 +177,63 @@ class ESNLIVEDataset(Dataset):
     def __getitem__(self, idx):
         return self.data[idx]
 
+class BeansHFDataset(Dataset):
+    """Beans image classification dataset via Hugging Face (public, small). Uses label as text."""
+    def __init__(self, split: str = 'train', max_samples: int = 1000, device: str = 'cpu'):
+        super().__init__()
+        self.split = split
+        self.max_samples = max_samples
+        self.device = device
+        # Dataset: beans (images with 3 classes). We'll synthesize text from label name.
+        self.ds = load_dataset('beans', split=split)
+        if max_samples:
+            self.ds = self.ds.select(range(min(len(self.ds), max_samples)))
+
+        # Text tokenizer (very simple: map to ids by hashing)
+        self.vocab_size = 10000
+        self._tokenize = lambda s: torch.tensor([abs(hash(tok)) % self.vocab_size for tok in s.lower().split()][:20], dtype=torch.long)
+
+        # Image feature extractor (ResNet-50 avgpool features)
+        self.cnn = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
+        self.cnn.fc = nn.Identity()
+        self.cnn.eval()
+        self.cnn.to(device)
+        self.transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+
+    def __len__(self):
+        return len(self.ds)
+
+    def __getitem__(self, idx):
+        item = self.ds[idx]
+        label_idx = int(item['labels']) if 'labels' in item else int(item['label'])
+        label_names = self.ds.features['labels'].names if 'labels' in self.ds.features else ['class_'+str(label_idx)]
+        text = f"This image is about {label_names[label_idx]}"
+        image = item['image']  # PIL.Image
+
+        # Tokenize text
+        question_tokens = self._tokenize(text)
+        if question_tokens.numel() == 0:
+            question_tokens = torch.tensor([0], dtype=torch.long)
+
+        # Load and encode image
+        img_t = self.transform(image.convert('RGB')).unsqueeze(0).to(self.device)
+        with torch.no_grad():
+            feats = self.cnn(img_t)  # [1, 2048]
+        # Tile to patches-like dim for model expectation
+        image_features = feats.unsqueeze(1).repeat(1, 49, 1).squeeze(0).cpu()  # [49, 2048]
+
+        return {
+            'question': text,
+            'answer': label_names[label_idx],
+            'question_tokens': question_tokens,
+            'image_features': image_features
+        }
+
 class FuzzyAttentionEvaluator:
     """Comprehensive evaluator for fuzzy attention networks"""
     
@@ -130,7 +256,28 @@ class FuzzyAttentionEvaluator:
         print("=" * 50)
         
         model.eval()
-        dataloader = DataLoader(dataset, batch_size=4, shuffle=False)
+        def collate_fn(batch_list):
+            # Pad variable length question tokens
+            max_len = max(len(b['question_tokens']) for b in batch_list)
+            padded = []
+            for b in batch_list:
+                q = b['question_tokens']
+                if len(q) < max_len:
+                    q = torch.cat([q, torch.zeros(max_len - len(q), dtype=torch.long)])
+                padded.append(q)
+            question_tokens = torch.stack(padded)
+            image_features = torch.stack([b['image_features'] for b in batch_list])
+            answers = [b['answer'] for b in batch_list]
+            batch = {
+                'question_tokens': question_tokens,
+                'image_features': image_features,
+                'answer': answers
+            }
+            if 'label' in batch_list[0]:
+                batch['labels'] = torch.tensor([b['label'] for b in batch_list], dtype=torch.long)
+            return batch
+
+        dataloader = DataLoader(dataset, batch_size=4, shuffle=False, collate_fn=collate_fn)
         
         # Initialize metrics
         total_correct = 0
@@ -152,6 +299,10 @@ class FuzzyAttentionEvaluator:
                     result = self._evaluate_vqa_batch(model, batch)
                 elif dataset_name == 'e-SNLI-VE':
                     result = self._evaluate_esnli_batch(model, batch)
+                elif dataset_name == 'HatefulMemes':
+                    result = self._evaluate_vqa_batch(model, batch)
+                elif dataset_name == 'PokemonCaptions':
+                    result = self._evaluate_vqa_batch(model, batch)
                 else:
                     result = self._evaluate_generic_batch(model, batch)
                 
@@ -221,20 +372,31 @@ class FuzzyAttentionEvaluator:
         """Evaluate VQA batch"""
         question_tokens = batch['question_tokens'].to(self.device)
         image_features = batch['image_features'].to(self.device)
-        answers = batch['answer']
+        answers = batch.get('answer', [])
+        labels = batch.get('labels', None)
         
         # Get model predictions
         result = model(question_tokens, image_features, return_explanations=True)
         
         # Calculate accuracy (simplified)
         predicted_answers = torch.argmax(result['answer_logits'], dim=-1)
-        correct = 0  # Simplified - would need proper answer matching
+        if labels is not None:
+            correct = int((predicted_answers.cpu() == labels).sum().item())
+        else:
+            correct = 0  # Simplified
         
         return {
             'correct_predictions': correct,
-            'batch_size': len(answers),
-            'attention_entropy': np.mean([p['entropy'] for p in result.get('attention_patterns', {}).get('attention_entropy', [0])]),
-            'attention_sparsity': np.mean([p for p in result.get('attention_patterns', {}).get('attention_sparsity', [0])]),
+            'batch_size': question_tokens.size(0),
+            # Compute means from attention_patterns dict lists
+            'attention_entropy': (
+                float(np.mean(result.get('attention_patterns', {}).get('attention_entropy', [])))
+                if result.get('attention_patterns') and result['attention_patterns'].get('attention_entropy') else 0.0
+            ),
+            'attention_sparsity': (
+                float(np.mean(result.get('attention_patterns', {}).get('attention_sparsity', [])))
+                if result.get('attention_patterns') and result['attention_patterns'].get('attention_sparsity') else 0.0
+            ),
             'fuzzy_rules': result.get('fuzzy_rules', []),
             'attention_patterns': result.get('attention_patterns', {})
         }
@@ -257,8 +419,14 @@ class FuzzyAttentionEvaluator:
         return {
             'correct_predictions': correct,
             'batch_size': len(labels),
-            'attention_entropy': np.mean([p['entropy'] for p in result.get('attention_patterns', {}).get('attention_entropy', [0])]),
-            'attention_sparsity': np.mean([p for p in result.get('attention_patterns', {}).get('attention_sparsity', [0])]),
+            'attention_entropy': (
+                float(np.mean(result.get('attention_patterns', {}).get('attention_entropy', [])))
+                if result.get('attention_patterns') and result['attention_patterns'].get('attention_entropy') else 0.0
+            ),
+            'attention_sparsity': (
+                float(np.mean(result.get('attention_patterns', {}).get('attention_sparsity', [])))
+                if result.get('attention_patterns') and result['attention_patterns'].get('attention_sparsity') else 0.0
+            ),
             'fuzzy_rules': result.get('fuzzy_rules', []),
             'attention_patterns': result.get('attention_patterns', {})
         }
@@ -389,9 +557,10 @@ def demo_evaluation_framework():
     # Create evaluator
     evaluator = FuzzyAttentionEvaluator()
     
-    # Create demo datasets
+    # Create demo datasets (mock + real HF dataset)
     vqa_dataset = VQAXDataset("mock_path", split='train', max_samples=20)
     esnli_dataset = ESNLIVEDataset("mock_path", split='train', max_samples=20)
+    hateful_dataset = HatefulMemesHFDataset(split='train', max_samples=40, device='cpu')
     
     print(f"📊 Created datasets:")
     print(f"   VQA-X: {len(vqa_dataset)} samples")
@@ -417,6 +586,10 @@ def demo_evaluation_framework():
     # Evaluate on e-SNLI-VE
     print(f"\n🔍 Evaluating on e-SNLI-VE...")
     esnli_results = evaluator.evaluate_model(fuzzy_model, esnli_dataset, 'e-SNLI-VE')
+
+    # Evaluate on Hateful Memes (HF)
+    print(f"\n🔍 Evaluating on Hateful Memes (HF)...")
+    hateful_results = evaluator.evaluate_model(fuzzy_model, hateful_dataset, 'HatefulMemes')
     
     # Create comparative evaluator
     comp_evaluator = ComparativeEvaluator(evaluator)

@@ -21,51 +21,33 @@ wheels/
 *.egg
 MANIFEST
 
-# PyInstaller
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# Environments
-.env
-.venv
-env/
+# Virtual environments
 venv/
+env/
 ENV/
 env.bak/
 venv.bak/
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyTorch
+*.pth
+*.pt
+
+# Data and models
+data/
+models/
+results/
+temp_logs/
+*.log
 
 # OS
 .DS_Store
@@ -76,47 +58,9 @@ venv.bak/
 ehthumbs.db
 Thumbs.db
 
-# Project specific
-logs/
-temp_logs/
-*.log
-models/checkpoints/
-results/temp/
-data/raw/
-data/processed/
+# Streamlit
+.streamlit/
 
 # Temporary files
 *.tmp
 *.temp
-temp/
-tmp/
-
-# Large files
-*.pkl
-*.pickle
-*.h5
-*.hdf5
-*.pt
-*.pth
-*.bin
-
-# LaTeX
-*.aux
-*.bbl
-*.blg
-*.fdb_latexmk
-*.fls
-*.log
-*.out
-*.synctex.gz
-*.toc
-
-# Streamlit
-.streamlit/
-
-# Weights & Biases
-wandb/
-
-# TensorBoard
-runs/
-tensorboard_logs/

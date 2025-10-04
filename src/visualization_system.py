@@ -1,817 +1,575 @@
 """
-Visualization System for Membership Functions and Interactive Rule Refinement
-Implements sophisticated visualizations as described in the paper
+Visualization System for Fuzzy Attention Networks
+Interactive visualizations for attention patterns and fuzzy rules
 """
 
 import torch
-import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-from matplotlib.animation import FuncAnimation
 import seaborn as sns
+from typing import List, Dict, Any, Optional, Tuple
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
-import networkx as nx
-from typing import Dict, List, Any, Tuple, Optional, Callable
-import json
-import ipywidgets as widgets
-from IPython.display import display, HTML
-import streamlit as st
+import pandas as pd
 from dataclasses import dataclass
+
+from rule_extractor import FuzzyRule
 
 @dataclass
 class VisualizationConfig:
     """Configuration for visualizations"""
-    style: str = 'modern'  # 'modern', 'classic', 'minimal'
-    color_scheme: str = 'viridis'  # 'viridis', 'plasma', 'inferno', 'custom'
+    figure_size: Tuple[int, int] = (12, 8)
+    color_scheme: str = 'viridis'
+    font_size: int = 12
+    dpi: int = 300
     interactive: bool = True
-    animation: bool = False
-    export_format: str = 'png'  # 'png', 'svg', 'html', 'json'
 
-class MembershipFunctionVisualizer:
-    """Visualizes fuzzy membership functions with interactive features"""
+class AttentionVisualizer:
+    """Visualize attention patterns and fuzzy rules"""
     
-    def __init__(self, config: VisualizationConfig = None):
+    def __init__(self, config: Optional[VisualizationConfig] = None):
         self.config = config or VisualizationConfig()
         self.setup_style()
         
     def setup_style(self):
-        """Setup visualization style"""
-        if self.config.style == 'modern':
-            plt.style.use('seaborn-v0_8')
-            sns.set_palette("husl")
-        elif self.config.style == 'classic':
-            plt.style.use('classic')
-        else:  # minimal
-            plt.style.use('default')
+        """Setup matplotlib and seaborn styles"""
+        plt.style.use('seaborn-v0_8')
+        sns.set_palette(self.config.color_scheme)
+        plt.rcParams.update({
+            'font.size': self.config.font_size,
+            'figure.dpi': self.config.dpi,
+            'savefig.dpi': self.config.dpi
+        })
     
-    def visualize_gaussian_membership(self, 
-                                    centers: torch.Tensor,
-                                    sigmas: torch.Tensor,
-                                    input_range: Tuple[float, float] = (-3, 3),
-                                    resolution: int = 1000) -> go.Figure:
-        """Create interactive visualization of Gaussian membership functions"""
+    def plot_attention_heatmap(self, 
+                              attention_weights: torch.Tensor,
+                              tokens: Optional[List[str]] = None,
+                              title: str = "Attention Heatmap",
+                              save_path: Optional[str] = None) -> plt.Figure:
+        """Plot attention weights as heatmap"""
         
-        x = np.linspace(input_range[0], input_range[1], resolution)
+        # Convert to numpy and average over batch dimension
+        if attention_weights.dim() == 3:
+            attention = attention_weights.mean(dim=0).cpu().numpy()
+        else:
+            attention = attention_weights.cpu().numpy()
         
-        fig = go.Figure()
+        # Create figure
+        fig, ax = plt.subplots(figsize=self.config.figure_size)
         
-        colors = px.colors.qualitative.Set3
-        n_functions = centers.shape[0]
+        # Create heatmap
+        im = ax.imshow(attention, cmap='Blues', aspect='auto')
         
-        for i in range(n_functions):
-            center = centers[i].item()
-            sigma = sigmas[i].item()
-            
-            # Compute membership values
-            membership = np.exp(-(x - center)**2 / (2 * sigma**2))
-            
-            # Add membership function curve
-            fig.add_trace(go.Scatter(
-                x=x,
-                y=membership,
-                mode='lines',
-                name=f'μ_{i+1}(x)',
-                line=dict(color=colors[i % len(colors)], width=3),
-                hovertemplate=f'<b>Membership Function {i+1}</b><br>' +
-                             f'Center: {center:.3f}<br>' +
-                             f'Width: {sigma:.3f}<br>' +
-                             f'Membership: %{{y:.3f}}<extra></extra>'
-            ))
-            
-            # Add center line
-            fig.add_vline(
-                x=center,
-                line_dash="dash",
-                line_color=colors[i % len(colors)],
-                opacity=0.5,
-                annotation_text=f"c_{i+1} = {center:.3f}"
-            )
+        # Set labels
+        if tokens:
+            ax.set_xticks(range(len(tokens)))
+            ax.set_yticks(range(len(tokens)))
+            ax.set_xticklabels(tokens, rotation=45, ha='right')
+            ax.set_yticklabels(tokens)
+        else:
+            ax.set_xlabel('Key Position')
+            ax.set_ylabel('Query Position')
         
-        # Add alpha-cut visualization
-        fig.add_hline(
-            y=0.5,
-            line_dash="dot",
-            line_color="red",
-            opacity=0.7,
-            annotation_text="α-cut (α=0.5)"
-        )
+        # Add colorbar
+        cbar = plt.colorbar(im, ax=ax)
+        cbar.set_label('Attention Weight', rotation=270, labelpad=20)
         
-        fig.update_layout(
-            title="Gaussian Membership Functions",
-            xaxis_title="Input Value (x)",
-            yaxis_title="Membership Degree μ(x)",
-            hovermode='x unified',
-            template="plotly_white",
-            showlegend=True,
-            width=800,
-            height=500
-        )
+        # Set title
+        ax.set_title(title, fontsize=16, fontweight='bold')
+        
+        # Adjust layout
+        plt.tight_layout()
+        
+        if save_path:
+            plt.savefig(save_path, bbox_inches='tight', dpi=self.config.dpi)
         
         return fig
     
-    def visualize_tnorm_operations(self, 
-                                 a_values: torch.Tensor,
-                                 b_values: torch.Tensor,
-                                 tnorm_types: List[str] = ['product', 'minimum', 'lukasiewicz']) -> go.Figure:
-        """Visualize different t-norm operations"""
+    def plot_fuzzy_rules_network(self, 
+                                rules: List[FuzzyRule],
+                                tokens: Optional[List[str]] = None,
+                                title: str = "Fuzzy Rules Network",
+                                save_path: Optional[str] = None) -> plt.Figure:
+        """Plot fuzzy rules as network graph"""
         
-        fig = make_subplots(
-            rows=1, cols=len(tnorm_types),
-            subplot_titles=[f"{tnorm.title()} T-norm" for tnorm in tnorm_types],
-            specs=[[{"type": "surface"} for _ in tnorm_types]]
-        )
+        if not rules:
+            fig, ax = plt.subplots(figsize=self.config.figure_size)
+            ax.text(0.5, 0.5, 'No fuzzy rules to display', 
+                   ha='center', va='center', fontsize=16)
+            ax.set_title(title)
+            return fig
         
-        for i, tnorm_type in enumerate(tnorm_types):
-            # Create meshgrid
-            A, B = np.meshgrid(a_values.numpy(), b_values.numpy())
+        # Create network data
+        nodes = set()
+        edges = []
+        edge_weights = []
+        
+        for rule in rules:
+            nodes.add(rule.from_position)
+            nodes.add(rule.to_position)
+            edges.append((rule.from_position, rule.to_position))
+            edge_weights.append(rule.strength)
+        
+        nodes = sorted(list(nodes))
+        node_labels = {}
+        if tokens:
+            for i, node in enumerate(nodes):
+                if node < len(tokens):
+                    node_labels[node] = tokens[node]
+                else:
+                    node_labels[node] = f"Pos {node}"
+        else:
+            node_labels = {node: f"Pos {node}" for node in nodes}
+        
+        # Create figure
+        fig, ax = plt.subplots(figsize=self.config.figure_size)
+        
+        # Position nodes in a circle
+        n_nodes = len(nodes)
+        angles = np.linspace(0, 2*np.pi, n_nodes, endpoint=False)
+        x_pos = np.cos(angles)
+        y_pos = np.sin(angles)
+        
+        # Plot edges
+        for i, (from_pos, to_pos) in enumerate(edges):
+            from_idx = nodes.index(from_pos)
+            to_idx = nodes.index(to_pos)
             
-            # Compute t-norm values
-            if tnorm_type == 'product':
-                T = A * B
-            elif tnorm_type == 'minimum':
-                T = np.minimum(A, B)
-            elif tnorm_type == 'lukasiewicz':
-                T = np.maximum(0, A + B - 1)
+            x_coords = [x_pos[from_idx], x_pos[to_idx]]
+            y_coords = [y_pos[from_idx], y_pos[to_idx]]
             
-            # Add surface plot
-            fig.add_trace(
-                go.Surface(
-                    x=A, y=B, z=T,
-                    name=f"{tnorm_type.title()} T-norm",
-                    colorscale='Viridis',
-                    showscale=(i == len(tnorm_types) - 1)
-                ),
-                row=1, col=i+1
-            )
+            # Line width based on rule strength
+            line_width = max(1, edge_weights[i] * 10)
+            
+            ax.plot(x_coords, y_coords, 'b-', alpha=0.6, linewidth=line_width)
         
-        fig.update_layout(
-            title="T-norm Operations Visualization",
-            height=400,
-            width=1200
-        )
+        # Plot nodes
+        ax.scatter(x_pos, y_pos, s=200, c='lightblue', edgecolors='black', linewidth=2)
+        
+        # Add labels
+        for i, node in enumerate(nodes):
+            ax.annotate(node_labels[node], (x_pos[i], y_pos[i]), 
+                       ha='center', va='center', fontsize=10, fontweight='bold')
+        
+        # Set title and remove axes
+        ax.set_title(title, fontsize=16, fontweight='bold')
+        ax.set_xlim(-1.2, 1.2)
+        ax.set_ylim(-1.2, 1.2)
+        ax.set_aspect('equal')
+        ax.axis('off')
+        
+        # Add legend for edge weights
+        legend_elements = [
+            plt.Line2D([0], [0], color='blue', linewidth=2, label='Strong Rule'),
+            plt.Line2D([0], [0], color='blue', linewidth=1, label='Weak Rule')
+        ]
+        ax.legend(handles=legend_elements, loc='upper right')
+        
+        plt.tight_layout()
+        
+        if save_path:
+            plt.savefig(save_path, bbox_inches='tight', dpi=self.config.dpi)
         
         return fig
     
-    def visualize_attention_heatmap(self, 
+    def plot_rule_strength_distribution(self, 
+                                       rules: List[FuzzyRule],
+                                       title: str = "Rule Strength Distribution",
+                                       save_path: Optional[str] = None) -> plt.Figure:
+        """Plot distribution of rule strengths"""
+        
+        if not rules:
+            fig, ax = plt.subplots(figsize=self.config.figure_size)
+            ax.text(0.5, 0.5, 'No fuzzy rules to display', 
+                   ha='center', va='center', fontsize=16)
+            ax.set_title(title)
+            return fig
+        
+        strengths = [rule.strength for rule in rules]
+        confidences = [rule.confidence for rule in rules]
+        
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=self.config.figure_size)
+        
+        # Strength histogram
+        ax1.hist(strengths, bins=20, alpha=0.7, color='skyblue', edgecolor='black')
+        ax1.set_xlabel('Rule Strength')
+        ax1.set_ylabel('Frequency')
+        ax1.set_title('Rule Strength Distribution')
+        ax1.grid(True, alpha=0.3)
+        
+        # Confidence histogram
+        ax2.hist(confidences, bins=20, alpha=0.7, color='lightcoral', edgecolor='black')
+        ax2.set_xlabel('Rule Confidence')
+        ax2.set_ylabel('Frequency')
+        ax2.set_title('Rule Confidence Distribution')
+        ax2.grid(True, alpha=0.3)
+        
+        plt.suptitle(title, fontsize=16, fontweight='bold')
+        plt.tight_layout()
+        
+        if save_path:
+            plt.savefig(save_path, bbox_inches='tight', dpi=self.config.dpi)
+        
+        return fig
+    
+    def plot_attention_entropy(self, 
+                              attention_weights: torch.Tensor,
+                              title: str = "Attention Entropy",
+                              save_path: Optional[str] = None) -> plt.Figure:
+        """Plot attention entropy for each position"""
+        
+        # Calculate entropy for each position
+        if attention_weights.dim() == 3:
+            attention = attention_weights.mean(dim=0)  # Average over batch
+        else:
+            attention = attention_weights
+        
+        # Calculate entropy: -sum(p * log(p))
+        entropy = -(attention * torch.log(attention + 1e-8)).sum(dim=-1)
+        entropy = entropy.cpu().numpy()
+        
+        # Create figure
+        fig, ax = plt.subplots(figsize=self.config.figure_size)
+        
+        positions = range(len(entropy))
+        bars = ax.bar(positions, entropy, color='lightblue', edgecolor='black')
+        
+        # Color bars based on entropy level
+        for i, bar in enumerate(bars):
+            if entropy[i] > np.percentile(entropy, 75):
+                bar.set_color('red')
+            elif entropy[i] > np.percentile(entropy, 50):
+                bar.set_color('orange')
+        
+        ax.set_xlabel('Position')
+        ax.set_ylabel('Attention Entropy')
+        ax.set_title(title, fontsize=16, fontweight='bold')
+        ax.grid(True, alpha=0.3)
+        
+        # Add statistics
+        mean_entropy = np.mean(entropy)
+        ax.axhline(y=mean_entropy, color='red', linestyle='--', 
+                  label=f'Mean: {mean_entropy:.3f}')
+        ax.legend()
+        
+        plt.tight_layout()
+        
+        if save_path:
+            plt.savefig(save_path, bbox_inches='tight', dpi=self.config.dpi)
+        
+        return fig
+
+class InteractiveVisualizer:
+    """Interactive visualizations using Plotly"""
+    
+    def __init__(self):
+        self.color_schemes = {
+            'viridis': px.colors.sequential.Viridis,
+            'plasma': px.colors.sequential.Plasma,
+            'inferno': px.colors.sequential.Inferno,
+            'magma': px.colors.sequential.Magma
+        }
+    
+    def create_interactive_attention_heatmap(self, 
                                   attention_weights: torch.Tensor,
                                   tokens: Optional[List[str]] = None,
-                                  title: str = "Fuzzy Attention Weights") -> go.Figure:
-        """Create interactive attention heatmap"""
+                                           title: str = "Interactive Attention Heatmap") -> go.Figure:
+        """Create interactive attention heatmap with Plotly"""
         
-        attention = attention_weights.squeeze().cpu().numpy()
-        
-        # Create labels
-        if tokens:
-            labels = [f"{i}: {token}" for i, token in enumerate(tokens)]
+        # Convert to numpy and average over batch dimension
+        if attention_weights.dim() == 3:
+            attention = attention_weights.mean(dim=0).cpu().numpy()
         else:
-            labels = [f"Pos {i}" for i in range(attention.shape[0])]
+            attention = attention_weights.cpu().numpy()
         
+        # Create hover text
+        if tokens:
+            hover_text = []
+            for i in range(len(tokens)):
+                row = []
+                for j in range(len(tokens)):
+                    row.append(f"Query: {tokens[i]}<br>Key: {tokens[j]}<br>Attention: {attention[i, j]:.4f}")
+                hover_text.append(row)
+        else:
+            hover_text = None
+        
+        # Create heatmap
         fig = go.Figure(data=go.Heatmap(
             z=attention,
-            x=labels,
-            y=labels,
-            colorscale='Viridis',
+            x=tokens if tokens else None,
+            y=tokens if tokens else None,
             hoverongaps=False,
-            hovertemplate='<b>From:</b> %{y}<br>' +
-                         '<b>To:</b> %{x}<br>' +
-                         '<b>Attention:</b> %{z:.4f}<extra></extra>'
+            hovertext=hover_text,
+            colorscale='Blues',
+            showscale=True,
+            colorbar=dict(title="Attention Weight")
         ))
         
         fig.update_layout(
             title=title,
-            xaxis_title="Target Position",
-            yaxis_title="Source Position",
-            width=600,
+            xaxis_title="Key Position",
+            yaxis_title="Query Position",
+            width=800,
             height=600
         )
         
         return fig
     
-    def visualize_rule_network(self, 
-                             rules: List[Any],
-                             tokens: Optional[List[str]] = None) -> go.Figure:
-        """Visualize fuzzy rules as a network graph"""
+    def create_interactive_rule_network(self, 
+                                      rules: List[FuzzyRule],
+                                      tokens: Optional[List[str]] = None,
+                                      title: str = "Interactive Fuzzy Rules Network") -> go.Figure:
+        """Create interactive network visualization of fuzzy rules"""
         
-        # Create network graph
-        G = nx.DiGraph()
+        if not rules:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="No fuzzy rules to display",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False,
+                font=dict(size=16)
+            )
+            fig.update_layout(title=title)
+            return fig
+        
+        # Create network data
+        nodes = set()
+        edges = []
         
         for rule in rules:
-            from_pos = rule.from_position
-            to_pos = rule.to_position
-            
-            # Add nodes
-            if tokens and from_pos < len(tokens):
-                from_label = f"{from_pos}: {tokens[from_pos]}"
-            else:
-                from_label = f"Pos {from_pos}"
-                
-            if tokens and to_pos < len(tokens):
-                to_label = f"{to_pos}: {tokens[to_pos]}"
-            else:
-                to_label = f"Pos {to_pos}"
-            
-            G.add_node(from_pos, label=from_label)
-            G.add_node(to_pos, label=to_label)
-            
-            # Add edge with weight
-            G.add_edge(from_pos, to_pos, weight=rule.strength)
+            nodes.add(rule.from_position)
+            nodes.add(rule.to_position)
+            edges.append({
+                'from': rule.from_position,
+                'to': rule.to_position,
+                'strength': rule.strength,
+                'confidence': rule.confidence,
+                'description': rule.linguistic_description
+            })
         
-        # Create plotly network
-        pos = nx.spring_layout(G, k=3, iterations=50)
+        nodes = sorted(list(nodes))
         
-        # Extract node and edge information
+        # Position nodes in a circle
+        n_nodes = len(nodes)
+        angles = np.linspace(0, 2*np.pi, n_nodes, endpoint=False)
+        x_pos = np.cos(angles)
+        y_pos = np.sin(angles)
+        
+        # Create node data
+        node_data = []
+        for i, node in enumerate(nodes):
+            label = tokens[node] if tokens and node < len(tokens) else f"Pos {node}"
+            node_data.append({
+                'x': x_pos[i],
+                'y': y_pos[i],
+                'label': label,
+                'position': node
+            })
+        
+        # Create edge data
         edge_x = []
         edge_y = []
         edge_info = []
         
-        for edge in G.edges():
-            x0, y0 = pos[edge[0]]
-            x1, y1 = pos[edge[1]]
-            edge_x.extend([x0, x1, None])
-            edge_y.extend([y0, y1, None])
+        for edge in edges:
+            from_idx = nodes.index(edge['from'])
+            to_idx = nodes.index(edge['to'])
             
-            weight = G[edge[0]][edge[1]]['weight']
-            edge_info.append(f"Strength: {weight:.3f}")
+            edge_x.extend([x_pos[from_idx], x_pos[to_idx], None])
+            edge_y.extend([y_pos[from_idx], y_pos[to_idx], None])
+            
+            edge_info.append({
+                'from': edge['from'],
+                'to': edge['to'],
+                'strength': edge['strength'],
+                'confidence': edge['confidence'],
+                'description': edge['description']
+            })
         
-        # Create edge trace
-        edge_trace = go.Scatter(
+        # Create figure
+        fig = go.Figure()
+        
+        # Add edges
+        fig.add_trace(go.Scatter(
             x=edge_x, y=edge_y,
-            line=dict(width=2, color='#888'),
+            mode='lines',
+            line=dict(width=2, color='rgba(0,0,255,0.5)'),
             hoverinfo='none',
-            mode='lines'
-        )
+            showlegend=False
+        ))
         
-        # Create node trace
-        node_x = []
-        node_y = []
-        node_text = []
-        node_info = []
-        
-        for node in G.nodes():
-            x, y = pos[node]
-            node_x.append(x)
-            node_y.append(y)
-            node_text.append(G.nodes[node]['label'])
-            node_info.append(f"Position: {node}")
-        
-        node_trace = go.Scatter(
-            x=node_x, y=node_y,
+        # Add nodes
+        fig.add_trace(go.Scatter(
+            x=[node['x'] for node in node_data],
+            y=[node['y'] for node in node_data],
             mode='markers+text',
-            hoverinfo='text',
-            text=node_text,
+            marker=dict(size=20, color='lightblue', line=dict(width=2, color='black')),
+            text=[node['label'] for node in node_data],
             textposition="middle center",
-            hovertext=node_info,
-            marker=dict(
-                showscale=True,
-                colorscale='YlOrRd',
-                reversescale=True,
-                color=[],
-                size=20,
-                colorbar=dict(
-                    thickness=15,
-                    title="Node Connections",
-                    xanchor="left",
-                    titleside="right"
-                ),
-                line=dict(width=2)
-            )
-        )
+            hoverinfo='text',
+            hovertext=[f"Position: {node['position']}<br>Label: {node['label']}" for node in node_data],
+            showlegend=False
+        ))
         
-        # Color nodes by degree
-        node_adjacencies = []
-        for node in G.nodes():
-            node_adjacencies.append(len(list(G.neighbors(node))))
-        
-        node_trace.marker.color = node_adjacencies
-        
-        fig = go.Figure(data=[edge_trace, node_trace],
-                       layout=go.Layout(
-                           title='Fuzzy Rule Network',
-                           titlefont_size=16,
+        fig.update_layout(
+            title=title,
                            showlegend=False,
                            hovermode='closest',
                            margin=dict(b=20,l=5,r=5,t=40),
                            annotations=[ dict(
-                               text="Node size represents number of connections",
+                text="Hover over nodes and edges for details",
                                showarrow=False,
                                xref="paper", yref="paper",
                                x=0.005, y=-0.002,
                                xanchor='left', yanchor='bottom',
-                               font=dict(color="gray", size=12)
+                font=dict(color='gray', size=12)
                            )],
                            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                           yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
-                       ))
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            width=800,
+            height=600
+        )
         
         return fig
 
-class InteractiveRuleRefinement:
-    """Interactive rule refinement interface"""
-    
-    def __init__(self):
-        self.rule_editor = RuleEditor()
-        self.validation_engine = RuleValidationEngine()
+    def create_rule_comparison_chart(self, 
+                                   rules_by_level: Dict[str, List[FuzzyRule]],
+                                   title: str = "Rule Comparison by User Level") -> go.Figure:
+        """Create comparison chart of rules across different user levels"""
         
-    def create_rule_editor_interface(self, rules: List[Any]) -> widgets.VBox:
-        """Create interactive rule editor interface"""
+        # Prepare data
+        data = []
+        for level, rules in rules_by_level.items():
+            for rule in rules:
+                data.append({
+                    'User Level': level,
+                    'Rule Strength': rule.strength,
+                    'Rule Confidence': rule.confidence,
+                    'Rule ID': f"{rule.from_position}-{rule.to_position}"
+                })
         
-        # Create rule selection dropdown
-        rule_options = [f"Rule {i+1}: {rule.linguistic_description[:50]}..." for i, rule in enumerate(rules)]
-        rule_selector = widgets.Dropdown(
-            options=rule_options,
-            value=rule_options[0] if rule_options else None,
-            description='Select Rule:',
-            style={'description_width': 'initial'}
-        )
-        
-        # Create rule editing widgets
-        strength_slider = widgets.FloatSlider(
-            value=0.5,
-            min=0.0,
-            max=1.0,
-            step=0.01,
-            description='Strength:',
-            style={'description_width': 'initial'}
-        )
-        
-        confidence_slider = widgets.FloatSlider(
-            value=0.5,
-            min=0.0,
-            max=1.0,
-            step=0.01,
-            description='Confidence:',
-            style={'description_width': 'initial'}
-        )
-        
-        description_text = widgets.Textarea(
-            value='',
-            placeholder='Enter rule description...',
-            description='Description:',
-            style={'description_width': 'initial'},
-            layout=widgets.Layout(width='100%')
-        )
-        
-        # Create action buttons
-        validate_button = widgets.Button(
-            description='Validate Rule',
-            button_style='info',
-            icon='check'
-        )
-        
-        save_button = widgets.Button(
-            description='Save Changes',
-            button_style='success',
-            icon='save'
-        )
-        
-        reset_button = widgets.Button(
-            description='Reset',
-            button_style='warning',
-            icon='undo'
-        )
-        
-        # Create output area
-        output_area = widgets.Output()
-        
-        # Create validation results display
-        validation_results = widgets.HTML(
-            value="<p>No validation performed yet.</p>",
-            description='Validation Results:'
-        )
-        
-        # Define event handlers
-        def on_rule_selected(change):
-            if change['new'] is not None:
-                rule_idx = change['new']
-                rule = rules[rule_idx]
-                strength_slider.value = rule.strength
-                confidence_slider.value = rule.confidence
-                description_text.value = rule.linguistic_description
-        
-        def on_validate_clicked(b):
-            with output_area:
-                output_area.clear_output()
-                rule_idx = rule_selector.index
-                if rule_idx is not None:
-                    rule = rules[rule_idx]
-                    validation_result = self.validation_engine.validate_rule(rule)
-                    
-                    # Update validation results display
-                    if validation_result['is_valid']:
-                        status_color = "green"
-                        status_text = "✓ Valid"
-                    else:
-                        status_color = "red"
-                        status_text = "✗ Invalid"
-                    
-                    validation_html = f"""
-                    <div style="border: 1px solid {status_color}; padding: 10px; border-radius: 5px;">
-                        <h4 style="color: {status_color};">{status_text}</h4>
-                        <p><strong>Confidence:</strong> {validation_result['confidence']:.3f}</p>
-                        <p><strong>Consistency Score:</strong> {validation_result['consistency_score']:.3f}</p>
-                        <p><strong>Suggestions:</strong></p>
-                        <ul>
-                            {''.join([f'<li>{suggestion}</li>' for suggestion in validation_result['suggestions']])}
-                        </ul>
-                    </div>
-                    """
-                    validation_results.value = validation_html
-        
-        def on_save_clicked(b):
-            with output_area:
-                output_area.clear_output()
-                print("Rule saved successfully!")
-        
-        def on_reset_clicked(b):
-            strength_slider.value = 0.5
-            confidence_slider.value = 0.5
-            description_text.value = ""
-            validation_results.value = "<p>Reset to default values.</p>"
-        
-        # Attach event handlers
-        rule_selector.observe(on_rule_selected, names='value')
-        validate_button.on_click(on_validate_clicked)
-        save_button.on_click(on_save_clicked)
-        reset_button.on_click(on_reset_clicked)
-        
-        # Create layout
-        interface = widgets.VBox([
-            widgets.HTML("<h3>Interactive Rule Refinement</h3>"),
-            rule_selector,
-            widgets.HBox([strength_slider, confidence_slider]),
-            description_text,
-            widgets.HBox([validate_button, save_button, reset_button]),
-            validation_results,
-            output_area
-        ])
-        
-        return interface
-    
-    def create_rule_comparison_interface(self, rules: List[Any]) -> widgets.VBox:
-        """Create rule comparison interface"""
-        
-        # Create rule selection checkboxes
-        rule_checkboxes = []
-        for i, rule in enumerate(rules):
-            checkbox = widgets.Checkbox(
-                value=False,
-                description=f"Rule {i+1}: {rule.linguistic_description[:30]}...",
-                style={'description_width': 'initial'}
+        if not data:
+            fig = go.Figure()
+            fig.add_annotation(
+                text="No rules to compare",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False,
+                font=dict(size=16)
             )
-            rule_checkboxes.append(checkbox)
+            fig.update_layout(title=title)
+            return fig
         
-        # Create comparison button
-        compare_button = widgets.Button(
-            description='Compare Selected Rules',
-            button_style='primary',
-            icon='balance-scale'
+        df = pd.DataFrame(data)
+        
+        # Create subplots
+        fig = make_subplots(
+            rows=1, cols=2,
+            subplot_titles=('Rule Strength by User Level', 'Rule Confidence by User Level'),
+            specs=[[{"type": "box"}, {"type": "box"}]]
         )
         
-        # Create output area
-        comparison_output = widgets.Output()
-        
-        def on_compare_clicked(b):
-            with comparison_output:
-                comparison_output.clear_output()
-                selected_rules = [rules[i] for i, cb in enumerate(rule_checkboxes) if cb.value]
-                
-                if len(selected_rules) < 2:
-                    print("Please select at least 2 rules to compare.")
-                    return
-                
-                # Create comparison table
-                comparison_data = []
-                for i, rule in enumerate(selected_rules):
-                    comparison_data.append({
-                        'Rule': f"Rule {i+1}",
-                        'Strength': f"{rule.strength:.3f}",
-                        'Confidence': f"{rule.confidence:.3f}",
-                        'Type': rule.tnorm_type,
-                        'Description': rule.linguistic_description[:50] + "..."
-                    })
-                
-                # Display comparison
-                print("Rule Comparison:")
-                print("-" * 80)
-                for data in comparison_data:
-                    print(f"{data['Rule']:8} | {data['Strength']:8} | {data['Confidence']:10} | {data['Type']:12} | {data['Description']}")
-        
-        compare_button.on_click(on_compare_clicked)
-        
-        # Create layout
-        interface = widgets.VBox([
-            widgets.HTML("<h3>Rule Comparison</h3>"),
-            widgets.VBox(rule_checkboxes),
-            compare_button,
-            comparison_output
-        ])
-        
-        return interface
-
-class RuleEditor:
-    """Rule editing functionality"""
-    
-    def edit_rule(self, rule: Any, new_values: Dict[str, Any]) -> Any:
-        """Edit a rule with new values"""
-        # This would implement actual rule editing
-        # For now, return the original rule
-        return rule
-
-class RuleValidationEngine:
-    """Rule validation engine"""
-    
-    def validate_rule(self, rule: Any) -> Dict[str, Any]:
-        """Validate a rule"""
-        validation_result = {
-            'is_valid': True,
-            'confidence': rule.confidence,
-            'consistency_score': np.random.random(),
-            'suggestions': []
-        }
-        
-        # Check rule consistency
-        if rule.strength < 0.05:
-            validation_result['is_valid'] = False
-            validation_result['suggestions'].append("Rule strength too low")
-        
-        if rule.confidence < 0.3:
-            validation_result['is_valid'] = False
-            validation_result['suggestions'].append("Rule confidence too low")
-        
-        return validation_result
-
-class StreamlitVisualizationApp:
-    """Streamlit app for interactive visualizations"""
-    
-    def __init__(self):
-        self.visualizer = MembershipFunctionVisualizer()
-        self.rule_refinement = InteractiveRuleRefinement()
-    
-    def run_app(self):
-        """Run the Streamlit app"""
-        st.set_page_config(
-            page_title="Fuzzy Attention Networks Visualization",
-            page_icon="🧠",
-            layout="wide"
-        )
-        
-        st.title("🧠 Fuzzy Attention Networks Visualization")
-        
-        # Sidebar for configuration
-        st.sidebar.header("Configuration")
-        
-        # Style selection
-        style = st.sidebar.selectbox(
-            "Visualization Style",
-            ["modern", "classic", "minimal"]
-        )
-        
-        # Color scheme
-        color_scheme = st.sidebar.selectbox(
-            "Color Scheme",
-            ["viridis", "plasma", "inferno", "custom"]
-        )
-        
-        # Main tabs
-        tab1, tab2, tab3, tab4 = st.tabs([
-            "Membership Functions", 
-            "Attention Heatmaps", 
-            "Rule Networks", 
-            "Rule Refinement"
-        ])
-        
-        with tab1:
-            self._membership_functions_tab()
-        
-        with tab2:
-            self._attention_heatmaps_tab()
-        
-        with tab3:
-            self._rule_networks_tab()
-        
-        with tab4:
-            self._rule_refinement_tab()
-    
-    def _membership_functions_tab(self):
-        """Membership functions visualization tab"""
-        st.header("Gaussian Membership Functions")
-        
-        # Parameters
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            n_functions = st.slider("Number of Functions", 1, 5, 3)
-            input_range_min = st.number_input("Input Range Min", -5.0, 0.0, -3.0)
-            input_range_max = st.number_input("Input Range Max", 0.0, 5.0, 3.0)
-        
-        with col2:
-            resolution = st.slider("Resolution", 100, 1000, 500)
-            show_alpha_cut = st.checkbox("Show Alpha Cut", True)
-        
-        # Generate membership functions
-        centers = torch.randn(n_functions) * 2
-        sigmas = torch.ones(n_functions) * 0.5
-        
-        # Create visualization
-        fig = self.visualizer.visualize_gaussian_membership(
-            centers, sigmas, (input_range_min, input_range_max), resolution
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Show parameters
-        st.subheader("Function Parameters")
-        for i in range(n_functions):
-            st.write(f"Function {i+1}: Center = {centers[i]:.3f}, Sigma = {sigmas[i]:.3f}")
-    
-    def _attention_heatmaps_tab(self):
-        """Attention heatmaps tab"""
-        st.header("Attention Weight Heatmaps")
-        
-        # Generate sample attention weights
-        seq_len = st.slider("Sequence Length", 5, 20, 10)
-        attention_weights = torch.rand(1, seq_len, seq_len)
-        attention_weights = torch.softmax(attention_weights, dim=-1)
-        
-        # Create tokens
-        tokens = [f"token_{i}" for i in range(seq_len)]
-        
-        # Create heatmap
-        fig = self.visualizer.visualize_attention_heatmap(
-            attention_weights, tokens, "Sample Attention Weights"
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Show statistics
-        st.subheader("Attention Statistics")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric("Max Attention", f"{attention_weights.max():.3f}")
-        with col2:
-            st.metric("Min Attention", f"{attention_weights.min():.3f}")
-        with col3:
-            entropy = -(attention_weights * torch.log(attention_weights + 1e-8)).sum(dim=-1).mean()
-            st.metric("Attention Entropy", f"{entropy:.3f}")
-    
-    def _rule_networks_tab(self):
-        """Rule networks tab"""
-        st.header("Fuzzy Rule Networks")
-        
-        # Generate sample rules
-        n_rules = st.slider("Number of Rules", 3, 15, 8)
-        rules = []
-        
-        for i in range(n_rules):
-            from_pos = np.random.randint(0, 10)
-            to_pos = np.random.randint(0, 10)
-            strength = np.random.random() * 0.5 + 0.1
+        # Add box plots
+        for level in df['User Level'].unique():
+            level_data = df[df['User Level'] == level]
             
-            rule = type('Rule', (), {
-                'from_position': from_pos,
-                'to_position': to_pos,
-                'strength': strength,
-                'confidence': np.random.random(),
-                'linguistic_description': f"Position {from_pos} connects to position {to_pos}",
-                'tnorm_type': 'product'
-            })()
-            rules.append(rule)
-        
-        # Create network visualization
-        tokens = [f"word_{i}" for i in range(10)]
-        fig = self.visualizer.visualize_rule_network(rules, tokens)
-        
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Show rule details
-        st.subheader("Rule Details")
-        for i, rule in enumerate(rules):
-            st.write(f"**Rule {i+1}:** {rule.linguistic_description} (Strength: {rule.strength:.3f})")
-    
-    def _rule_refinement_tab(self):
-        """Rule refinement tab"""
-        st.header("Interactive Rule Refinement")
-        
-        # Generate sample rules
-        rules = []
-        for i in range(5):
-            rule = type('Rule', (), {
-                'from_position': i,
-                'to_position': (i + 1) % 5,
-                'strength': np.random.random() * 0.5 + 0.1,
-                'confidence': np.random.random() * 0.5 + 0.3,
-                'linguistic_description': f"Rule {i+1} description",
-                'tnorm_type': 'product'
-            })()
-            rules.append(rule)
-        
-        # Rule selection
-        rule_options = [f"Rule {i+1}" for i in range(len(rules))]
-        selected_rule_idx = st.selectbox("Select Rule to Edit", range(len(rules)), format_func=lambda x: rule_options[x])
-        
-        selected_rule = rules[selected_rule_idx]
-        
-        # Rule editing
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            new_strength = st.slider(
-                "Rule Strength", 
-                0.0, 1.0, 
-                selected_rule.strength, 
-                key="strength"
+            fig.add_trace(
+                go.Box(
+                    y=level_data['Rule Strength'],
+                    name=f"{level} Strength",
+                    boxpoints='outliers',
+                    jitter=0.3,
+                    pointpos=-1.8
+                ),
+                row=1, col=1
             )
             
-            new_confidence = st.slider(
-                "Rule Confidence", 
-                0.0, 1.0, 
-                selected_rule.confidence, 
-                key="confidence"
+            fig.add_trace(
+                go.Box(
+                    y=level_data['Rule Confidence'],
+                    name=f"{level} Confidence",
+                    boxpoints='outliers',
+                    jitter=0.3,
+                    pointpos=-1.8
+                ),
+                row=1, col=2
             )
         
-        with col2:
-            new_description = st.text_area(
-                "Rule Description",
-                selected_rule.linguistic_description,
-                key="description"
-            )
+        fig.update_layout(
+            title=title,
+            showlegend=False,
+            width=1000,
+            height=500
+        )
         
-        # Validation
-        if st.button("Validate Rule"):
-            validation_result = {
-                'is_valid': new_strength > 0.05 and new_confidence > 0.3,
-                'confidence': new_confidence,
-                'consistency_score': np.random.random(),
-                'suggestions': []
-            }
-            
-            if not validation_result['is_valid']:
-                if new_strength <= 0.05:
-                    validation_result['suggestions'].append("Rule strength too low")
-                if new_confidence <= 0.3:
-                    validation_result['suggestions'].append("Rule confidence too low")
-            
-            if validation_result['is_valid']:
-                st.success("✓ Rule is valid!")
-            else:
-                st.error("✗ Rule is invalid!")
-                for suggestion in validation_result['suggestions']:
-                    st.warning(f"• {suggestion}")
-        
-        # Save changes
-        if st.button("Save Changes"):
-            st.success("Rule saved successfully!")
+        return fig
 
 def demo_visualization_system():
     """Demo function for visualization system"""
-    print("📊 Visualization System Demo")
+    print("🎨 Visualization System Demo")
     print("=" * 50)
     
-    # Create visualizer
-    visualizer = MembershipFunctionVisualizer()
-    
-    # Create sample membership functions
-    centers = torch.tensor([-1.0, 0.0, 1.0])
-    sigmas = torch.tensor([0.5, 0.3, 0.4])
-    
-    print("✅ Created membership function visualizer")
-    print(f"   Centers: {centers.tolist()}")
-    print(f"   Sigmas: {sigmas.tolist()}")
-    
-    # Create sample attention weights
-    attention_weights = torch.rand(1, 8, 8)
+    # Create sample data
+    seq_len = 8
+    attention_weights = torch.rand(1, seq_len, seq_len)
     attention_weights = torch.softmax(attention_weights, dim=-1)
     
-    print(f"✅ Created attention heatmap visualizer")
-    print(f"   Attention shape: {attention_weights.shape}")
+    tokens = ["The", "cat", "sat", "on", "the", "mat", "quietly", "watching"]
     
     # Create sample rules
-    from rule_extractor import FuzzyRule
     rules = [
-        FuzzyRule(0, 2, 0.25, 0.8, "Position 0 connects to position 2", "gaussian", "product"),
-        FuzzyRule(1, 3, 0.18, 0.7, "Position 1 connects to position 3", "gaussian", "product"),
-        FuzzyRule(2, 4, 0.22, 0.75, "Position 2 connects to position 4", "gaussian", "product")
+        FuzzyRule(0, 2, 0.25, 0.8, "Position 0 strongly attends to position 2", "gaussian", "product"),
+        FuzzyRule(1, 3, 0.18, 0.7, "Position 1 moderately attends to position 3", "gaussian", "product"),
+        FuzzyRule(4, 6, 0.12, 0.6, "Position 4 slightly attends to position 6", "gaussian", "product"),
+        FuzzyRule(2, 5, 0.15, 0.65, "Position 2 moderately attends to position 5", "gaussian", "product"),
+        FuzzyRule(3, 7, 0.10, 0.55, "Position 3 slightly attends to position 7", "gaussian", "product")
     ]
     
-    print(f"✅ Created rule network visualizer")
-    print(f"   Number of rules: {len(rules)}")
+    # Test matplotlib visualizer
+    print("📊 Testing Matplotlib Visualizer...")
+    visualizer = AttentionVisualizer()
     
-    # Create interactive refinement
-    refinement = InteractiveRuleRefinement()
-    print(f"✅ Created interactive rule refinement system")
+    # Attention heatmap
+    fig1 = visualizer.plot_attention_heatmap(attention_weights, tokens, "Sample Attention Heatmap")
+    print("✅ Attention heatmap created")
     
-    print(f"\n🎯 Visualization system ready!")
-    print(f"   - Membership function visualizations")
-    print(f"   - Interactive attention heatmaps")
-    print(f"   - Rule network graphs")
-    print(f"   - Interactive rule refinement")
+    # Fuzzy rules network
+    fig2 = visualizer.plot_fuzzy_rules_network(rules, tokens, "Sample Fuzzy Rules Network")
+    print("✅ Fuzzy rules network created")
     
-    return visualizer, refinement
+    # Rule strength distribution
+    fig3 = visualizer.plot_rule_strength_distribution(rules, "Sample Rule Strength Distribution")
+    print("✅ Rule strength distribution created")
+    
+    # Attention entropy
+    fig4 = visualizer.plot_attention_entropy(attention_weights, "Sample Attention Entropy")
+    print("✅ Attention entropy plot created")
+    
+    # Test interactive visualizer
+    print("\n🎯 Testing Interactive Visualizer...")
+    interactive_viz = InteractiveVisualizer()
+    
+    # Interactive attention heatmap
+    fig5 = interactive_viz.create_interactive_attention_heatmap(attention_weights, tokens, "Interactive Attention Heatmap")
+    print("✅ Interactive attention heatmap created")
+    
+    # Interactive rule network
+    fig6 = interactive_viz.create_interactive_rule_network(rules, tokens, "Interactive Fuzzy Rules Network")
+    print("✅ Interactive rule network created")
+    
+    # Rule comparison chart
+    rules_by_level = {
+        'novice': rules[:2],
+        'intermediate': rules[:4],
+        'expert': rules
+    }
+    fig7 = interactive_viz.create_rule_comparison_chart(rules_by_level, "Rule Comparison by User Level")
+    print("✅ Rule comparison chart created")
+    
+    print("\n🎉 All visualizations created successfully!")
+    print("💡 Use the returned figures to display or save visualizations")
+    
+    return visualizer, interactive_viz
 
 if __name__ == "__main__":
     demo_visualization_system()
-

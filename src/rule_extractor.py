@@ -75,8 +75,13 @@ class RuleExtractor:
         for batch_idx in range(batch_size):
             attention = attention_weights[batch_idx]  # [seq_len, seq_len]
             
-            # Find high-attention connections
-            high_attention_mask = attention > self.attention_threshold
+            # Find high-attention connections with improved thresholding
+            attention_mean = attention.mean()
+            attention_std = attention.std()
+            # Lower threshold to extract more rules
+            dynamic_threshold = max(0.01, attention_mean + 0.1 * attention_std)
+            
+            high_attention_mask = attention > dynamic_threshold
             high_attention_indices = torch.nonzero(high_attention_mask, as_tuple=False)
             
             # Extract rules for each high-attention connection
@@ -84,10 +89,14 @@ class RuleExtractor:
                 from_pos, to_pos = idx[0].item(), idx[1].item()
                 strength = attention[from_pos, to_pos].item()
                 
-                # Determine rule strength category
+                # Skip self-attention (diagonal elements)
+                if from_pos == to_pos:
+                    continue
+                
+                # Determine rule strength category with improved thresholds
                 if strength > self.strong_threshold:
                     strength_category = 'strong'
-                elif strength > self.attention_threshold * 1.5:
+                elif strength > dynamic_threshold * 1.2:
                     strength_category = 'medium'
                 else:
                     strength_category = 'weak'
@@ -97,8 +106,16 @@ class RuleExtractor:
                     from_pos, to_pos, strength_category, tokens
                 )
                 
-                # Calculate confidence based on attention strength
-                confidence = min(strength / self.strong_threshold, 1.0)
+                # Calculate confidence based on attention strength and position
+                base_confidence = min(strength / self.strong_threshold, 1.0)
+                
+                # Boost confidence for cross-modal connections (assuming first half is text, second half is image)
+                if from_pos < seq_len // 2 and to_pos >= seq_len // 2:
+                    base_confidence *= 1.2  # Cross-modal connections are more interesting
+                elif from_pos >= seq_len // 2 and to_pos < seq_len // 2:
+                    base_confidence *= 1.2
+                
+                confidence = min(base_confidence, 1.0)
                 
                 rule = FuzzyRule(
                     from_position=from_pos,

@@ -1,10 +1,22 @@
 # Core dependencies for Fuzzy Attention Networks
 torch>=2.0.0
 numpy>=1.21.0
+datasets>=2.16.0
+torchvision>=0.15.0
+Pillow>=9.0.0
+tqdm>=4.64.0
+huggingface_hub>=0.23.0
 
-# Optional dependencies (uncomment as needed)
-# transformers>=4.21.0  # For enhanced rule extraction
-# clip-by-openai        # For CLIP integration
-# matplotlib>=3.5.0     # For visualizations
-# plotly>=5.0.0         # For interactive plots
-# streamlit>=1.25.0     # For web interface
+# Visualization and UI
+matplotlib>=3.5.0
+plotly>=5.0.0
+streamlit>=1.25.0
+
+# Data processing
+pandas>=1.3.0
+scikit-learn>=1.0.0
+
+# Development and testing
+pytest>=7.0.0
+black>=22.0.0
+flake8>=4.0.0
