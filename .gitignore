@@ -39,7 +39,6 @@ venv.bak/
 .ipynb_checkpoints
 
 # PyTorch
-*.pth
 *.pt
 
 # Data and models
