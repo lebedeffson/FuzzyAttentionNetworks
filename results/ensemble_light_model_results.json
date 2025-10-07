@@ -1,0 +1,10 @@
+{
+  "accuracy": 0.74,
+  "f1_score": 0.6294252873563217,
+  "precision": 0.5476,
+  "recall": 0.74,
+  "epochs": 6,
+  "best_f1": 0.6294252873563217,
+  "model_type": "ensemble_light",
+  "num_models": 3
+}

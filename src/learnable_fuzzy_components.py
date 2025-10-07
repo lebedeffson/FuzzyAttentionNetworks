@@ -205,9 +205,17 @@ class LearnableFuzzyAttention(nn.Module):
         """Compute fuzzy attention weights using learnable membership functions"""
         batch_size, num_heads, seq_len, head_dim = Q.shape
         
+        # Reshape for membership functions (combine batch and heads)
+        Q_reshaped = Q.reshape(batch_size * num_heads, seq_len, head_dim)
+        K_reshaped = K.reshape(batch_size * num_heads, seq_len, head_dim)
+        
         # Compute membership values for queries and keys
-        Q_membership = self.gaussian_membership(Q)  # [batch, num_heads, seq, num_functions]
-        K_membership = self.gaussian_membership(K)
+        Q_membership = self.gaussian_membership(Q_reshaped)  # [batch*heads, seq, num_functions]
+        K_membership = self.gaussian_membership(K_reshaped)
+        
+        # Reshape back
+        Q_membership = Q_membership.reshape(batch_size, num_heads, seq_len, -1)
+        K_membership = K_membership.reshape(batch_size, num_heads, seq_len, -1)
         
         # Compute attention scores using t-norm
         attention_scores = torch.zeros(batch_size, num_heads, seq_len, seq_len, device=Q.device)
@@ -218,11 +226,18 @@ class LearnableFuzzyAttention(nn.Module):
                 q_mem = Q_membership[:, :, i, :]  # [batch, num_heads, num_functions]
                 k_mem = K_membership[:, :, j, :]  # [batch, num_heads, num_functions]
                 
-                # Apply t-norm to compute attention strength
-                attention_strength = self.tnorm(q_mem, k_mem)  # [batch, num_heads, num_functions]
+                # Reshape for t-norm (combine batch and heads)
+                q_mem_flat = q_mem.reshape(batch_size * num_heads, -1)
+                k_mem_flat = k_mem.reshape(batch_size * num_heads, -1)
                 
-                # Sum over membership functions to get final attention score
-                attention_scores[:, :, i, j] = attention_strength.sum(dim=-1)
+                # Apply t-norm to compute attention strength
+                attention_strength = self.tnorm(q_mem_flat, k_mem_flat)  # [batch*heads, num_functions]
+                
+                # Sum over membership functions and reshape back
+                attention_strength = attention_strength.sum(dim=-1).reshape(batch_size, num_heads)
+                
+                # Store attention score
+                attention_scores[:, :, i, j] = attention_strength
         
         # Apply softmax for normalization
         attention_weights = F.softmax(attention_scores, dim=-1)
