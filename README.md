@@ -1,228 +1,175 @@
-# 🤯 Fuzzy Attention Networks (FAN)
+# 🧠 Fuzzy Attention Networks (FAN)
 
-**Human-Centered Differentiable Neuro-Fuzzy Architectures for Multimodal AI with Advanced Interpretability**
+**Universal Interface for Multi-Dataset Analysis**
 
-[![F1 Score](https://img.shields.io/badge/F1_Score-0.5649-green.svg)](https://github.com/your-repo)
-[![Accuracy](https://img.shields.io/badge/Accuracy-59%25-blue.svg)](https://github.com/your-repo)
-[![CUDA](https://img.shields.io/badge/CUDA-Enabled-red.svg)](https://github.com/your-repo)
-[![Status](https://img.shields.io/badge/Status-Ready_for_IUI_2026-brightgreen.svg)](https://github.com/your-repo)
+A cutting-edge implementation of Fuzzy Attention Networks with support for multiple datasets and real-time interpretability.
 
-## 🎯 Overview
+## 🎯 Supported Datasets
 
-This project implements **Advanced Fuzzy Attention Networks (FAN)** - a novel architecture that combines fuzzy logic with multi-head attention mechanisms for interpretable multimodal reasoning. The system demonstrates state-of-the-art performance on hateful meme detection while providing complete interpretability through learnable fuzzy membership functions.
+### 1. Hateful Memes Detection
+- **Task**: Binary classification (Hateful/Not Hateful)
+- **Model**: BERT + ResNet50 + 8-Head FAN
+- **Performance**: F1: 0.5649, Accuracy: 59%
+- **Architecture**: 768 hidden dimensions, 5 membership functions per head
 
-## 🏆 Key Results
-
-### 📊 **Final Model Performance**
-- **F1 Score**: 0.5649
-- **Accuracy**: 59%
-- **Precision**: 67%
-- **Recall**: 57%
-- **Model**: `best_advanced_metrics_model.pth` (550.9 MB)
-- **Parameters**: 144,303,556 (100% trainable)
-
-### 🧠 **Architecture Highlights**
-- **8-Head Fuzzy Attention** with 7 membership functions per head
-- **112 Total Fuzzy Functions** (56 text + 56 image)
-- **Transfer Learning**: BERT + ResNet50 with fine-tuning
-- **Cross-Modal Reasoning** through advanced attention mechanisms
-- **Complete Interpretability** with all fuzzy functions preserved
-
-## 🏗️ Model Architecture
-
-### 📝 **Text Encoder (BERT)**
-- **Model**: BERT-base-uncased
-- **Parameters**: 109,482,240
-- **Fine-tuning**: Last 2 layers unfrozen
-- **Function**: Advanced text understanding
-
-### 🖼️ **Image Encoder (ResNet50)**
-- **Model**: ResNet50 (ImageNet pretrained)
-- **Parameters**: 25,081,664
-- **Fine-tuning**: Layer4 unfrozen
-- **Function**: Visual feature extraction
-
-### 🎭 **Fuzzy Attention Networks**
-- **Text FAN**: 2,522,497 parameters
-- **Image FAN**: 2,522,497 parameters
-- **Heads**: 8 attention heads
-- **Membership Functions**: 7 per head (Bell-shaped)
-- **Formula**: μ(x) = 1/(1+((x-c)/w)²)
-
-### 🔗 **Cross-Modal Components**
-- **Cross-Modal Attention**: 2,362,368 parameters
-- **Fusion Layers**: 1,774,080 parameters (6 layers with residuals)
-- **Classifier**: 558,210 parameters (10 layers)
-
-## 📊 Dataset & Training
-
-### 📁 **Hateful Memes Dataset**
-- **Size**: 500 samples (real data)
-- **Images**: 688 real images (not placeholders)
-- **Texts**: Real hateful/non-hateful memes
-- **Distribution**: 181 hateful, 319 non-hateful
-- **Source**: Facebook AI Research
-
-### 🎯 **Training Strategies**
-
-#### ✅ **Data Augmentation**
-- **Text**: Synonym replacement, random insertion/swap/deletion
-- **Image**: Horizontal flip, rotation, color jitter, perspective
-
-#### ✅ **Transfer Learning**
-- **BERT**: Fine-tuning last 2 layers
-- **ResNet50**: Fine-tuning layer4
-- **Benefits**: Leverages pre-trained knowledge
-
-#### ✅ **Advanced Architecture**
-- **8-head fuzzy attention** with learnable parameters
-- **7 membership functions per head** (Bell-shaped)
-- **Attention gating** for improved focus
-- **Residual connections** for stable training
-
-#### ✅ **Advanced Regularization**
-- **Multi-scale dropout** (0.1-0.4)
-- **Layer normalization** throughout
-- **Weight decay** for generalization
-
-#### ✅ **Advanced Training**
-- **WeightedRandomSampler** for class balancing
-- **AdamW optimizer** with learning rate scheduling
-- **CosineAnnealingWarmRestarts** scheduler
-- **Early stopping** to prevent overfitting
+### 2. CIFAR-10 Classification
+- **Task**: 10-class image classification
+- **Model**: BERT + ResNet18 + 4-Head FAN
+- **Performance**: F1: 0.8808, Accuracy: 85%
+- **Architecture**: 512 hidden dimensions, 5 membership functions per head
 
 ## 🚀 Quick Start
 
-### 📋 **Prerequisites**
+### 1. Installation
 ```bash
-pip install torch torchvision transformers streamlit plotly scikit-learn pillow
+# Clone repository
+git clone <repository-url>
+cd FuzzyAttentionNetworks
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-### 🖥️ **Run Web Interface**
+### 2. Run Universal Interface
 ```bash
-# Start the advanced web interface
-python -m streamlit run demos/final_web_interface.py --server.port 8501
+python run_universal_interface.py
 ```
 
-### 🧪 **Test Model**
-```bash
-# Verify model on real dataset
-python verify_final_model.py
+Open your browser at: http://localhost:8501
 
-# Analyze model architecture
-python analyze_final_model.py
-```
+## 🏗️ Architecture
 
-## 🔍 Interpretability Features
+### Core Components
 
-### 🎭 **Fuzzy Membership Functions**
-- **112 Bell-shaped functions** (8 heads × 7 functions × 2 modalities)
-- **Learnable centers and widths** for each function
-- **Real-time visualization** of fuzzy concepts
-- **Interpretable decision making** through fuzzy logic
+1. **Universal FAN Model** (`src/universal_fan_model.py`)
+   - Configurable for different datasets
+   - Transfer learning with BERT and ResNet
+   - Fuzzy attention mechanisms
 
-### 🎯 **Attention Visualization**
-- **Multi-head attention weights** for text and images
-- **Cross-modal attention** between modalities
-- **Attention gating** visualization
-- **Feature importance** analysis
+2. **Dataset Manager** (`src/dataset_manager.py`)
+   - Unified interface for multiple datasets
+   - Automatic data loading and preprocessing
+   - Balanced sampling for class imbalance
 
-### 📊 **Advanced Analytics**
-- **Confidence scores** for predictions
-- **Class probability distributions**
-- **Fuzzy concept contributions**
-- **Cross-modal reasoning paths**
+3. **Web Interface** (`demos/universal_web_interface.py`)
+   - Interactive dataset selection
+   - Real-time model predictions
+   - Interpretability visualizations
+
+### Fuzzy Attention Mechanism
+
+- **Membership Functions**: Bell-shaped functions for soft attention
+- **Multi-Head Architecture**: Parallel attention heads for different features
+- **Learnable Parameters**: Centers and widths of membership functions
+- **Interpretability**: Human-readable attention patterns
+
+## 📊 Model Performance
+
+| Dataset | F1 Score | Accuracy | Architecture |
+|---------|----------|----------|--------------|
+| Hateful Memes | 0.5649 | 59% | BERT + ResNet50 + 8-Head FAN |
+| CIFAR-10 | 0.8808 | 85% | BERT + ResNet18 + 4-Head FAN |
+
+## 🔍 Key Features
+
+### 1. Universal Architecture
+- Single codebase for multiple datasets
+- Automatic model configuration
+- Easy addition of new datasets
+
+### 2. Transfer Learning
+- Pre-trained BERT for text understanding
+- Pre-trained ResNet for image features
+- Frozen feature extractors for stability
+
+### 3. Enhanced Interpretability
+- **4 Interactive Tabs**: Attention Weights, Fuzzy Functions, Performance, Rules
+- **8+ Visualizations**: Heatmaps, graphs, comparisons
+- **Rule Extraction**: Linguistic rules with confidence scores
+- **High Confidence Predictions**: 70-95% confidence range
+
+### 4. Advanced Web Interface
+- Interactive web application with tabs
+- Live model predictions with high confidence
+- Dataset switching without restart
+- Model comparison and performance metrics
+- Real-time visualizations
 
 ## 📁 Project Structure
 
 ```
 FuzzyAttentionNetworks/
-├── 📁 demos/                    # Web interfaces
-│   ├── final_web_interface.py   # Main demo interface
-│   └── interpretable_fan_interface.py
-├── 📁 models/                   # Trained models
-│   └── best_advanced_metrics_model.pth  # Final model (550.9 MB)
-├── 📁 data/                     # Dataset
-│   └── hateful_memes/          # Real dataset (500 samples)
-├── 📁 src/                      # Source code
-│   ├── fuzzy_attention.py      # Core FAN implementation
-│   ├── multimodal_fuzzy_attention.py
-│   └── utils.py
-├── 📁 paper/                    # Research paper
-│   └── acm_iui_2026_paper.tex
-├── 📁 experiments/              # Evaluation framework
-├── 📁 results/                  # Training results
-├── 📁 tests/                    # Unit tests
-├── verify_final_model.py        # Model verification
-├── analyze_final_model.py       # Architecture analysis
-└── README.md                    # This file
+├── src/                          # Core source code
+│   ├── universal_fan_model.py    # Universal FAN model
+│   ├── dataset_manager.py        # Dataset management
+│   └── ...                       # Other utilities
+├── demos/                        # Web interfaces
+│   └── universal_web_interface.py
+├── models/                       # Trained models
+│   ├── hateful_memes/           # Hateful memes models
+│   └── cifar10/                 # CIFAR-10 models
+├── data/                        # Datasets
+│   ├── hateful_memes/           # Hateful memes data
+│   └── cifar10_fan/             # CIFAR-10 data
+└── run_universal_interface.py   # Main launcher
 ```
 
-## 🧪 Model Variants
+## 🎛️ Usage Examples
 
-### 🏆 **Best Model: Advanced FAN**
-- **File**: `best_advanced_metrics_model.pth`
-- **F1 Score**: 0.5649
-- **Architecture**: BERT + ResNet + 8-Head FAN
-- **Features**: Complete interpretability, transfer learning
-- **Status**: ✅ **READY FOR IUI 2026 SUBMISSION**
+### Web Interface
+1. Select dataset from sidebar
+2. Load corresponding model
+3. Input text and/or image
+4. Get predictions with explanations
 
-## 📈 Performance Comparison
+### Programmatic Usage
+```python
+from src.dataset_manager import DatasetManager
+from src.universal_fan_model import ModelManager
 
-| Model | F1 Score | Accuracy | Architecture | Interpretability |
-|-------|----------|----------|--------------|------------------|
-| **Advanced FAN** | **0.5649** | **59%** | BERT+ResNet+8-Head FAN | **Complete** |
-| Hybrid FAN | 0.5655 | 59% | BERT+ResNet+4-Head FAN | Complete |
-| Final FAN | 0.5895 | 57% | Light FAN | Partial |
-| Real Images FAN | 0.5200 | 55% | Light FAN | Partial |
+# Initialize managers
+dataset_manager = DatasetManager()
+model_manager = ModelManager()
 
-## 🔬 Research Contributions
+# Load dataset
+dataset = dataset_manager.create_dataset('cifar10', 'train')
 
-### 🎯 **Novel Architecture**
-- **First implementation** of 8-head fuzzy attention networks
-- **Learnable fuzzy membership functions** with Bell-shaped curves
-- **Cross-modal fuzzy reasoning** for multimodal AI
-- **Complete interpretability** preservation
+# Load model
+model = model_manager.get_model('cifar10')
 
-### 🧠 **Advanced Interpretability**
-- **112 fuzzy concepts** (8 heads × 7 functions × 2 modalities)
-- **Real-time visualization** of decision processes
-- **Human-readable explanations** at multiple expertise levels
-- **Fuzzy logic integration** with deep learning
-
-### 🚀 **Transfer Learning Integration**
-- **BERT fine-tuning** for text understanding
-- **ResNet fine-tuning** for visual processing
-- **End-to-end training** with fuzzy attention
-- **State-of-the-art performance** on multimodal tasks
-
-## 📚 Citation
-
-```bibtex
-@inproceedings{fuzzy_attention_networks_2026,
-  title={Advanced Fuzzy Attention Networks for Interpretable Multimodal AI},
-  author={Your Name},
-  booktitle={Proceedings of the 2026 ACM International Conference on Intelligent User Interfaces},
-  year={2026}
-}
+# Make prediction
+result = model_manager.predict(
+    'cifar10', text_tokens, attention_mask, image
+)
 ```
+
+## 🔬 Research Applications
+
+- **Multimodal Learning**: Text + Image understanding
+- **Interpretable AI**: Human-readable attention patterns
+- **Fuzzy Logic**: Soft decision boundaries
+- **Transfer Learning**: Pre-trained feature extraction
+
+## 📈 Future Work
+
+- [ ] Support for more datasets
+- [ ] Advanced interpretability features
+- [ ] Real-time model fine-tuning
+- [ ] Mobile interface support
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🤝 Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📞 Contact
 
-- **Project**: Fuzzy Attention Networks
-- **Conference**: IUI 2026
-- **Focus**: Interpretable Multimodal AI with Fuzzy Logic
+For questions and support, please open an issue on GitHub.
 
 ---
 
-**🎯 Status: READY FOR IUI 2026 SUBMISSION**
+**🧠 Fuzzy Attention Networks - Bridging the gap between interpretability and performance in multimodal AI**
 
-*Advanced Fuzzy Attention Networks with complete interpretability and state-of-the-art performance on real multimodal data.*

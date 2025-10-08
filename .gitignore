@@ -21,9 +21,20 @@ wheels/
 *.egg
 MANIFEST
 
-# Virtual environments
-venv/
+# PyTorch
+*.pth
+*.pt
+*.pkl
+*.pickle
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment
+.env
+.venv
 env/
+venv/
 ENV/
 env.bak/
 venv.bak/
@@ -35,18 +46,6 @@ venv.bak/
 *.swo
 *~
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# PyTorch
-*.pt
-*.pth
-
-# Data and models
-data/
-models/
-*.log
-
 # OS
 .DS_Store
 .DS_Store?
@@ -56,9 +55,23 @@ models/
 ehthumbs.db
 Thumbs.db
 
+# Logs
+*.log
+logs/
+temp_logs/
+
+# Data (keep structure but ignore large files)
+data/hateful_memes/img/*.png
+data/hateful_memes/img/*.jpg
+data/hateful_memes/img/*.jpeg
+
+# Models (keep only the best one)
+models/*.pth
+!models/best_advanced_metrics_model.pth
+
+# Results
+results/
+temp_results/
+
 # Streamlit
 .streamlit/
-
-# Temporary files
-*.tmp
-*.temp

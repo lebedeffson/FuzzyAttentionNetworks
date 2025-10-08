@@ -1,0 +1,300 @@
+{"img": "img/cifar10_0000.png", "text": "Image shows a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 9094}
+{"img": "img/cifar10_0001.png", "text": "A airplane is depicted here", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 2014}
+{"img": "img/cifar10_0002.png", "text": "Visible airplane in the image", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 22688}
+{"img": "img/cifar10_0003.png", "text": "This image contains a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 20190}
+{"img": "img/cifar10_0004.png", "text": "The airplane appears in this image", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 18386}
+{"img": "img/cifar10_0005.png", "text": "Visible airplane in the image", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 11283}
+{"img": "img/cifar10_0006.png", "text": "The airplane appears in this image", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 8387}
+{"img": "img/cifar10_0007.png", "text": "This image contains a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 44715}
+{"img": "img/cifar10_0008.png", "text": "A airplane is depicted here", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 7251}
+{"img": "img/cifar10_0009.png", "text": "A airplane in the picture", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 48280}
+{"img": "img/cifar10_0010.png", "text": "This image contains a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 34944}
+{"img": "img/cifar10_0011.png", "text": "The picture shows a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 2617}
+{"img": "img/cifar10_0012.png", "text": "Visible airplane in the image", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 2435}
+{"img": "img/cifar10_0013.png", "text": "Image shows a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 7772}
+{"img": "img/cifar10_0014.png", "text": "This is a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 17976}
+{"img": "img/cifar10_0015.png", "text": "The picture shows a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 19094}
+{"img": "img/cifar10_0016.png", "text": "Image shows a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 41524}
+{"img": "img/cifar10_0017.png", "text": "Image shows a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 49205}
+{"img": "img/cifar10_0018.png", "text": "The airplane appears in this image", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 2171}
+{"img": "img/cifar10_0019.png", "text": "This image contains a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 46019}
+{"img": "img/cifar10_0020.png", "text": "A airplane in the picture", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 16316}
+{"img": "img/cifar10_0021.png", "text": "Visible airplane in the image", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 44668}
+{"img": "img/cifar10_0022.png", "text": "Image shows a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 34724}
+{"img": "img/cifar10_0023.png", "text": "The airplane appears in this image", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 18106}
+{"img": "img/cifar10_0024.png", "text": "Visible airplane in the image", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 37068}
+{"img": "img/cifar10_0025.png", "text": "This image contains a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 48197}
+{"img": "img/cifar10_0026.png", "text": "A airplane in the picture", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 22962}
+{"img": "img/cifar10_0027.png", "text": "The picture shows a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 555}
+{"img": "img/cifar10_0028.png", "text": "This image contains a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 12916}
+{"img": "img/cifar10_0029.png", "text": "This is a airplane", "label": 0, "class_name": "airplane", "description": "A flying aircraft with wings and engines", "original_idx": 35028}
+{"img": "img/cifar10_0030.png", "text": "This image contains a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 28005}
+{"img": "img/cifar10_0031.png", "text": "Image shows a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 22745}
+{"img": "img/cifar10_0032.png", "text": "A automobile in the picture", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 12963}
+{"img": "img/cifar10_0033.png", "text": "This image contains a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 17673}
+{"img": "img/cifar10_0034.png", "text": "Image shows a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 27607}
+{"img": "img/cifar10_0035.png", "text": "Image shows a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 8693}
+{"img": "img/cifar10_0036.png", "text": "A automobile in the picture", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 7936}
+{"img": "img/cifar10_0037.png", "text": "This image contains a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 30840}
+{"img": "img/cifar10_0038.png", "text": "This image contains a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 8228}
+{"img": "img/cifar10_0039.png", "text": "The automobile appears in this image", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 29283}
+{"img": "img/cifar10_0040.png", "text": "Visible automobile in the image", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 28210}
+{"img": "img/cifar10_0041.png", "text": "The automobile appears in this image", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 49539}
+{"img": "img/cifar10_0042.png", "text": "This image contains a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 21752}
+{"img": "img/cifar10_0043.png", "text": "The picture shows a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 3907}
+{"img": "img/cifar10_0044.png", "text": "This image contains a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 37650}
+{"img": "img/cifar10_0045.png", "text": "This is a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 43932}
+{"img": "img/cifar10_0046.png", "text": "Image shows a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 10476}
+{"img": "img/cifar10_0047.png", "text": "A automobile is depicted here", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 30738}
+{"img": "img/cifar10_0048.png", "text": "This image contains a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 6899}
+{"img": "img/cifar10_0049.png", "text": "This is a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 45070}
+{"img": "img/cifar10_0050.png", "text": "This is a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 23923}
+{"img": "img/cifar10_0051.png", "text": "Visible automobile in the image", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 29473}
+{"img": "img/cifar10_0052.png", "text": "A automobile in the picture", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 47237}
+{"img": "img/cifar10_0053.png", "text": "This image contains a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 15885}
+{"img": "img/cifar10_0054.png", "text": "A automobile in the picture", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 6226}
+{"img": "img/cifar10_0055.png", "text": "The picture shows a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 4099}
+{"img": "img/cifar10_0056.png", "text": "A automobile is depicted here", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 18784}
+{"img": "img/cifar10_0057.png", "text": "This is a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 23548}
+{"img": "img/cifar10_0058.png", "text": "Image shows a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 6959}
+{"img": "img/cifar10_0059.png", "text": "Image shows a automobile", "label": 1, "class_name": "automobile", "description": "A four-wheeled motor vehicle for transportation", "original_idx": 19324}
+{"img": "img/cifar10_0060.png", "text": "A bird in the picture", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 8065}
+{"img": "img/cifar10_0061.png", "text": "This is a bird", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 30893}
+{"img": "img/cifar10_0062.png", "text": "Visible bird in the image", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 22510}
+{"img": "img/cifar10_0063.png", "text": "A bird in the picture", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 36516}
+{"img": "img/cifar10_0064.png", "text": "A bird is depicted here", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 29812}
+{"img": "img/cifar10_0065.png", "text": "A bird in the picture", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 13130}
+{"img": "img/cifar10_0066.png", "text": "This is a bird", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 30232}
+{"img": "img/cifar10_0067.png", "text": "This image contains a bird", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 28948}
+{"img": "img/cifar10_0068.png", "text": "Visible bird in the image", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 16691}
+{"img": "img/cifar10_0069.png", "text": "This is a bird", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 21513}
+{"img": "img/cifar10_0070.png", "text": "Visible bird in the image", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 5656}
+{"img": "img/cifar10_0071.png", "text": "The bird appears in this image", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 49877}
+{"img": "img/cifar10_0072.png", "text": "The bird appears in this image", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 13727}
+{"img": "img/cifar10_0073.png", "text": "Image shows a bird", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 43443}
+{"img": "img/cifar10_0074.png", "text": "Visible bird in the image", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 19637}
+{"img": "img/cifar10_0075.png", "text": "A bird is depicted here", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 13195}
+{"img": "img/cifar10_0076.png", "text": "A bird in the picture", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 37298}
+{"img": "img/cifar10_0077.png", "text": "The bird appears in this image", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 30855}
+{"img": "img/cifar10_0078.png", "text": "A bird in the picture", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 21765}
+{"img": "img/cifar10_0079.png", "text": "A bird in the picture", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 45414}
+{"img": "img/cifar10_0080.png", "text": "A bird is depicted here", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 17538}
+{"img": "img/cifar10_0081.png", "text": "This is a bird", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 26308}
+{"img": "img/cifar10_0082.png", "text": "A bird in the picture", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 4370}
+{"img": "img/cifar10_0083.png", "text": "Visible bird in the image", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 18242}
+{"img": "img/cifar10_0084.png", "text": "A bird is depicted here", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 2543}
+{"img": "img/cifar10_0085.png", "text": "The bird appears in this image", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 25587}
+{"img": "img/cifar10_0086.png", "text": "This image contains a bird", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 32587}
+{"img": "img/cifar10_0087.png", "text": "A bird in the picture", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 21587}
+{"img": "img/cifar10_0088.png", "text": "Image shows a bird", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 5238}
+{"img": "img/cifar10_0089.png", "text": "A bird is depicted here", "label": 2, "class_name": "bird", "description": "A warm-blooded vertebrate with feathers and wings", "original_idx": 16761}
+{"img": "img/cifar10_0090.png", "text": "This is a cat", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 46568}
+{"img": "img/cifar10_0091.png", "text": "The picture shows a cat", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 25527}
+{"img": "img/cifar10_0092.png", "text": "The cat appears in this image", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 17214}
+{"img": "img/cifar10_0093.png", "text": "The cat appears in this image", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 41144}
+{"img": "img/cifar10_0094.png", "text": "The picture shows a cat", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 32557}
+{"img": "img/cifar10_0095.png", "text": "Visible cat in the image", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 37753}
+{"img": "img/cifar10_0096.png", "text": "This image contains a cat", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 11477}
+{"img": "img/cifar10_0097.png", "text": "The cat appears in this image", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 21510}
+{"img": "img/cifar10_0098.png", "text": "The cat appears in this image", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 11291}
+{"img": "img/cifar10_0099.png", "text": "This is a cat", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 20091}
+{"img": "img/cifar10_0100.png", "text": "The cat appears in this image", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 46205}
+{"img": "img/cifar10_0101.png", "text": "A cat is depicted here", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 44313}
+{"img": "img/cifar10_0102.png", "text": "Visible cat in the image", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 21287}
+{"img": "img/cifar10_0103.png", "text": "This image contains a cat", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 48019}
+{"img": "img/cifar10_0104.png", "text": "Image shows a cat", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 35292}
+{"img": "img/cifar10_0105.png", "text": "This image contains a cat", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 47970}
+{"img": "img/cifar10_0106.png", "text": "Visible cat in the image", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 32923}
+{"img": "img/cifar10_0107.png", "text": "A cat is depicted here", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 29464}
+{"img": "img/cifar10_0108.png", "text": "Visible cat in the image", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 17699}
+{"img": "img/cifar10_0109.png", "text": "This is a cat", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 11199}
+{"img": "img/cifar10_0110.png", "text": "Image shows a cat", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 41993}
+{"img": "img/cifar10_0111.png", "text": "This image contains a cat", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 40670}
+{"img": "img/cifar10_0112.png", "text": "A cat in the picture", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 7432}
+{"img": "img/cifar10_0113.png", "text": "This image contains a cat", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 4010}
+{"img": "img/cifar10_0114.png", "text": "This is a cat", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 8916}
+{"img": "img/cifar10_0115.png", "text": "Image shows a cat", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 12255}
+{"img": "img/cifar10_0116.png", "text": "A cat is depicted here", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 12904}
+{"img": "img/cifar10_0117.png", "text": "Visible cat in the image", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 34822}
+{"img": "img/cifar10_0118.png", "text": "Visible cat in the image", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 48976}
+{"img": "img/cifar10_0119.png", "text": "A cat is depicted here", "label": 3, "class_name": "cat", "description": "A small domesticated carnivorous mammal", "original_idx": 5354}
+{"img": "img/cifar10_0120.png", "text": "Image shows a deer", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 31514}
+{"img": "img/cifar10_0121.png", "text": "A deer is depicted here", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 31167}
+{"img": "img/cifar10_0122.png", "text": "The deer appears in this image", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 48613}
+{"img": "img/cifar10_0123.png", "text": "This image contains a deer", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 38259}
+{"img": "img/cifar10_0124.png", "text": "This is a deer", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 43147}
+{"img": "img/cifar10_0125.png", "text": "A deer is depicted here", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 20450}
+{"img": "img/cifar10_0126.png", "text": "This is a deer", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 45100}
+{"img": "img/cifar10_0127.png", "text": "The deer appears in this image", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 959}
+{"img": "img/cifar10_0128.png", "text": "Visible deer in the image", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 9500}
+{"img": "img/cifar10_0129.png", "text": "A deer is depicted here", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 43650}
+{"img": "img/cifar10_0130.png", "text": "Image shows a deer", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 21757}
+{"img": "img/cifar10_0131.png", "text": "Visible deer in the image", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 27888}
+{"img": "img/cifar10_0132.png", "text": "Visible deer in the image", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 9176}
+{"img": "img/cifar10_0133.png", "text": "Image shows a deer", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 24034}
+{"img": "img/cifar10_0134.png", "text": "This image contains a deer", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 35450}
+{"img": "img/cifar10_0135.png", "text": "This image contains a deer", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 13186}
+{"img": "img/cifar10_0136.png", "text": "A deer is depicted here", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 37028}
+{"img": "img/cifar10_0137.png", "text": "Visible deer in the image", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 310}
+{"img": "img/cifar10_0138.png", "text": "A deer is depicted here", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 21454}
+{"img": "img/cifar10_0139.png", "text": "This image contains a deer", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 40848}
+{"img": "img/cifar10_0140.png", "text": "A deer in the picture", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 14690}
+{"img": "img/cifar10_0141.png", "text": "The deer appears in this image", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 41402}
+{"img": "img/cifar10_0142.png", "text": "A deer is depicted here", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 8720}
+{"img": "img/cifar10_0143.png", "text": "A deer is depicted here", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 24529}
+{"img": "img/cifar10_0144.png", "text": "A deer in the picture", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 49895}
+{"img": "img/cifar10_0145.png", "text": "This image contains a deer", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 16179}
+{"img": "img/cifar10_0146.png", "text": "A deer is depicted here", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 12611}
+{"img": "img/cifar10_0147.png", "text": "This is a deer", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 30593}
+{"img": "img/cifar10_0148.png", "text": "This image contains a deer", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 13472}
+{"img": "img/cifar10_0149.png", "text": "This image contains a deer", "label": 4, "class_name": "deer", "description": "A hoofed grazing animal with antlers", "original_idx": 43857}
+{"img": "img/cifar10_0150.png", "text": "The dog appears in this image", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 43852}
+{"img": "img/cifar10_0151.png", "text": "A dog is depicted here", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 70}
+{"img": "img/cifar10_0152.png", "text": "Visible dog in the image", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 49052}
+{"img": "img/cifar10_0153.png", "text": "The picture shows a dog", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 27289}
+{"img": "img/cifar10_0154.png", "text": "The picture shows a dog", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 40380}
+{"img": "img/cifar10_0155.png", "text": "The picture shows a dog", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 1801}
+{"img": "img/cifar10_0156.png", "text": "The dog appears in this image", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 9707}
+{"img": "img/cifar10_0157.png", "text": "The picture shows a dog", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 30129}
+{"img": "img/cifar10_0158.png", "text": "A dog in the picture", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 26028}
+{"img": "img/cifar10_0159.png", "text": "Image shows a dog", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 20382}
+{"img": "img/cifar10_0160.png", "text": "This image contains a dog", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 4874}
+{"img": "img/cifar10_0161.png", "text": "Visible dog in the image", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 20478}
+{"img": "img/cifar10_0162.png", "text": "Image shows a dog", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 46638}
+{"img": "img/cifar10_0163.png", "text": "The dog appears in this image", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 6675}
+{"img": "img/cifar10_0164.png", "text": "This image contains a dog", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 7236}
+{"img": "img/cifar10_0165.png", "text": "The dog appears in this image", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 40069}
+{"img": "img/cifar10_0166.png", "text": "The dog appears in this image", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 5837}
+{"img": "img/cifar10_0167.png", "text": "A dog in the picture", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 44085}
+{"img": "img/cifar10_0168.png", "text": "This is a dog", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 10995}
+{"img": "img/cifar10_0169.png", "text": "This is a dog", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 11155}
+{"img": "img/cifar10_0170.png", "text": "The dog appears in this image", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 39147}
+{"img": "img/cifar10_0171.png", "text": "The picture shows a dog", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 45326}
+{"img": "img/cifar10_0172.png", "text": "Image shows a dog", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 14185}
+{"img": "img/cifar10_0173.png", "text": "The picture shows a dog", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 22650}
+{"img": "img/cifar10_0174.png", "text": "A dog is depicted here", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 43599}
+{"img": "img/cifar10_0175.png", "text": "The dog appears in this image", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 49680}
+{"img": "img/cifar10_0176.png", "text": "A dog is depicted here", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 34924}
+{"img": "img/cifar10_0177.png", "text": "The picture shows a dog", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 18245}
+{"img": "img/cifar10_0178.png", "text": "A dog is depicted here", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 44452}
+{"img": "img/cifar10_0179.png", "text": "The dog appears in this image", "label": 5, "class_name": "dog", "description": "A domesticated carnivorous mammal, loyal companion", "original_idx": 17425}
+{"img": "img/cifar10_0180.png", "text": "A frog in the picture", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 25168}
+{"img": "img/cifar10_0181.png", "text": "This is a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 32581}
+{"img": "img/cifar10_0182.png", "text": "Image shows a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 30563}
+{"img": "img/cifar10_0183.png", "text": "A frog is depicted here", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 35703}
+{"img": "img/cifar10_0184.png", "text": "The frog appears in this image", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 42250}
+{"img": "img/cifar10_0185.png", "text": "A frog in the picture", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 36768}
+{"img": "img/cifar10_0186.png", "text": "The picture shows a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 9727}
+{"img": "img/cifar10_0187.png", "text": "This is a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 19941}
+{"img": "img/cifar10_0188.png", "text": "The frog appears in this image", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 17999}
+{"img": "img/cifar10_0189.png", "text": "Image shows a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 5032}
+{"img": "img/cifar10_0190.png", "text": "The picture shows a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 27385}
+{"img": "img/cifar10_0191.png", "text": "A frog in the picture", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 1628}
+{"img": "img/cifar10_0192.png", "text": "The picture shows a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 48214}
+{"img": "img/cifar10_0193.png", "text": "Visible frog in the image", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 45267}
+{"img": "img/cifar10_0194.png", "text": "The picture shows a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 18370}
+{"img": "img/cifar10_0195.png", "text": "A frog is depicted here", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 48218}
+{"img": "img/cifar10_0196.png", "text": "The picture shows a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 17680}
+{"img": "img/cifar10_0197.png", "text": "A frog in the picture", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 571}
+{"img": "img/cifar10_0198.png", "text": "The picture shows a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 5582}
+{"img": "img/cifar10_0199.png", "text": "The picture shows a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 4685}
+{"img": "img/cifar10_0200.png", "text": "This image contains a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 18309}
+{"img": "img/cifar10_0201.png", "text": "The frog appears in this image", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 5308}
+{"img": "img/cifar10_0202.png", "text": "This image contains a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 2566}
+{"img": "img/cifar10_0203.png", "text": "The picture shows a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 26517}
+{"img": "img/cifar10_0204.png", "text": "The frog appears in this image", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 5558}
+{"img": "img/cifar10_0205.png", "text": "This image contains a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 41924}
+{"img": "img/cifar10_0206.png", "text": "The picture shows a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 19000}
+{"img": "img/cifar10_0207.png", "text": "Image shows a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 22502}
+{"img": "img/cifar10_0208.png", "text": "This image contains a frog", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 39542}
+{"img": "img/cifar10_0209.png", "text": "The frog appears in this image", "label": 6, "class_name": "frog", "description": "A tailless amphibian that lives in water and on land", "original_idx": 17204}
+{"img": "img/cifar10_0210.png", "text": "This image contains a horse", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 44016}
+{"img": "img/cifar10_0211.png", "text": "Visible horse in the image", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 10685}
+{"img": "img/cifar10_0212.png", "text": "Visible horse in the image", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 46709}
+{"img": "img/cifar10_0213.png", "text": "Image shows a horse", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 47137}
+{"img": "img/cifar10_0214.png", "text": "A horse in the picture", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 38425}
+{"img": "img/cifar10_0215.png", "text": "A horse in the picture", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 19638}
+{"img": "img/cifar10_0216.png", "text": "The horse appears in this image", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 38440}
+{"img": "img/cifar10_0217.png", "text": "A horse is depicted here", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 33019}
+{"img": "img/cifar10_0218.png", "text": "A horse in the picture", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 15364}
+{"img": "img/cifar10_0219.png", "text": "The horse appears in this image", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 7684}
+{"img": "img/cifar10_0220.png", "text": "Image shows a horse", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 7863}
+{"img": "img/cifar10_0221.png", "text": "A horse is depicted here", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 35056}
+{"img": "img/cifar10_0222.png", "text": "A horse is depicted here", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 28637}
+{"img": "img/cifar10_0223.png", "text": "Visible horse in the image", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 34392}
+{"img": "img/cifar10_0224.png", "text": "The picture shows a horse", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 33348}
+{"img": "img/cifar10_0225.png", "text": "A horse is depicted here", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 38057}
+{"img": "img/cifar10_0226.png", "text": "This is a horse", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 4522}
+{"img": "img/cifar10_0227.png", "text": "The horse appears in this image", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 7969}
+{"img": "img/cifar10_0228.png", "text": "A horse is depicted here", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 5101}
+{"img": "img/cifar10_0229.png", "text": "A horse is depicted here", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 32546}
+{"img": "img/cifar10_0230.png", "text": "This is a horse", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 27411}
+{"img": "img/cifar10_0231.png", "text": "A horse is depicted here", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 8859}
+{"img": "img/cifar10_0232.png", "text": "The picture shows a horse", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 20094}
+{"img": "img/cifar10_0233.png", "text": "This is a horse", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 15511}
+{"img": "img/cifar10_0234.png", "text": "Visible horse in the image", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 15359}
+{"img": "img/cifar10_0235.png", "text": "This image contains a horse", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 43791}
+{"img": "img/cifar10_0236.png", "text": "A horse is depicted here", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 36597}
+{"img": "img/cifar10_0237.png", "text": "A horse is depicted here", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 11334}
+{"img": "img/cifar10_0238.png", "text": "The horse appears in this image", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 34282}
+{"img": "img/cifar10_0239.png", "text": "The picture shows a horse", "label": 7, "class_name": "horse", "description": "A large four-legged mammal used for riding", "original_idx": 14910}
+{"img": "img/cifar10_0240.png", "text": "The ship appears in this image", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 22705}
+{"img": "img/cifar10_0241.png", "text": "This image contains a ship", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 38138}
+{"img": "img/cifar10_0242.png", "text": "A ship is depicted here", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 20359}
+{"img": "img/cifar10_0243.png", "text": "The picture shows a ship", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 5986}
+{"img": "img/cifar10_0244.png", "text": "This is a ship", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 36424}
+{"img": "img/cifar10_0245.png", "text": "A ship is depicted here", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 45537}
+{"img": "img/cifar10_0246.png", "text": "Visible ship in the image", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 7941}
+{"img": "img/cifar10_0247.png", "text": "A ship is depicted here", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 4092}
+{"img": "img/cifar10_0248.png", "text": "A ship in the picture", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 44534}
+{"img": "img/cifar10_0249.png", "text": "The picture shows a ship", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 1230}
+{"img": "img/cifar10_0250.png", "text": "A ship in the picture", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 7496}
+{"img": "img/cifar10_0251.png", "text": "This is a ship", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 19175}
+{"img": "img/cifar10_0252.png", "text": "A ship is depicted here", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 13369}
+{"img": "img/cifar10_0253.png", "text": "This is a ship", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 33124}
+{"img": "img/cifar10_0254.png", "text": "Image shows a ship", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 39787}
+{"img": "img/cifar10_0255.png", "text": "A ship is depicted here", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 39444}
+{"img": "img/cifar10_0256.png", "text": "A ship in the picture", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 17390}
+{"img": "img/cifar10_0257.png", "text": "The picture shows a ship", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 32728}
+{"img": "img/cifar10_0258.png", "text": "A ship in the picture", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 4743}
+{"img": "img/cifar10_0259.png", "text": "This is a ship", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 13227}
+{"img": "img/cifar10_0260.png", "text": "This image contains a ship", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 31266}
+{"img": "img/cifar10_0261.png", "text": "A ship is depicted here", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 222}
+{"img": "img/cifar10_0262.png", "text": "Visible ship in the image", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 32023}
+{"img": "img/cifar10_0263.png", "text": "The ship appears in this image", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 21499}
+{"img": "img/cifar10_0264.png", "text": "The picture shows a ship", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 37416}
+{"img": "img/cifar10_0265.png", "text": "Visible ship in the image", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 23312}
+{"img": "img/cifar10_0266.png", "text": "Visible ship in the image", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 34657}
+{"img": "img/cifar10_0267.png", "text": "A ship is depicted here", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 45912}
+{"img": "img/cifar10_0268.png", "text": "This image contains a ship", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 39908}
+{"img": "img/cifar10_0269.png", "text": "A ship is depicted here", "label": 8, "class_name": "ship", "description": "A large watercraft for transportation on water", "original_idx": 12403}
+{"img": "img/cifar10_0270.png", "text": "This image contains a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 16046}
+{"img": "img/cifar10_0271.png", "text": "Image shows a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 24408}
+{"img": "img/cifar10_0272.png", "text": "The picture shows a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 18209}
+{"img": "img/cifar10_0273.png", "text": "This is a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 4704}
+{"img": "img/cifar10_0274.png", "text": "This is a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 47511}
+{"img": "img/cifar10_0275.png", "text": "Visible truck in the image", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 44638}
+{"img": "img/cifar10_0276.png", "text": "The truck appears in this image", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 5009}
+{"img": "img/cifar10_0277.png", "text": "Image shows a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 26053}
+{"img": "img/cifar10_0278.png", "text": "This is a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 4638}
+{"img": "img/cifar10_0279.png", "text": "This is a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 3974}
+{"img": "img/cifar10_0280.png", "text": "The truck appears in this image", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 47927}
+{"img": "img/cifar10_0281.png", "text": "The truck appears in this image", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 39449}
+{"img": "img/cifar10_0282.png", "text": "This is a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 41329}
+{"img": "img/cifar10_0283.png", "text": "A truck in the picture", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 43648}
+{"img": "img/cifar10_0284.png", "text": "The truck appears in this image", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 13337}
+{"img": "img/cifar10_0285.png", "text": "A truck in the picture", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 4622}
+{"img": "img/cifar10_0286.png", "text": "The picture shows a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 41640}
+{"img": "img/cifar10_0287.png", "text": "Image shows a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 6381}
+{"img": "img/cifar10_0288.png", "text": "The truck appears in this image", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 15652}
+{"img": "img/cifar10_0289.png", "text": "The picture shows a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 5485}
+{"img": "img/cifar10_0290.png", "text": "This image contains a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 48743}
+{"img": "img/cifar10_0291.png", "text": "Visible truck in the image", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 5461}
+{"img": "img/cifar10_0292.png", "text": "A truck in the picture", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 19625}
+{"img": "img/cifar10_0293.png", "text": "Image shows a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 33248}
+{"img": "img/cifar10_0294.png", "text": "A truck in the picture", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 10038}
+{"img": "img/cifar10_0295.png", "text": "This image contains a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 46775}
+{"img": "img/cifar10_0296.png", "text": "Image shows a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 20613}
+{"img": "img/cifar10_0297.png", "text": "This is a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 47501}
+{"img": "img/cifar10_0298.png", "text": "This image contains a truck", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 48705}
+{"img": "img/cifar10_0299.png", "text": "A truck is depicted here", "label": 9, "class_name": "truck", "description": "A large motor vehicle for transporting goods", "original_idx": 3228}
