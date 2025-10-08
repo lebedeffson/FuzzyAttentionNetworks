@@ -45,7 +45,7 @@ class BaseFANDataset(Dataset):
         entry = self.entries[idx]
         
         # Загружаем изображение
-        img_path = self.data_dir / entry['img']
+        img_path = self.data_dir / entry.get('img', entry.get('image_path', ''))
         image = Image.open(img_path).convert('RGB')
         image_tensor = self.transform(image)
         
@@ -68,28 +68,6 @@ class BaseFANDataset(Dataset):
             'class_name': entry.get('class_name', f'class_{entry["label"]}')
         }
 
-class HatefulMemesDataset(BaseFANDataset):
-    """Датасет Hateful Memes для FAN модели"""
-    
-    def __init__(self, data_dir, split='train'):
-        super().__init__(data_dir, split)
-        
-        # Загружаем метаданные
-        metadata_file = self.data_dir / "train.jsonl"
-        with open(metadata_file, 'r', encoding='utf-8') as f:
-            self.entries = [json.loads(line) for line in f]
-        
-        # Разделяем на train/val
-        random.shuffle(self.entries)
-        split_idx = int(0.8 * len(self.entries))
-        
-        if split == 'train':
-            self.entries = self.entries[:split_idx]
-        else:
-            self.entries = self.entries[split_idx:]
-        
-        self.num_classes = 2
-        self.class_names = ['Not Hateful', 'Hateful']
 
 class CIFAR10FANDataset(BaseFANDataset):
     """Датасет CIFAR-10 для FAN модели"""
@@ -115,22 +93,94 @@ class CIFAR10FANDataset(BaseFANDataset):
         self.class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer', 
                            'dog', 'frog', 'horse', 'ship', 'truck']
 
+class StanfordDogsFANDataset(BaseFANDataset):
+    """Датасет Stanford Dogs для FAN модели"""
+    
+    def __init__(self, data_dir, split='train'):
+        super().__init__(data_dir, split)
+        
+        # Загружаем метаданные
+        metadata_file = self.data_dir / "train.jsonl"
+        with open(metadata_file, 'r', encoding='utf-8') as f:
+            self.entries = [json.loads(line) for line in f]
+        
+        # Разделяем на train/val
+        random.shuffle(self.entries)
+        split_idx = int(0.8 * len(self.entries))
+        
+        if split == 'train':
+            self.entries = self.entries[:split_idx]
+        else:
+            self.entries = self.entries[split_idx:]
+        
+        # Загружаем информацию о классах
+        info_file = self.data_dir / "dataset_info.json"
+        if info_file.exists():
+            with open(info_file, 'r', encoding='utf-8') as f:
+                info = json.load(f)
+                self.class_names = info.get('classes', [])
+                self.num_classes = len(self.class_names)
+        else:
+            # Fallback
+            unique_labels = set(entry['label'] for entry in self.entries)
+            self.num_classes = len(unique_labels)
+            self.class_names = [f'Dog_Class_{i}' for i in range(self.num_classes)]
+
+class HAM10000FANDataset(BaseFANDataset):
+    """Датасет HAM10000 для FAN модели (кожные заболевания)"""
+    
+    def __init__(self, data_dir, split='train'):
+        super().__init__(data_dir, split)
+        
+        # Загружаем метаданные
+        metadata_file = self.data_dir / "train.jsonl"
+        with open(metadata_file, 'r', encoding='utf-8') as f:
+            self.entries = [json.loads(line) for line in f]
+        
+        # Разделяем на train/val
+        random.shuffle(self.entries)
+        split_idx = int(0.8 * len(self.entries))
+        
+        if split == 'train':
+            self.entries = self.entries[:split_idx]
+        else:
+            self.entries = self.entries[split_idx:]
+        
+        # Загружаем информацию о классах
+        info_file = self.data_dir / "dataset_info.json"
+        if info_file.exists():
+            with open(info_file, 'r', encoding='utf-8') as f:
+                info = json.load(f)
+                self.class_names = info.get('classes', [])
+                self.num_classes = len(self.class_names)
+        else:
+            # Fallback
+            unique_labels = set(entry['label'] for entry in self.entries)
+            self.num_classes = len(unique_labels)
+            self.class_names = [f'Skin_Class_{i}' for i in range(self.num_classes)]
+
 class DatasetManager:
     """Менеджер для работы с разными датасетами"""
     
     def __init__(self):
         self.datasets = {
-            'hateful_memes': {
-                'dataset_class': HatefulMemesDataset,
-                'data_path': 'data/hateful_memes',
-                'model_path': 'models/hateful_memes/best_advanced_metrics_model.pth',
-                'description': 'Hateful Memes Detection - Binary Classification'
+            'stanford_dogs': {
+                'dataset_class': StanfordDogsFANDataset,
+                'data_path': 'data/stanford_dogs_fan',
+                'model_path': 'models/stanford_dogs/best_advanced_stanford_dogs_fan_model.pth',
+                'description': 'Stanford Dogs Classification - 20 Classes'
             },
             'cifar10': {
                 'dataset_class': CIFAR10FANDataset,
                 'data_path': 'data/cifar10_fan',
                 'model_path': 'models/cifar10/best_simple_cifar10_fan_model.pth',
                 'description': 'CIFAR-10 Classification - 10 Classes'
+            },
+            'ham10000': {
+                'dataset_class': HAM10000FANDataset,
+                'data_path': 'data/ham10000_fan',
+                'model_path': 'models/ham10000/best_ham10000_fan_model.pth',
+                'description': 'HAM10000 Skin Lesion Classification - 7 Classes'
             }
         }
     
@@ -190,4 +240,5 @@ class DatasetManager:
     def get_available_datasets(self):
         """Получить список доступных датасетов"""
         return list(self.datasets.keys())
+
 

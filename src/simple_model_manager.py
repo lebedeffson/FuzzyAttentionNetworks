@@ -168,11 +168,14 @@ class SimpleModelManager:
         
         # Информация о моделях
         self.model_info = {
-            'hateful_memes': {
-                'model_path': 'models/hateful_memes/best_advanced_metrics_model.pth',
-                'num_classes': 2,
-                'class_names': ['Not Hateful', 'Hateful'],
-                'description': 'Hateful Memes Detection - Binary Classification'
+            'stanford_dogs': {
+                'model_path': 'models/stanford_dogs/best_advanced_stanford_dogs_fan_model.pth',
+                'num_classes': 20,
+                'class_names': ['Afghan Hound', 'Basset Hound', 'Beagle', 'Border Collie', 'Boston Terrier',
+                               'Boxer', 'Bulldog', 'Chihuahua', 'Cocker Spaniel', 'Dachshund',
+                               'Dalmatian', 'German Shepherd', 'Golden Retriever', 'Great Dane', 'Husky',
+                               'Labrador', 'Maltese', 'Poodle', 'Pug', 'Rottweiler'],
+                'description': 'Stanford Dogs Classification - 20 Classes'
             },
             'cifar10': {
                 'model_path': 'models/cifar10/best_simple_cifar10_fan_model.pth',
@@ -180,6 +183,13 @@ class SimpleModelManager:
                 'class_names': ['airplane', 'automobile', 'bird', 'cat', 'deer', 
                                'dog', 'frog', 'horse', 'ship', 'truck'],
                 'description': 'CIFAR-10 Classification - 10 Classes'
+            },
+            'ham10000': {
+                'model_path': 'models/ham10000/best_ham10000_fan_model.pth',
+                'num_classes': 7,
+                'class_names': ['Actinic Keratoses', 'Basal Cell Carcinoma', 'Benign Keratosis',
+                               'Dermatofibroma', 'Melanoma', 'Melanocytic Nevi', 'Vascular Lesions'],
+                'description': 'HAM10000 Skin Lesion Classification - 7 Classes'
             }
         }
     
@@ -198,9 +208,9 @@ class SimpleModelManager:
         """Создать демо модель"""
         info = self.get_model_info(dataset_name)
         
-        if dataset_name == 'hateful_memes':
+        if dataset_name == 'stanford_dogs':
             model = SimpleFANModel(
-                num_classes=2,
+                num_classes=20,
                 num_heads=8,
                 hidden_dim=768
             )
@@ -208,6 +218,12 @@ class SimpleModelManager:
             model = SimpleFANModel(
                 num_classes=10,
                 num_heads=4,
+                hidden_dim=512
+            )
+        elif dataset_name == 'ham10000':
+            model = SimpleFANModel(
+                num_classes=7,
+                num_heads=8,
                 hidden_dim=512
             )
         else:
