@@ -19,8 +19,9 @@ import torchvision.transforms as transforms
 # Добавляем src в путь
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-# Импортируем простой менеджер
+# Импортируем простой менеджер и улучшенный извлекатель правил
 from simple_model_manager import SimpleModelManager
+from improved_rule_extractor import ImprovedRuleExtractor, SemanticFuzzyRule
 
 # Настройка страницы
 st.set_page_config(
@@ -77,7 +78,7 @@ st.markdown("""
 @st.cache_resource
 def load_tokenizer():
     """Загрузить токенизатор BERT"""
-    return BertTokenizer.from_pretrained('bert-base-uncased')
+    return BertTokenizer.from_pretrained('bert-base-uncased', local_files_only=True)
 
 @st.cache_resource
 def load_model_manager():
@@ -417,7 +418,7 @@ def main():
                         st.markdown("- **Parameters:** Learnable centers and widths")
                         st.markdown("- **Heads:** Multiple parallel attention heads")
                     
-                    with tab3:
+                    with tab2:
                         st.markdown("### 📈 Model Performance")
                         
                         # График производительности
@@ -454,7 +455,7 @@ def main():
                         with col3:
                             st.metric("Model Size", "Available")
                     
-                    with tab4:
+                    with tab3:
                         st.markdown("### 🔧 Extracted Rules")
                         
                         # Симуляция извлеченных правил
@@ -508,8 +509,8 @@ def main():
     st.markdown("---")
     st.markdown("## 🎮 Interactive Features")
     
-    # Создаем вкладки для новых функций
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Model Comparison", "🔍 Attention Visualization", "📈 Training Progress", "🎯 Performance Analysis", "🧠 Fuzzy Rules Demo"])
+    # Создаем вкладки для основных функций
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📊 Model Comparison", "🔍 Attention Visualization", "📈 Training Progress", "🎯 Performance Analysis", "🧠 Fuzzy Rules Demo", "🔧 Extracted Rules"])
     
     with tab1:
         st.markdown("### 📊 Model Comparison")
@@ -634,7 +635,7 @@ def main():
         
         st.plotly_chart(fig_membership, use_container_width=True)
     
-    with tab3:
+    with tab4:
         st.markdown("### 📈 Training Progress")
         
         # Симуляция training progress
@@ -691,7 +692,7 @@ def main():
         with col4:
             st.metric("Best Accuracy", "95.00%")
     
-    with tab4:
+    with tab5:
         st.markdown("### 🎯 Performance Analysis")
         
         # Confusion Matrix simulation
@@ -757,41 +758,129 @@ def main():
             st.write("- Boxer: 92.5% F1 Score")
             st.write("- Basset Hound: 91.5% F1 Score")
     
-    with tab5:
-        st.markdown("### 🧠 Fuzzy Rules Demo")
+    with tab6:
+        st.markdown("### 🧠 Улучшенное извлечение правил")
         
-        st.markdown("**Interactive Fuzzy Rule Generation**")
+        st.markdown("**Семантически осмысленные fuzzy правила**")
         
         # Интерактивные параметры
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("**Rule Parameters**")
-            confidence_threshold = st.slider("Confidence Threshold", 0.0, 1.0, 0.7, 0.05)
-            num_rules = st.slider("Number of Rules", 1, 10, 5)
-            rule_type = st.selectbox("Rule Type", ["IF-THEN", "Fuzzy Logic", "Neural-Fuzzy"])
+            st.markdown("**Параметры извлечения**")
+            confidence_threshold = st.slider("Порог уверенности", 0.0, 1.0, 0.7, 0.05)
+            strong_threshold = st.slider("Порог сильных правил", 0.0, 1.0, 0.15, 0.05)
+            max_rules = st.slider("Максимум правил", 1, 10, 5)
+            rule_type = st.selectbox("Тип правил", ["Семантические", "Лингвистические", "Технические"])
         
         with col2:
-            st.markdown("**Input Features**")
-            text_importance = st.slider("Text Importance", 0.0, 1.0, 0.6, 0.1)
-            image_importance = st.slider("Image Importance", 0.0, 1.0, 0.8, 0.1)
-            attention_weight = st.slider("Attention Weight", 0.0, 1.0, 0.7, 0.1)
+            st.markdown("**Входные данные**")
+            text_importance = st.slider("Важность текста", 0.0, 1.0, 0.6, 0.1)
+            image_importance = st.slider("Важность изображения", 0.0, 1.0, 0.8, 0.1)
+            attention_weight = st.slider("Вес внимания", 0.0, 1.0, 0.7, 0.1)
         
         # Генерируем правила
-        if st.button("Generate Fuzzy Rules"):
-            st.markdown("**Generated Fuzzy Rules:**")
+        if st.button("🔍 Извлечь семантические правила"):
+            st.markdown("**Извлеченные семантические правила:**")
             
-            # Симуляция сгенерированных правил
-            rules = [
-                f"IF text_attention IS high AND image_features IS strong THEN class_confidence IS very_high (confidence: {0.95:.2f})",
-                f"IF fuzzy_membership IS medium AND cross_modal_attention IS good THEN class_confidence IS high (confidence: {0.87:.2f})",
-                f"IF text_importance > {text_importance:.1f} AND image_importance > {image_importance:.1f} THEN prediction IS reliable (confidence: {0.92:.2f})",
-                f"IF attention_weight > {attention_weight:.1f} THEN use_advanced_fusion ELSE use_simple_fusion (confidence: {0.78:.2f})",
-                f"IF class_probability IS very_high THEN final_prediction IS confident (confidence: {0.96:.2f})"
-            ]
+            # Создаем улучшенный извлекатель
+            extractor = ImprovedRuleExtractor(
+                attention_threshold=confidence_threshold,
+                strong_threshold=strong_threshold,
+                max_rules_per_head=max_rules
+            )
             
-            for i, rule in enumerate(rules[:num_rules], 1):
-                st.success(f"**Rule {i}:** {rule}")
+            # Создаем пример attention weights для демонстрации
+            seq_len = 10
+            attention_weights = torch.rand(1, seq_len, seq_len)
+            
+            # Добавляем сильные связи для демонстрации
+            attention_weights[0, 0, 5] = 0.25  # text to image
+            attention_weights[0, 1, 6] = 0.18  # text to image
+            attention_weights[0, 5, 1] = 0.20  # image to text
+            attention_weights[0, 0, 1] = 0.15  # text to text
+            attention_weights[0, 6, 7] = 0.12  # image to image
+            
+            # Нормализуем
+            attention_weights = torch.softmax(attention_weights, dim=-1)
+            
+            # Пример текстовых токенов
+            text_tokens = ["красный", "автомобиль", "гладкий", "поверхность", "круглый", "колесо", "блестящий", "металл", "черный", "шина"]
+            class_names = ["автомобиль", "грузовик", "автобус", "мотоцикл"]
+            
+            # Извлекаем правила
+            rules = extractor.extract_semantic_rules(
+                attention_weights, 
+                text_tokens, 
+                class_names=class_names,
+                head_idx=0
+            )
+            
+            if rules:
+                st.success(f"✅ Извлечено {len(rules)} семантических правил")
+                
+                # Показываем правила
+                for i, rule in enumerate(rules):
+                    with st.expander(f"🔹 Правило {i+1}: {rule.semantic_type.upper()}", expanded=True):
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            st.markdown(f"**ID:** `{rule.rule_id}`")
+                            st.markdown(f"**Тип:** {rule.semantic_type}")
+                            st.markdown(f"**Условие текста:** {rule.condition_text}")
+                            st.markdown(f"**Условие изображения:** {rule.condition_image}")
+                            st.markdown(f"**Заключение:** {rule.conclusion}")
+                        
+                        with col2:
+                            st.markdown(f"**Уверенность:** {rule.confidence:.1%}")
+                            st.markdown(f"**Сила:** {rule.strength:.3f}")
+                            st.markdown(f"**Голова внимания:** {rule.attention_head}")
+                            st.markdown(f"**T-norm:** {rule.tnorm_type}")
+                        
+                        st.markdown("**Лингвистическое описание:**")
+                        st.info(rule.linguistic_description)
+                        
+                        # Показываем значения membership
+                        st.markdown("**Значения membership функций:**")
+                        for key, value in rule.membership_values.items():
+                            st.write(f"- {key}: {value:.3f}")
+                
+                # Генерируем сводку
+                summary = extractor.generate_rule_summary(rules)
+                
+                st.markdown("---")
+                st.markdown("### 📊 Сводка по правилам")
+                
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.metric("Всего правил", summary['total_rules'])
+                    st.metric("Средняя уверенность", f"{summary['avg_confidence']:.1%}")
+                
+                with col2:
+                    st.metric("Максимальная уверенность", f"{summary['max_confidence']:.1%}")
+                    st.metric("Минимальная уверенность", f"{summary['min_confidence']:.1%}")
+                
+                with col3:
+                    st.metric("Средняя сила", f"{summary['avg_strength']:.3f}")
+                
+                # График типов правил
+                if summary['rule_types']:
+                    st.markdown("**Распределение по типам правил:**")
+                    type_data = list(summary['rule_types'].items())
+                    types, counts = zip(*type_data)
+                    
+                    fig = go.Figure(data=[go.Bar(x=types, y=counts, marker_color='lightblue')])
+                    fig.update_layout(
+                        title="Количество правил по типам",
+                        xaxis_title="Тип правила",
+                        yaxis_title="Количество"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                
+                st.info(f"💡 {summary['summary']}")
+            else:
+                st.warning("⚠️ Правила не найдены. Попробуйте изменить параметры.")
         
         # Визуализация fuzzy inference
         st.markdown("**Fuzzy Inference Process**")

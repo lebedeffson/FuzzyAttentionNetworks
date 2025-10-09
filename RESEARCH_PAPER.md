@@ -361,3 +361,4 @@ The open-source implementation with web interface makes FAN accessible to resear
 **Code Availability**: https://github.com/your-username/FuzzyAttentionNetworks  
 **Web Interface**: http://localhost:8501  
 **Contact**: your.email@university.edu
+
