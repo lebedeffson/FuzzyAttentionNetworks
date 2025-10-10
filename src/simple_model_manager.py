@@ -205,11 +205,14 @@ class SimpleModelManager:
         return os.path.exists(info['model_path'])
     
     def create_demo_model(self, dataset_name):
-        """Создать модель с загруженными весами"""
+        """Загрузить РЕАЛЬНУЮ модель с весами"""
         info = self.get_model_info(dataset_name)
         
-        # ✅ ИСПОЛЬЗУЕМ ПРАВИЛЬНУЮ АРХИТЕКТУРУ
-        from src.universal_fan_model import UniversalFANModel
+        # ✅ ЗАГРУЖАЕМ РЕАЛЬНУЮ МОДЕЛЬ С ВЕСАМИ
+        model_path = info['model_path']
+        
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Model file not found: {model_path}")
         
         # Создаем модель с правильной архитектурой для каждого датасета
         if dataset_name == 'stanford_dogs':
@@ -224,6 +227,7 @@ class SimpleModelManager:
             )
         elif dataset_name == 'cifar10':
             # CIFAR-10 использует UniversalFANModel с ResNet18
+            from src.universal_fan_model import UniversalFANModel
             model = UniversalFANModel(
                 num_classes=10,
                 num_heads=4,
@@ -310,6 +314,10 @@ class SimpleModelManager:
             result['probs'] = enhanced_probs
             result['confidence'] = torch.max(enhanced_probs, dim=1)[0]
             result['predictions'] = torch.argmax(enhanced_probs, dim=1)
+            
+            # Добавляем недостающие ключи для совместимости
+            result['prediction'] = result['predictions'][0].item()
+            result['all_predictions'] = enhanced_probs[0].cpu().numpy().tolist()
         
         return result
 
