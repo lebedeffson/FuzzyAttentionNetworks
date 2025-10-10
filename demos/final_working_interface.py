@@ -876,28 +876,57 @@ def main():
 
                     with tab2:
                         st.markdown("### 📊 Fuzzy Membership Functions")
+                        st.markdown("""
+                        **Fuzzy sets for attention modulation:**
+                        - **Text Features:** Semantic similarity, word importance, context relevance
+                        - **Image Features:** Visual saliency, object boundaries, color patterns  
+                        - **Attention Features:** Cross-modal alignment
+                        """)
 
                         # Загружаем реальные fuzzy membership functions из модели
                         fuzzy_params = load_fuzzy_membership_functions(selected_dataset)
                         x = np.linspace(-3, 3, 100)
                         
+                        # Названия нечетких множеств
+                        fuzzy_set_names = [
+                            "Text: Semantic Similarity",
+                            "Text: Word Importance", 
+                            "Text: Context Relevance",
+                            "Image: Visual Saliency",
+                            "Image: Object Boundaries",
+                            "Image: Color Patterns",
+                            "Attention: Cross-modal Alignment"
+                        ]
+                        
                         fig_fuzzy = go.Figure()
 
                         for i, (center, width) in enumerate(zip(fuzzy_params['centers'], fuzzy_params['widths'])):
                             y = 1 / (1 + ((x - center) / width) ** 2)
+                            set_name = fuzzy_set_names[i] if i < len(fuzzy_set_names) else f"Fuzzy Set {i + 1}"
                             fig_fuzzy.add_trace(go.Scatter(
                                 x=x, y=y,
                                 mode='lines',
-                                name=f'Function {i + 1}',
+                                name=set_name,
                                 line=dict(width=3)
                             ))
 
-                        title = f"Real Membership Functions (from {fuzzy_params['source']})" if fuzzy_params['type'] == 'real' else "Default Membership Functions"
+                        title = f"Fuzzy Membership Functions (from {fuzzy_params['source']})" if fuzzy_params['type'] == 'real' else "Default Membership Functions"
                         fig_fuzzy.update_layout(
                             title=title,
-                            xaxis_title="Input Value",
-                            yaxis_title="Membership Degree",
-                            height=400
+                            xaxis_title="Feature Value (x)",
+                            yaxis_title="Membership Degree μ(x)",
+                            height=400,
+                            xaxis=dict(
+                                title="Feature Value (x)",
+                                showgrid=True,
+                                gridcolor='lightgray'
+                            ),
+                            yaxis=dict(
+                                title="Membership Degree μ(x)",
+                                range=[0, 1.1],
+                                showgrid=True,
+                                gridcolor='lightgray'
+                            )
                         )
                         st.plotly_chart(fig_fuzzy, use_container_width=True, key="fuzzy_functions_main")
 
@@ -1137,36 +1166,57 @@ def main():
         # Информация о fuzzy membership functions
         st.markdown("**Fuzzy Membership Functions**")
         st.markdown("""
-        **Как должны выглядеть fuzzy функции:**
-        - **Bell-образные кривые:** Каждая функция имеет пик в определенной точке
-        - **Разные центры:** Функции сдвинуты по оси X (разные точки активации)
-        - **Разные ширины:** Одни функции узкие (точные), другие широкие (общие)
-        - **Высота 1.0:** Максимальная степень принадлежности
-        - **7 функций:** Разные типы признаков (текст, изображение, внимание)
+        **Fuzzy sets for attention modulation:**
+        - **Text Features:** Semantic similarity, word importance, context relevance
+        - **Image Features:** Visual saliency, object boundaries, color patterns  
+        - **Attention Features:** Cross-modal alignment
         """)
 
         # Загружаем реальные fuzzy membership functions из модели
         fuzzy_params = load_fuzzy_membership_functions(selected_dataset)
         x = np.linspace(-3, 3, 100)
 
+        # Названия нечетких множеств
+        fuzzy_set_names = [
+            "Text: Semantic Similarity",
+            "Text: Word Importance", 
+            "Text: Context Relevance",
+            "Image: Visual Saliency",
+            "Image: Object Boundaries",
+            "Image: Color Patterns",
+            "Attention: Cross-modal Alignment"
+        ]
+
         fig_membership = go.Figure()
 
         # Показываем реальные функции из модели
         for i, (center, width) in enumerate(zip(fuzzy_params['centers'], fuzzy_params['widths'])):
             y = 1 / (1 + ((x - center) / width) ** 2)
+            set_name = fuzzy_set_names[i] if i < len(fuzzy_set_names) else f"Fuzzy Set {i + 1}"
             fig_membership.add_trace(go.Scatter(
                 x=x, y=y, 
                 mode='lines', 
-                name=f'Real Function {i + 1}', 
-                line=dict(color=['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57'][i % 5])
+                name=set_name, 
+                line=dict(color=['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FECA57', '#FF9FF3', '#54A0FF'][i % 7])
             ))
 
-        title = f"Real Membership Functions (from {fuzzy_params['source']})" if fuzzy_params['type'] == 'real' else "Default Membership Functions"
+        title = f"Fuzzy Membership Functions (from {fuzzy_params['source']})" if fuzzy_params['type'] == 'real' else "Default Membership Functions"
         fig_membership.update_layout(
             title=title,
-            xaxis_title="Input Value",
-            yaxis_title="Membership Degree",
-            height=400
+            xaxis_title="Feature Value (x)",
+            yaxis_title="Membership Degree μ(x)",
+            height=400,
+            xaxis=dict(
+                title="Feature Value (x)",
+                showgrid=True,
+                gridcolor='lightgray'
+            ),
+            yaxis=dict(
+                title="Membership Degree μ(x)",
+                range=[0, 1.1],
+                showgrid=True,
+                gridcolor='lightgray'
+            )
         )
 
         st.plotly_chart(fig_membership, use_container_width=True, key="membership_functions")
