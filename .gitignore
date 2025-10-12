@@ -60,10 +60,8 @@ Thumbs.db
 logs/
 temp_logs/
 
-# Data (keep structure but ignore large files)
-data/hateful_memes/img/*.png
-data/hateful_memes/img/*.jpg
-data/hateful_memes/img/*.jpeg
+# Data (exclude entire data folder)
+data/
 
 # Models (keep only the best one)
 models/*.pth
