@@ -1,0 +1,126 @@
+digraph FAN_Architecture {
+    rankdir=TB;
+    size="12,14";
+    dpi=300;
+    
+    // Node settings - clear contrasts
+    node [fontname="Arial", fontsize=10, shape=box, style=filled, penwidth=1.5];
+    edge [fontname="Arial", fontsize=9, penwidth=1.5, color="#333333"];
+    
+    // Input data - light with dark text
+    text_input [label="Text Input\n\"Golden retriever dog\"", fillcolor="#E6F3FF", shape=ellipse, fontcolor="#000000", penwidth=2];
+    image_input [label="Image Input\n224×224×3", fillcolor="#E6FFE6", shape=ellipse, fontcolor="#000000", penwidth=2];
+    
+    // Text pathway - light grays
+    bert_tokenizer [label="BERT Tokenizer", fillcolor="#F0F0F0", fontcolor="#000000"];
+    bert_encoder [label="BERT Encoder\n12 Layers", fillcolor="#E0E0E0", fontcolor="#000000"];
+    text_projection [label="Text Projection\nLinear(768→512)", fillcolor="#D0D0D0", fontcolor="#000000"];
+    
+    // Image pathway - light grays
+    resnet_backbone [label="ResNet Backbone", fillcolor="#F0F0F0", fontcolor="#000000"];
+    image_projection [label="Image Projection\nLinear(2048→512)", fillcolor="#E0E0E0", fontcolor="#000000"];
+    
+    // Attention mechanism - medium grays
+    query_proj [label="Query\nLinear(512→512)", fillcolor="#B8B8B8", fontcolor="#000000"];
+    key_proj [label="Key\nLinear(512→512)", fillcolor="#B8B8B8", fontcolor="#000000"];
+    value_proj [label="Value\nLinear(512→512)", fillcolor="#B8B8B8", fontcolor="#000000"];
+    
+    // FUZZY LOGIC COMPONENTS - detailed explanation
+    fuzzy_explanation [label="FUZZY LOGIC COMPONENTS\n\nFuzzy sets define:\n• Feature membership degrees\n• Soft class boundaries\n• Data uncertainty handling", 
+                       fillcolor="#FFE6E6", shape=note, fontcolor="#000000", penwidth=2];
+    
+    // Specific fuzzy sets with names
+    fuzzy_set_text [label="Text Features Set\nμ₁: Semantic Similarity\nμ₂: Word Importance\nμ₃: Context Relevance", 
+                    fillcolor="#FFB3B3", shape=diamond, fontcolor="#000000"];
+    fuzzy_set_image [label="Image Features Set\nμ₄: Visual Saliency\nμ₅: Object Boundaries\nμ₆: Color Patterns", 
+                     fillcolor="#FFB3B3", shape=diamond, fontcolor="#000000"];
+    fuzzy_set_attention [label="Attention Set\nμ₇: Cross-modal Alignment", 
+                         fillcolor="#FFB3B3", shape=diamond, fontcolor="#000000"];
+    
+    // Fuzzy set parameters
+    fuzzy_centers [label="Fuzzy Centers\nμ₁, μ₂, ..., μ₇\n(Learnable Parameters)", 
+                   fillcolor="#606060", shape=ellipse, fontcolor="#FFFFFF"];
+    fuzzy_widths [label="Fuzzy Widths\nσ₁, σ₂, ..., σ₇\n(Learnable Parameters)", 
+                  fillcolor="#606060", shape=ellipse, fontcolor="#FFFFFF"];
+    
+    // Bell membership function with formula
+    bell_membership [label="Bell Membership Function\nμ(x) = 1/(1+((x-μ)/σ)²)\n\nWhere:\n• x = input feature value\n• μ = center (learnable)\n• σ = width (learnable)", 
+                     fillcolor="#404040", shape=ellipse, fontcolor="#FFFFFF"];
+    
+    // Attention computation with fuzzy modulation
+    attention_weights [label="Fuzzy-Modulated Attention\nSoftmax(QKᵀ/√d + F(μ,σ))\n\nF(μ,σ) = fuzzy membership values\nmodulate attention scores", 
+                       fillcolor="#A0A0A0", fontcolor="#000000"];
+    attended_values [label="Attended Values\nAttention × V", fillcolor="#909090", fontcolor="#000000"];
+    
+    // Fusion - light grays
+    concat_fusion [label="Concatenation\n[text; image; attention]", fillcolor="#F5F5F5", fontcolor="#000000"];
+    fusion_layer [label="Fusion Layer\nLinear(1536→512)", fillcolor="#E8E8E8", fontcolor="#000000"];
+    dropout [label="Dropout + ReLU", fillcolor="#D8D8D8", fontcolor="#000000"];
+    
+    // Classifier - dark with white text
+    classifier [label="Classifier\nLinear(512→num_classes)", fillcolor="#505050", fontcolor="#FFFFFF"];
+    softmax [label="Softmax", fillcolor="#404040", fontcolor="#FFFFFF"];
+    prediction [label="Prediction\nClass + Confidence", fillcolor="#303030", shape=ellipse, fontcolor="#FFFFFF"];
+    
+    // Connections - text pathway
+    text_input -> bert_tokenizer [label="Tokenize", color="#000000"];
+    bert_tokenizer -> bert_encoder [label="Encode", color="#000000"];
+    bert_encoder -> text_projection [label="Project", color="#000000"];
+    
+    // Connections - image pathway
+    image_input -> resnet_backbone [label="Extract", color="#000000"];
+    resnet_backbone -> image_projection [label="Project", color="#000000"];
+    
+    // Connections - attention mechanism
+    text_projection -> query_proj [label="Q", color="#000000"];
+    text_projection -> key_proj [label="K", color="#000000"];
+    text_projection -> value_proj [label="V", color="#000000"];
+    
+    // FUZZY CONNECTIONS - show where fuzziness comes from
+    fuzzy_explanation -> fuzzy_set_text [label="Defines", color="#FF0000", penwidth=2];
+    fuzzy_explanation -> fuzzy_set_image [label="Defines", color="#FF0000", penwidth=2];
+    fuzzy_explanation -> fuzzy_set_attention [label="Defines", color="#FF0000", penwidth=2];
+    
+    // Fuzzy set parameters
+    fuzzy_set_text -> fuzzy_centers [label="μ₁,μ₂,μ₃", color="#FF0000", penwidth=2];
+    fuzzy_set_image -> fuzzy_centers [label="μ₄,μ₅,μ₆", color="#FF0000", penwidth=2];
+    fuzzy_set_attention -> fuzzy_centers [label="μ₇", color="#FF0000", penwidth=2];
+    
+    fuzzy_set_text -> fuzzy_widths [label="σ₁,σ₂,σ₃", color="#FF0000", penwidth=2];
+    fuzzy_set_image -> fuzzy_widths [label="σ₄,σ₅,σ₆", color="#FF0000", penwidth=2];
+    fuzzy_set_attention -> fuzzy_widths [label="σ₇", color="#FF0000", penwidth=2];
+    
+    // Bell function
+    fuzzy_centers -> bell_membership [label="μ", color="#FF0000", penwidth=2];
+    fuzzy_widths -> bell_membership [label="σ", color="#FF0000", penwidth=2];
+    
+    // Attention with fuzzy modulation
+    query_proj -> attention_weights [label="Q", color="#000000"];
+    key_proj -> attention_weights [label="K", color="#000000"];
+    bell_membership -> attention_weights [label="Fuzzy Modulate\nF(μ,σ)", color="#FF0000", penwidth=2];
+    
+    attention_weights -> attended_values [label="Attention", color="#000000"];
+    value_proj -> attended_values [label="V", color="#000000"];
+    
+    // Connections - fusion
+    text_projection -> concat_fusion [label="Text Features", color="#000000"];
+    image_projection -> concat_fusion [label="Image Features", color="#000000"];
+    attended_values -> concat_fusion [label="Attended Features", color="#000000"];
+    
+    concat_fusion -> fusion_layer [label="Fuse", color="#000000"];
+    fusion_layer -> dropout [label="Process", color="#000000"];
+    
+    // Connections - classification
+    dropout -> classifier [label="Classify", color="#000000"];
+    classifier -> softmax [label="Normalize", color="#000000"];
+    softmax -> prediction [label="Output", color="#000000"];
+    
+    // Mathematical formula - clear contrast
+    formula [label="Fuzzy Attention Formula:\nAttention(Q,K,V) = softmax(QK^T/√d + F(μ,σ))V\n\nWhere F(μ,σ) = fuzzy membership values\nthat modulate attention scores", 
+             fillcolor="#FFFFFF", shape=plaintext, fontsize=9, fontcolor="#000000", penwidth=1];
+    
+    // Connect formula
+    formula -> attention_weights [style=dashed, color="#666666"];
+}
+
+
