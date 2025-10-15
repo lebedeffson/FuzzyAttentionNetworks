@@ -1,23 +1,32 @@
-# Fuzzy Attention Networks - Requirements
-# Core ML libraries
-torch>=2.0.0
-torchvision>=0.15.0
-transformers>=4.30.0
-scikit-learn>=1.3.0
+# Основные зависимости
+torch>=1.9.0
+torchvision>=0.10.0
+numpy>=1.21.0
+pandas>=1.3.0
+scikit-learn>=1.0.0
 
-# Web interface
+# Веб-интерфейс
 streamlit>=1.28.0
-plotly>=5.15.0
+plotly>=5.0.0
 
-# Data processing
-numpy>=1.24.0
-pandas>=2.0.0
-Pillow>=10.0.0
+# Обработка изображений
+Pillow>=8.3.0
+opencv-python>=4.5.0
 
-# Visualization
-matplotlib>=3.7.0
-seaborn>=0.12.0
+# Обработка текста
+transformers>=4.20.0
+tokenizers>=0.13.0
 
-# Utilities
-tqdm>=4.65.0
-pathlib2>=2.3.7
+# Визуализация
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Утилиты
+tqdm>=4.62.0
+requests>=2.26.0
+kaggle>=1.5.0
+
+# Разработка (опционально)
+pytest>=6.2.0
+black>=21.0.0
+flake8>=4.0.0

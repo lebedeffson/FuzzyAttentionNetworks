@@ -206,16 +206,16 @@ class AdvancedFANModel(nn.Module):
         # Multi-scale fusion
         self.fusion = MultiScaleFusion(hidden_dim)
         
-        # Advanced classifier
+        # Advanced classifier (увеличиваем dropout)
         self.classifier = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
             nn.LayerNorm(hidden_dim),
             nn.ReLU(),
-            nn.Dropout(0.3),
+            nn.Dropout(0.5),  # Увеличиваем dropout
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.LayerNorm(hidden_dim // 2),
             nn.ReLU(),
-            nn.Dropout(0.2),
+            nn.Dropout(0.4),  # Увеличиваем dropout
             nn.Linear(hidden_dim // 2, num_classes)
         )
         

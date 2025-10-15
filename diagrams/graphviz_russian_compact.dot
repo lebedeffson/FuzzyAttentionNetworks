@@ -1,11 +1,11 @@
 digraph FAN_Architecture {
-    rankdir=TB;
-    size="12,14";
+    rankdir=LR;
+    size="11,8.5";
     dpi=300;
     
-    // Настройки узлов - четкие контрасты
-    node [fontname="Arial", fontsize=10, shape=box, style=filled, penwidth=1.5];
-    edge [fontname="Arial", fontsize=9, penwidth=1.5, color="#333333"];
+    // Настройки узлов - компактные, но с полным текстом
+    node [fontname="Arial", fontsize=9, shape=box, style=filled, penwidth=1.2];
+    edge [fontname="Arial", fontsize=8, penwidth=1.2, color="#333333"];
     
     // Входные данные - светлые с темным текстом
     text_input [label="Текстовый вход\n\"Золотистый ретривер\"", fillcolor="#E6F3FF", shape=ellipse, fontcolor="#000000", penwidth=2];
@@ -117,7 +117,7 @@ digraph FAN_Architecture {
     
     // Математическая формула - четкий контраст
     formula [label="Формула нечеткого внимания:\nAttention(Q,K,V) = softmax(QK^T/√d + F(μ,σ))V\n\nГде F(μ,σ) = значения нечеткой принадлежности\nмодулируют веса внимания", 
-             fillcolor="#FFFFFF", shape=plaintext, fontsize=9, fontcolor="#000000", penwidth=1];
+             fillcolor="#FFFFFF", shape=plaintext, fontsize=8, fontcolor="#000000", penwidth=1];
     
     // Соединяем формулу
     formula -> attention_weights [style=dashed, color="#666666"];

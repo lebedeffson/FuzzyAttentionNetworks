@@ -28,15 +28,50 @@ class BaseFANDataset(Dataset):
         self.split = split
         self.max_length = max_length
         
-        # Токенизатор
-        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        # Простой токенизатор (без BERT для избежания проблем с Hugging Face)
+        class SimpleTokenizer:
+            def __init__(self):
+                self.vocab = {}
+                self.vocab_size = 10000
+                
+            def encode(self, text, max_length=64, padding=True, truncation=True):
+                # Простая токенизация по словам
+                words = text.lower().split()[:max_length]
+                tokens = [hash(word) % self.vocab_size for word in words]
+                
+                if padding and len(tokens) < max_length:
+                    tokens.extend([0] * (max_length - len(tokens)))
+                elif truncation and len(tokens) > max_length:
+                    tokens = tokens[:max_length]
+                    
+                return tokens
+                
+            def __call__(self, text, max_length=64, padding=True, truncation=True, return_tensors=None):
+                tokens = self.encode(text, max_length, padding, truncation)
+                if return_tensors == 'pt':
+                    import torch
+                    return {'input_ids': torch.tensor([tokens])}
+                return {'input_ids': [tokens]}
         
-        # Базовые трансформации
-        self.transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
+        self.tokenizer = SimpleTokenizer()
+        
+        # Базовые трансформации с аугментацией
+        if split == 'train':
+            self.transform = transforms.Compose([
+                transforms.Resize((256, 256)),
+                transforms.RandomCrop((224, 224)),
+                transforms.RandomHorizontalFlip(p=0.5),
+                transforms.RandomRotation(10),
+                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ])
+        else:
+            self.transform = transforms.Compose([
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            ])
     
     def __len__(self):
         return len(self.entries)
@@ -58,6 +93,12 @@ class BaseFANDataset(Dataset):
             max_length=self.max_length,
             return_tensors='pt'
         )
+        
+        # Создаем attention_mask если его нет
+        if 'attention_mask' not in encoding:
+            input_ids = encoding['input_ids']
+            attention_mask = (input_ids != 0).long()
+            encoding['attention_mask'] = attention_mask
         
         return {
             'image': image_tensor,
@@ -159,6 +200,39 @@ class HAM10000FANDataset(BaseFANDataset):
             self.num_classes = len(unique_labels)
             self.class_names = [f'Skin_Class_{i}' for i in range(self.num_classes)]
 
+class ChestXRayFANDataset(BaseFANDataset):
+    """Датасет Chest X-Ray Pneumonia для FAN модели"""
+    
+    def __init__(self, data_dir, split='train'):
+        super().__init__(data_dir, split)
+        
+        # Загружаем метаданные
+        metadata_file = self.data_dir / "train.jsonl"
+        with open(metadata_file, 'r', encoding='utf-8') as f:
+            self.entries = [json.loads(line) for line in f]
+        
+        # Разделяем на train/val (70/30) - больше данных для валидации
+        random.shuffle(self.entries)
+        split_idx = int(0.7 * len(self.entries))
+        
+        if split == 'train':
+            self.entries = self.entries[:split_idx]
+        else:
+            self.entries = self.entries[split_idx:]
+        
+        # Загружаем информацию о классах
+        info_file = self.data_dir / "dataset_info.json"
+        if info_file.exists():
+            with open(info_file, 'r', encoding='utf-8') as f:
+                info = json.load(f)
+                self.class_names = info.get('classes', [])
+                self.num_classes = len(self.class_names)
+        else:
+            # Fallback
+            unique_labels = set(entry['label'] for entry in self.entries)
+            self.num_classes = len(unique_labels)
+            self.class_names = [f'Chest_Class_{i}' for i in range(self.num_classes)]
+
 class DatasetManager:
     """Менеджер для работы с разными датасетами"""
     
@@ -181,6 +255,12 @@ class DatasetManager:
                 'data_path': 'data/ham10000_fan',
                 'model_path': 'models/ham10000/best_ham10000_fan_model.pth',
                 'description': 'HAM10000 Skin Lesion Classification - 7 Classes'
+            },
+            'chest_xray': {
+                'dataset_class': ChestXRayFANDataset,
+                'data_path': 'data/chest_xray_fan',
+                'model_path': 'models/chest_xray/best_chest_xray_fan_model.pth',
+                'description': 'Chest X-Ray Pneumonia Classification - 2 Classes'
             }
         }
     

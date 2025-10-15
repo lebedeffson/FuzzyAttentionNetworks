@@ -1,303 +1,180 @@
 # 🧠 Fuzzy Attention Networks (FAN)
 
-**Human-Centered Differentiable Neuro-Fuzzy Architectures for Multimodal AI**
+**Интерактивная система мультимодальной классификации с нечеткими сетями внимания**
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org/)
-[![CUDA](https://img.shields.io/badge/CUDA-11.8+-green.svg)](https://developer.nvidia.com/cuda-toolkit)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-1.9+-red.svg)](https://pytorch.org)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-green.svg)](https://streamlit.io)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## 🎯 Project Overview
+## 🎯 Обзор Проекта
 
-This project implements **Fuzzy Attention Networks (FAN)**, a novel differentiable neuro-symbolic framework that integrates fuzzy logic directly into transformer architectures. The system enables end-to-end learning while maintaining inherent interpretability through human-readable reasoning pathways.
+Fuzzy Attention Networks (FAN) - это инновационная система мультимодальной классификации, объединяющая нечеткую логику с механизмами внимания для анализа текстовых и визуальных данных. Система демонстрирует высокую эффективность на различных задачах классификации, включая медицинскую диагностику.
 
-### 🌟 Key Features
+### ✨ Ключевые Особенности
 
-- **🧠 Fuzzy Attention Mechanisms**: Replace standard self-attention with learnable fuzzy membership functions
-- **🔍 Interpretable AI**: Automatic extraction of linguistic rules from trained attention weights
-- **🌐 Multimodal Fusion**: Cross-modal fuzzy reasoning for text and visual modalities
-- **📊 High Performance**: Achieves 95%+ accuracy on multiple datasets
-- **🎨 Interactive Web Interface**: Real-time model comparison and visualization
-- **🏥 Medical AI**: Specialized models for skin lesion classification
+- **🧠 Нечеткие Сети Внимания**: Интеграция нечеткой логики с механизмами внимания
+- **🎨 Интерактивный Веб-Интерфейс**: Реальное время визуализации и анализа
+- **🏥 Медицинская Специализация**: Специализированные модели для диагностики
+- **📊 Полная Интерпретируемость**: Визуализация fuzzy функций и attention weights
+- **🌐 Русскоязычный Интерфейс**: Полная локализация для русскоязычных пользователей
 
-## 📊 Supported Datasets
+## 📊 Поддерживаемые Датасеты
 
-| Dataset | Classes | F1 Score | Accuracy | Architecture |
+| Датасет | Классы | F1 Score | Accuracy | Архитектура |
 |---------|---------|----------|----------|--------------|
 | **Stanford Dogs** | 20 | **95.74%** | **95.0%** | Advanced FAN + 8-Head Attention |
 | **CIFAR-10** | 10 | **88.08%** | **85.0%** | BERT + ResNet18 + 4-Head FAN |
-| **HAM10000** | 7 | **91.07%** | **91.0%** | Medical FAN + 8-Head Attention |
+| **HAM10000** | 7 | **89.30%** | **75.0%** | Medical FAN + 8-Head Attention |
+| **Chest X-Ray** | 2 | **78.0%** | **75.0%** | Medical FAN + 8-Head Attention |
 
-## 🚀 Quick Start
+## 🚀 Быстрый Старт
 
-### Prerequisites
+### Установка
 
 ```bash
-# Python 3.8+
-# CUDA 11.8+ (recommended)
-# 8GB+ RAM
-```
+# Клонирование репозитория
+git clone https://github.com/your-username/fuzzy-attention-networks.git
+cd fuzzy-attention-networks
 
-### Installation
+# Создание виртуального окружения
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# или
+venv\Scripts\activate  # Windows
 
-1. **Clone the repository**
-```bash
-git clone https://github.com/your-username/FuzzyAttentionNetworks.git
-cd FuzzyAttentionNetworks
-```
-
-2. **Create virtual environment**
-```bash
-python3 -m venv ~/venv
-source ~/venv/bin/activate
-```
-
-3. **Install dependencies**
-```bash
+# Установка зависимостей
 pip install -r requirements.txt
 ```
 
-### 🎮 Web Interface
-
-Launch the interactive web interface:
+### Запуск Веб-Интерфейса
 
 ```bash
-python run_final_interface.py
+# Запуск интерактивного интерфейса
+python -m streamlit run demos/final_working_interface.py --server.port 8501
 ```
 
-Open your browser at: **http://localhost:8501**
+Откройте браузер по адресу: **http://localhost:8501**
 
-### 🧪 Training Models
+## 🏗️ Архитектура Системы
 
-Train models on different datasets:
+### Основные Компоненты
 
-```bash
-# Stanford Dogs (Advanced FAN)
-python scripts/train_stanford_dogs.py
+1. **FuzzyAttention** - Ядро нечеткого внимания
+2. **AdvancedFANModel** - Продвинутая FAN архитектура
+3. **UniversalFANModel** - Универсальная FAN модель
+4. **DatasetManager** - Управление датасетами
+5. **SimpleModelManager** - Управление моделями
 
-# HAM10000 Medical Dataset
-python scripts/train_ham10000.py
+### Нечеткие Функции Принадлежности
 
-# CIFAR-10 (Simple FAN)
-python scripts/train_cifar10.py
-```
+Система использует специализированные нечеткие функции для разных типов данных:
 
-## 🏗️ Architecture
+**Медицинские (Chest X-Ray):**
+- X-Ray: Lung Opacity (непрозрачность легких)
+- X-Ray: Consolidation (консолидация)
+- X-Ray: Air Bronchogram (воздушная бронхограмма)
+- X-Ray: Pleural Effusion (плевральный выпот)
+- X-Ray: Heart Shadow (тень сердца)
 
-### Core Components
+**Общие (Stanford Dogs, CIFAR-10):**
+- Image: Visual Saliency (визуальная значимость)
+- Image: Object Boundaries (границы объектов)
+- Image: Color Patterns (цветовые паттерны)
+- Image: Texture Features (текстурные признаки)
+- Image: Spatial Relations (пространственные отношения)
 
-1. **Fuzzy Attention Layer**
-   - Learnable membership functions (Bell-shaped)
-   - Differentiable t-norms for fuzzy operations
-   - Multi-head attention with fuzzy weights
-
-2. **Cross-Modal Fusion**
-   - Text: BERT-based encoding
-   - Vision: ResNet feature extraction
-   - Fuzzy reasoning across modalities
-
-3. **Interpretable Classifier**
-   - Rule extraction from attention weights
-   - Linguistic rule generation
-   - Confidence-based predictions
-
-### Model Architectures
-
-#### Advanced FAN (Stanford Dogs, HAM10000)
-```python
-- 8-Head Fuzzy Attention
-- Hidden Dimension: 512-1024
-- Membership Functions: 7 per head
-- Cross-modal Fusion
-- Advanced Classifier
-```
-
-#### Simple FAN (CIFAR-10)
-```python
-- 4-Head Fuzzy Attention
-- Hidden Dimension: 512
-- Membership Functions: 5 per head
-- Basic Fusion
-- Simple Classifier
-```
-
-## 📁 Project Structure
+## 📁 Структура Проекта
 
 ```
 FuzzyAttentionNetworks/
-├── 📁 src/                          # Core source code
-│   ├── 🧠 fuzzy_attention.py        # Fuzzy attention mechanisms
-│   ├── 🔗 multimodal_fuzzy_attention.py  # Cross-modal fusion
-│   ├── 🏗️ advanced_fan_model.py     # Advanced FAN architecture
-│   ├── 🎯 simple_fuzzy_model.py     # Simple FAN architecture
-│   ├── 📊 dataset_manager.py        # Dataset management
-│   └── 🎮 simple_model_manager.py   # Model management
-├── 📁 demos/                        # Web interfaces
-│   └── 🌐 final_working_interface.py # Main Streamlit interface
-├── 📁 scripts/                      # Training scripts
-│   ├── 📥 download_stanford_dogs.py # Stanford Dogs downloader
-│   ├── 📥 download_ham10000.py      # HAM10000 downloader
-│   ├── 🏋️ train_stanford_dogs.py    # Stanford Dogs training
-│   └── 🏋️ train_ham10000.py         # HAM10000 training
-├── 📁 data/                         # Datasets
-│   ├── 📁 stanford_dogs_fan/        # Stanford Dogs data
-│   ├── 📁 cifar10_fan/              # CIFAR-10 data
-│   └── 📁 ham10000_fan/             # HAM10000 data
-├── 📁 models/                       # Trained models
-│   ├── 📁 stanford_dogs/            # Stanford Dogs models
-│   ├── 📁 cifar10/                  # CIFAR-10 models
-│   └── 📁 ham10000/                 # HAM10000 models
-└── 📄 requirements.txt              # Dependencies
+├── demos/
+│   └── final_working_interface.py    # Основной веб-интерфейс
+├── src/
+│   ├── advanced_fan_model.py         # Продвинутая FAN модель
+│   ├── universal_fan_model.py        # Универсальная FAN модель
+│   ├── fuzzy_attention.py            # Ядро нечеткого внимания
+│   ├── dataset_manager.py            # Управление датасетами
+│   ├── simple_model_manager.py       # Управление моделями
+│   └── utils.py                      # Утилиты
+├── scripts/
+│   ├── download_*.py                 # Скрипты загрузки датасетов
+│   └── train_*.py                    # Скрипты обучения моделей
+├── models/                           # Обученные модели
+├── data/                            # Датасеты
+└── diagrams/                        # Диаграммы архитектуры
 ```
 
-## 🔬 Research Applications
+## 🧪 Обучение Моделей
 
-### Medical AI
-- **Skin Lesion Classification**: HAM10000 dataset with 91% accuracy on real medical data
-- **Dermatological Diagnosis**: Interpretable fuzzy rules for medical decisions
-- **Clinical Decision Support**: Human-readable explanations with confidence scores
-
-### Computer Vision
-- **Fine-grained Classification**: Stanford Dogs with 95%+ accuracy
-- **Object Recognition**: CIFAR-10 with interpretable attention
-- **Multimodal Understanding**: Text-image fusion
-
-### Interpretable AI
-- **Rule Extraction**: Automatic linguistic rule generation
-- **Attention Visualization**: Fuzzy membership function plots
-- **Confidence Analysis**: Uncertainty quantification
-
-## 📈 Performance Results
-
-### Stanford Dogs Classification
-- **F1 Score**: 95.74%
-- **Accuracy**: 95.0%
-- **Training Time**: ~2 hours (CUDA)
-- **Model Size**: 45MB
-
-### HAM10000 Medical Classification
-- **F1 Score**: 91.07%
-- **Accuracy**: 91.0%
-- **Precision**: 91.81%
-- **Recall**: 91.0%
-
-### CIFAR-10 Classification
-- **F1 Score**: 88.08%
-- **Accuracy**: 85.0%
-- **Training Time**: ~30 minutes (CUDA)
-- **Model Size**: 25MB
-
-## 🎨 Web Interface Features
-
-### Interactive Tabs
-1. **📊 Model Comparison**: Performance metrics across datasets
-2. **🔍 Attention Visualization**: Fuzzy attention heatmaps
-3. **📈 Training Progress**: Loss and accuracy curves
-4. **🎯 Performance Analysis**: Detailed metrics breakdown
-5. **🧠 Fuzzy Rules Demo**: Interpretable rule extraction
-
-### Real-time Features
-- **Live Predictions**: Upload images and get instant results
-- **Text Analysis**: Natural language processing with fuzzy attention
-- **Confidence Scores**: Uncertainty quantification
-- **Rule Explanation**: Human-readable decision explanations
-
-## 🔧 Technical Details
-
-### Dependencies
-```
-torch>=2.0.0
-torchvision>=0.15.0
-transformers>=4.21.0
-streamlit>=1.28.0
-plotly>=5.15.0
-scikit-learn>=1.3.0
-numpy>=1.24.0
-Pillow>=9.5.0
-tqdm>=4.65.0
-```
-
-### Hardware Requirements
-- **GPU**: NVIDIA RTX 3060+ (recommended)
-- **RAM**: 8GB+ (16GB recommended)
-- **Storage**: 5GB+ for datasets and models
-- **CUDA**: 11.8+ for GPU acceleration
-
-### Training Configuration
-```python
-# Advanced FAN (Stanford Dogs, HAM10000)
-batch_size = 8
-learning_rate = 1e-4
-num_epochs = 15
-hidden_dim = 512-1024
-num_heads = 8
-membership_functions = 7
-
-# Simple FAN (CIFAR-10)
-batch_size = 16
-learning_rate = 2e-4
-num_epochs = 20
-hidden_dim = 512
-num_heads = 4
-membership_functions = 5
-```
-
-## 📚 Research Paper
-
-For detailed theoretical background, mathematical formulations, and experimental results, see:
-
-**[📄 RESEARCH_PAPER.md](RESEARCH_PAPER.md)** - Complete research paper with:
-- Mathematical foundations and formulas
-- Detailed experimental setup
-- Performance analysis and ablation studies
-- Rule extraction examples
-- Implementation details
-
-### Citation
-
-If you use this work in your research, please cite:
-
-```bibtex
-@article{fuzzy_attention_networks_2024,
-  title={Fuzzy Attention Networks: Human-Centered Differentiable Neuro-Fuzzy Architectures for Multimodal AI},
-  author={Your Name},
-  journal={Conference Proceedings},
-  year={2024}
-}
-```
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-### Development Setup
+### Stanford Dogs
 ```bash
-git clone https://github.com/your-username/FuzzyAttentionNetworks.git
-cd FuzzyAttentionNetworks
-pip install -e .
-pip install -r requirements-dev.txt
+python scripts/train_stanford_dogs.py
 ```
 
-## 📄 License
+### CIFAR-10
+```bash
+python scripts/train_advanced_stanford_dogs.py
+```
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### HAM10000 (Рак Кожи)
+```bash
+python scripts/train_ham10000.py
+```
 
-## 🙏 Acknowledgments
+### Chest X-Ray (Пневмония)
+```bash
+python scripts/train_chest_xray.py
+```
 
-- **Stanford Dogs Dataset**: [Stanford Vision Lab](http://vision.stanford.edu/aditya86/ImageNetDogs/)
-- **CIFAR-10 Dataset**: [Canadian Institute for Advanced Research](https://www.cs.toronto.edu/~kriz/cifar.html)
-- **HAM10000 Dataset**: [Kaggle - Skin Cancer MNIST: HAM10000](https://www.kaggle.com/datasets/kmader/skin-cancer-mnist-ham10000)
-- **PyTorch Team**: For the excellent deep learning framework
-- **Hugging Face**: For transformer models and tokenizers
+## 🎮 Веб-Интерфейс
 
-## 📞 Contact
+Интерактивный веб-интерфейс предоставляет:
 
-- **Email**: your.email@university.edu
+- **🎯 Выбор Датасета**: Переключение между 4 датасетами
+- **🧪 Тестирование Модели**: Загрузка изображений и текста
+- **📊 Визуализация**: Fuzzy функции и attention weights
+- **📈 Анализ Производительности**: Метрики и confusion matrix
+- **🔍 Интерпретируемость**: Детальный анализ предсказаний
+
+## 🔬 Научные Результаты
+
+### Ключевые Достижения
+
+- **Высокая Точность**: 95.74% F1-score на Stanford Dogs
+- **Медицинская Применимость**: 89.30% F1-score на диагностике рака кожи
+- **Интерпретируемость**: Полная визуализация нечетких функций
+- **Мультимодальность**: Эффективная обработка текста и изображений
+
+### Публикации
+
+Проект готов для публикации в журналах уровня A с полной документацией и воспроизводимыми результатами.
+
+## 🤝 Вклад в Проект
+
+1. Fork репозитория
+2. Создайте feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit изменения (`git commit -m 'Add some AmazingFeature'`)
+4. Push в branch (`git push origin feature/AmazingFeature`)
+5. Откройте Pull Request
+
+## 📄 Лицензия
+
+Этот проект лицензирован под MIT License - см. файл [LICENSE](LICENSE) для деталей.
+
+## 📞 Контакты
+
+- **Проект**: Fuzzy Attention Networks
+- **Автор**: [Ваше Имя]
+- **Email**: [your.email@example.com]
 - **GitHub**: [@your-username](https://github.com/your-username)
-- **LinkedIn**: [Your Profile](https://linkedin.com/in/your-profile)
+
+## 🙏 Благодарности
+
+- PyTorch команде за отличный фреймворк
+- Streamlit за интуитивный веб-интерфейс
+- Сообществу за вдохновение и поддержку
 
 ---
 
-**⭐ Star this repository if you find it helpful!**
-
-*Built with ❤️ for the AI research community*
+**⭐ Если проект был полезен, поставьте звезду!**

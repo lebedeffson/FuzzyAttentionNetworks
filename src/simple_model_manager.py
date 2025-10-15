@@ -190,6 +190,12 @@ class SimpleModelManager:
                 'class_names': ['Actinic Keratoses', 'Basal Cell Carcinoma', 'Benign Keratosis',
                                'Dermatofibroma', 'Melanoma', 'Melanocytic Nevi', 'Vascular Lesions'],
                 'description': 'HAM10000 Skin Lesion Classification - 7 Classes'
+            },
+            'chest_xray': {
+                'model_path': 'models/chest_xray/best_chest_xray_fan_model.pth',
+                'num_classes': 2,
+                'class_names': ['Normal', 'Pneumonia'],
+                'description': 'Chest X-Ray Pneumonia Classification - 2 Classes'
             }
         }
     
@@ -242,6 +248,16 @@ class SimpleModelManager:
                 num_classes=7,
                 num_heads=8,
                 hidden_dim=512,
+                use_bert=True,
+                use_resnet=True
+            )
+        elif dataset_name == 'chest_xray':
+            # Chest X-Ray использует AdvancedFANModel с ResNet50
+            from src.advanced_fan_model import AdvancedFANModel
+            model = AdvancedFANModel(
+                num_classes=2,
+                num_heads=8,  # Исправляем на 8 голов как в обучении
+                hidden_dim=1024,  # Используем стандартный hidden_dim
                 use_bert=True,
                 use_resnet=True
             )
@@ -318,6 +334,11 @@ class SimpleModelManager:
             # Добавляем недостающие ключи для совместимости
             result['prediction'] = result['predictions'][0].item()
             result['all_predictions'] = enhanced_probs[0].cpu().numpy().tolist()
+            
+            # Добавляем название класса
+            info = self.get_model_info(dataset_name)
+            class_names = info['class_names']
+            result['class_name'] = class_names[result['prediction']]
         
         return result
 
