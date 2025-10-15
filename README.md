@@ -1,111 +1,111 @@
-# 🧠 Fuzzy Attention Networks (FAN)
+# Fuzzy Attention Networks (FAN)
 
-**Интерактивная система мультимодальной классификации с нечеткими сетями внимания**
+**Multimodal Classification System with Fuzzy Attention Mechanisms**
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-1.9+-red.svg)](https://pytorch.org)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-green.svg)](https://streamlit.io)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## 🎯 Обзор Проекта
+## Overview
 
-Fuzzy Attention Networks (FAN) - это инновационная система мультимодальной классификации, объединяющая нечеткую логику с механизмами внимания для анализа текстовых и визуальных данных. Система демонстрирует высокую эффективность на различных задачах классификации, включая медицинскую диагностику.
+Fuzzy Attention Networks (FAN) is an innovative multimodal classification system that integrates fuzzy logic with attention mechanisms for analyzing textual and visual data. The system demonstrates high effectiveness across various classification tasks, including medical diagnosis applications.
 
-### ✨ Ключевые Особенности
+### Key Features
 
-- **🧠 Нечеткие Сети Внимания**: Интеграция нечеткой логики с механизмами внимания
-- **🎨 Интерактивный Веб-Интерфейс**: Реальное время визуализации и анализа
-- **🏥 Медицинская Специализация**: Специализированные модели для диагностики
-- **📊 Полная Интерпретируемость**: Визуализация fuzzy функций и attention weights
-- **🌐 Русскоязычный Интерфейс**: Полная локализация для русскоязычных пользователей
+- **🧠 Fuzzy Attention Networks**: Integration of fuzzy logic with attention mechanisms
+- **🎨 Interactive Web Interface**: Real-time visualization and analysis capabilities
+- **🏥 Medical Specialization**: Specialized models for medical diagnosis
+- **📊 Full Interpretability**: Visualization of fuzzy functions and attention weights
+- **🌐 Multilingual Support**: Interface available in multiple languages
 
-## 📊 Поддерживаемые Датасеты
+## Supported Datasets
 
-| Датасет | Классы | F1 Score | Accuracy | Архитектура |
+| Dataset | Classes | F1 Score | Accuracy | Architecture |
 |---------|---------|----------|----------|--------------|
 | **Stanford Dogs** | 20 | **95.74%** | **95.0%** | Advanced FAN + 8-Head Attention |
-| **CIFAR-10** | 10 | **88.08%** | **85.0%** | BERT + ResNet18 + 4-Head FAN |
-| **HAM10000** | 7 | **89.30%** | **75.0%** | Medical FAN + 8-Head Attention |
+| **CIFAR-10** | 10 | **88.0%** | **85.0%** | BERT + ResNet18 + 4-Head FAN |
+| **HAM10000** | 7 | **89.3%** | **75.0%** | Medical FAN + 8-Head Attention |
 | **Chest X-Ray** | 2 | **78.0%** | **75.0%** | Medical FAN + 8-Head Attention |
 
-## 🚀 Быстрый Старт
+## Quick Start
 
-### Установка
+### Installation
 
 ```bash
-# Клонирование репозитория
+# Clone the repository
 git clone https://github.com/your-username/fuzzy-attention-networks.git
 cd fuzzy-attention-networks
 
-# Создание виртуального окружения
+# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
-# или
+# or
 venv\Scripts\activate  # Windows
 
-# Установка зависимостей
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### Запуск Веб-Интерфейса
+### Running the Web Interface
 
 ```bash
-# Запуск интерактивного интерфейса
+# Launch interactive interface
 python -m streamlit run demos/final_working_interface.py --server.port 8501
 ```
 
-Откройте браузер по адресу: **http://localhost:8501**
+Open your browser at: **http://localhost:8501**
 
-## 🏗️ Архитектура Системы
+## System Architecture
 
-### Основные Компоненты
+### Core Components
 
-1. **FuzzyAttention** - Ядро нечеткого внимания
-2. **AdvancedFANModel** - Продвинутая FAN архитектура
-3. **UniversalFANModel** - Универсальная FAN модель
-4. **DatasetManager** - Управление датасетами
-5. **SimpleModelManager** - Управление моделями
+1. **FuzzyAttention** - Core fuzzy attention mechanism
+2. **AdvancedFANModel** - Advanced FAN architecture
+3. **UniversalFANModel** - Universal FAN model
+4. **DatasetManager** - Dataset management
+5. **SimpleModelManager** - Model management
 
-### Нечеткие Функции Принадлежности
+### Fuzzy Membership Functions
 
-Система использует специализированные нечеткие функции для разных типов данных:
+The system utilizes specialized fuzzy functions for different data types:
 
-**Медицинские (Chest X-Ray):**
-- X-Ray: Lung Opacity (непрозрачность легких)
-- X-Ray: Consolidation (консолидация)
-- X-Ray: Air Bronchogram (воздушная бронхограмма)
-- X-Ray: Pleural Effusion (плевральный выпот)
-- X-Ray: Heart Shadow (тень сердца)
+**Medical (Chest X-Ray):**
+- X-Ray: Lung Opacity
+- X-Ray: Consolidation
+- X-Ray: Air Bronchogram
+- X-Ray: Pleural Effusion
+- X-Ray: Heart Shadow
 
-**Общие (Stanford Dogs, CIFAR-10):**
-- Image: Visual Saliency (визуальная значимость)
-- Image: Object Boundaries (границы объектов)
-- Image: Color Patterns (цветовые паттерны)
-- Image: Texture Features (текстурные признаки)
-- Image: Spatial Relations (пространственные отношения)
+**General (Stanford Dogs, CIFAR-10):**
+- Image: Visual Saliency
+- Image: Object Boundaries
+- Image: Color Patterns
+- Image: Texture Features
+- Image: Spatial Relations
 
-## 📁 Структура Проекта
+## Project Structure
 
 ```
 FuzzyAttentionNetworks/
 ├── demos/
-│   └── final_working_interface.py    # Основной веб-интерфейс
+│   └── final_working_interface.py    # Main web interface
 ├── src/
-│   ├── advanced_fan_model.py         # Продвинутая FAN модель
-│   ├── universal_fan_model.py        # Универсальная FAN модель
-│   ├── fuzzy_attention.py            # Ядро нечеткого внимания
-│   ├── dataset_manager.py            # Управление датасетами
-│   ├── simple_model_manager.py       # Управление моделями
-│   └── utils.py                      # Утилиты
+│   ├── advanced_fan_model.py         # Advanced FAN model
+│   ├── universal_fan_model.py        # Universal FAN model
+│   ├── fuzzy_attention.py            # Core fuzzy attention
+│   ├── dataset_manager.py            # Dataset management
+│   ├── simple_model_manager.py       # Model management
+│   └── utils.py                      # Utilities
 ├── scripts/
-│   ├── download_*.py                 # Скрипты загрузки датасетов
-│   └── train_*.py                    # Скрипты обучения моделей
-├── models/                           # Обученные модели
-├── data/                            # Датасеты
-└── diagrams/                        # Диаграммы архитектуры
+│   ├── download_*.py                 # Dataset download scripts
+│   └── train_*.py                    # Model training scripts
+├── models/                           # Trained models
+├── data/                            # Datasets
+└── diagrams/                        # Architecture diagrams
 ```
 
-## 🧪 Обучение Моделей
+## Model Training
 
 ### Stanford Dogs
 ```bash
@@ -117,64 +117,84 @@ python scripts/train_stanford_dogs.py
 python scripts/train_advanced_stanford_dogs.py
 ```
 
-### HAM10000 (Рак Кожи)
+### HAM10000 (Skin Cancer)
 ```bash
 python scripts/train_ham10000.py
 ```
 
-### Chest X-Ray (Пневмония)
+### Chest X-Ray (Pneumonia)
 ```bash
 python scripts/train_chest_xray.py
 ```
 
-## 🎮 Веб-Интерфейс
+## Web Interface
 
-Интерактивный веб-интерфейс предоставляет:
+The interactive web interface provides:
 
-- **🎯 Выбор Датасета**: Переключение между 4 датасетами
-- **🧪 Тестирование Модели**: Загрузка изображений и текста
-- **📊 Визуализация**: Fuzzy функции и attention weights
-- **📈 Анализ Производительности**: Метрики и confusion matrix
-- **🔍 Интерпретируемость**: Детальный анализ предсказаний
+- **🎯 Dataset Selection**: Switch between 4 datasets
+- **🧪 Model Testing**: Upload images and text
+- **📊 Visualization**: Fuzzy functions and attention weights
+- **📈 Performance Analysis**: Metrics and confusion matrices
+- **🔍 Interpretability**: Detailed prediction analysis
 
-## 🔬 Научные Результаты
+## Scientific Results
 
-### Ключевые Достижения
+### Key Achievements
 
-- **Высокая Точность**: 95.74% F1-score на Stanford Dogs
-- **Медицинская Применимость**: 89.30% F1-score на диагностике рака кожи
-- **Интерпретируемость**: Полная визуализация нечетких функций
-- **Мультимодальность**: Эффективная обработка текста и изображений
+- **High Accuracy**: 95.74% F1-score on Stanford Dogs
+- **Medical Applicability**: 89.3% F1-score on skin cancer diagnosis
+- **Interpretability**: Complete visualization of fuzzy functions
+- **Multimodality**: Effective processing of text and images
 
-### Публикации
+### Performance Metrics
 
-Проект готов для публикации в журналах уровня A с полной документацией и воспроизводимыми результатами.
+The system demonstrates robust performance across different domains:
 
-## 🤝 Вклад в Проект
+- **General Classification**: 88-95% F1-score on standard datasets
+- **Medical Diagnosis**: 78-89% F1-score on medical datasets
+- **Interpretability**: Full transparency through fuzzy function visualization
+- **Scalability**: Efficient processing of multimodal inputs
 
-1. Fork репозитория
-2. Создайте feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit изменения (`git commit -m 'Add some AmazingFeature'`)
-4. Push в branch (`git push origin feature/AmazingFeature`)
-5. Откройте Pull Request
+## Technical Specifications
 
-## 📄 Лицензия
+### Model Architectures
 
-Этот проект лицензирован под MIT License - см. файл [LICENSE](LICENSE) для деталей.
+- **Advanced FAN**: 8-head attention, 1024 hidden dimensions
+- **Universal FAN**: 4-head attention, 512 hidden dimensions
+- **Medical FAN**: Specialized for medical diagnosis tasks
 
-## 📞 Контакты
+### Training Configuration
 
-- **Проект**: Fuzzy Attention Networks
-- **Автор**: [Ваше Имя]
+- **Optimizer**: AdamW with learning rate scheduling
+- **Regularization**: Dropout, weight decay, early stopping
+- **Data Augmentation**: Image transformations for robustness
+- **Validation**: Cross-validation with holdout sets
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contact
+
+- **Project**: Fuzzy Attention Networks
+- **Author**: [Your Name]
 - **Email**: [your.email@example.com]
 - **GitHub**: [@your-username](https://github.com/your-username)
 
-## 🙏 Благодарности
+## Acknowledgments
 
-- PyTorch команде за отличный фреймворк
-- Streamlit за интуитивный веб-интерфейс
-- Сообществу за вдохновение и поддержку
+- PyTorch team for the excellent framework
+- Streamlit for the intuitive web interface
+- Community for inspiration and support
 
 ---
 
-**⭐ Если проект был полезен, поставьте звезду!**
+**⭐ If this project was helpful, please give it a star!**
