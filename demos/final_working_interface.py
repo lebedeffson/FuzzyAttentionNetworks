@@ -1246,54 +1246,159 @@ def main():
                         
                         x = np.linspace(x_min, x_max, 200)
                         
-                        # Названия нечетких множеств в зависимости от типа модели
+                        # Названия нечетких множеств в зависимости от типа модели и датасета
                         if fuzzy_params['source'] == 'text_fuzzy_attention':
-                            fuzzy_set_names = [
-                                "Text: Semantic Similarity",
-                                "Text: Word Importance", 
-                                "Text: Context Relevance",
-                                "Text: Syntactic Patterns",
-                                "Text: Semantic Relations",
-                                "Text: Discourse Markers",
-                                "Text: Pragmatic Features"
-                            ]
-                        elif fuzzy_params['source'] == 'image_fuzzy_attention':
-                            if selected_dataset == 'chest_xray':
+                            if selected_dataset == 'stanford_dogs':
                                 fuzzy_set_names = [
-                                    "X-Ray: Lung Opacity",
-                                    "X-Ray: Consolidation", 
-                                    "X-Ray: Air Bronchogram",
-                                    "X-Ray: Pleural Effusion",
-                                    "X-Ray: Heart Shadow"
+                                    "Текст: Порода собаки",
+                                    "Текст: Поведение", 
+                                    "Текст: Размер",
+                                    "Текст: Окрас",
+                                    "Текст: Характер",
+                                    "Текст: Активность",
+                                    "Текст: Среда обитания"
+                                ]
+                            elif selected_dataset == 'cifar10':
+                                fuzzy_set_names = [
+                                    "Текст: Класс объекта",
+                                    "Текст: Форма", 
+                                    "Текст: Цвет",
+                                    "Текст: Текстура",
+                                    "Текст: Размер",
+                                    "Текст: Контекст",
+                                    "Текст: Детали"
+                                ]
+                            elif selected_dataset == 'ham10000':
+                                fuzzy_set_names = [
+                                    "Текст: Тип поражения",
+                                    "Текст: Цвет кожи", 
+                                    "Текст: Размер",
+                                    "Текст: Форма",
+                                    "Текст: Границы",
+                                    "Текст: Текстура",
+                                    "Текст: Симметрия"
+                                ]
+                            elif selected_dataset == 'chest_xray':
+                                fuzzy_set_names = [
+                                    "Текст: Симптомы",
+                                    "Текст: Диагноз", 
+                                    "Текст: История болезни",
+                                    "Текст: Возраст пациента",
+                                    "Текст: Пол",
+                                    "Текст: Жалобы",
+                                    "Текст: Анамнез"
                                 ]
                             else:
                                 fuzzy_set_names = [
-                                    "Image: Visual Saliency",
-                                    "Image: Object Boundaries",
-                                    "Image: Color Patterns",
-                                    "Image: Texture Features",
-                                    "Image: Spatial Relations"
+                                    "Текст: Семантическое сходство",
+                                    "Текст: Важность слов", 
+                                    "Текст: Контекстная релевантность",
+                                    "Текст: Синтаксические паттерны",
+                                    "Текст: Семантические связи",
+                                    "Текст: Дискурсивные маркеры",
+                                    "Текст: Прагматические признаки"
+                                ]
+                        elif fuzzy_params['source'] == 'image_fuzzy_attention':
+                            if selected_dataset == 'stanford_dogs':
+                                fuzzy_set_names = [
+                                    "Изображение: Форма головы",
+                                    "Изображение: Размер ушей", 
+                                    "Изображение: Длина морды",
+                                    "Изображение: Форма тела",
+                                    "Изображение: Размер лап",
+                                    "Изображение: Окрас шерсти",
+                                    "Изображение: Пропорции"
+                                ]
+                            elif selected_dataset == 'cifar10':
+                                fuzzy_set_names = [
+                                    "Изображение: Форма объекта",
+                                    "Изображение: Цветовая схема", 
+                                    "Изображение: Текстура",
+                                    "Изображение: Контраст",
+                                    "Изображение: Границы",
+                                    "Изображение: Детали",
+                                    "Изображение: Композиция"
+                                ]
+                            elif selected_dataset == 'ham10000':
+                                fuzzy_set_names = [
+                                    "Изображение: Цвет поражения",
+                                    "Изображение: Форма границ", 
+                                    "Изображение: Размер",
+                                    "Изображение: Текстура",
+                                    "Изображение: Симметрия",
+                                    "Изображение: Контраст",
+                                    "Изображение: Детали"
+                                ]
+                            elif selected_dataset == 'chest_xray':
+                                fuzzy_set_names = [
+                                    "Рентген: Легочная непрозрачность",
+                                    "Рентген: Консолидация", 
+                                    "Рентген: Воздушная бронхограмма",
+                                    "Рентген: Плевральный выпот",
+                                    "Рентген: Тень сердца",
+                                    "Рентген: Легочные поля",
+                                    "Рентген: Диафрагма"
+                                ]
+                            else:
+                                fuzzy_set_names = [
+                                    "Изображение: Визуальная значимость",
+                                    "Изображение: Границы объектов",
+                                    "Изображение: Цветовые паттерны",
+                                    "Изображение: Текстуры",
+                                    "Изображение: Пространственные связи"
                                 ]
                         elif fuzzy_params['source'] == 'cross_attention':
-                            if selected_dataset == 'chest_xray':
+                            if selected_dataset == 'stanford_dogs':
                                 fuzzy_set_names = [
-                                    "Cross: Clinical-Image Alignment",
-                                    "Cross: Symptom Mapping",
-                                    "Cross: Diagnostic Fusion",
-                                    "Cross: Medical Attention",
-                                    "Cross: Modality Balance"
+                                    "Связь: Текст-Изображение",
+                                    "Связь: Описание-Внешность", 
+                                    "Связь: Характер-Поведение",
+                                    "Связь: Размер-Пропорции",
+                                    "Связь: Окрас-Цвет",
+                                    "Связь: Активность-Поза",
+                                    "Связь: Среда-Контекст"
+                                ]
+                            elif selected_dataset == 'cifar10':
+                                fuzzy_set_names = [
+                                    "Связь: Текст-Изображение",
+                                    "Связь: Класс-Форма", 
+                                    "Связь: Описание-Цвет",
+                                    "Связь: Контекст-Детали",
+                                    "Связь: Признаки-Текстура",
+                                    "Связь: Размер-Пропорции",
+                                    "Связь: Семантика-Визуал"
+                                ]
+                            elif selected_dataset == 'ham10000':
+                                fuzzy_set_names = [
+                                    "Связь: Описание-Визуал",
+                                    "Связь: Симптомы-Признаки", 
+                                    "Связь: Диагноз-Изображение",
+                                    "Связь: Цвет-Тон",
+                                    "Связь: Форма-Границы",
+                                    "Связь: Размер-Масштаб",
+                                    "Связь: Текстура-Детали"
+                                ]
+                            elif selected_dataset == 'chest_xray':
+                                fuzzy_set_names = [
+                                    "Связь: Клиника-Рентген",
+                                    "Связь: Симптомы-Изображение", 
+                                    "Связь: Диагноз-Признаки",
+                                    "Связь: Анамнез-Картина",
+                                    "Связь: Жалобы-Находки",
+                                    "Связь: История-Результат",
+                                    "Связь: Модальности-Баланс"
                                 ]
                             else:
                                 fuzzy_set_names = [
-                                    "Cross: Text-Image Alignment",
-                                    "Cross: Semantic Mapping",
-                                    "Cross: Feature Fusion",
-                                    "Cross: Attention Weights",
-                                    "Cross: Modality Balance"
+                                    "Связь: Текст-Изображение",
+                                    "Связь: Семантическое сопоставление",
+                                    "Связь: Слияние признаков",
+                                    "Связь: Веса внимания",
+                                    "Связь: Баланс модальностей"
                                 ]
                         else:
                             # Fallback для неизвестных типов
-                            fuzzy_set_names = [f"Fuzzy Set {i+1}" for i in range(len(fuzzy_params['centers']))]
+                            fuzzy_set_names = [f"Нечеткое множество {i+1}" for i in range(len(fuzzy_params['centers']))]
                         
                         fig_fuzzy = go.Figure()
 
@@ -1307,20 +1412,32 @@ def main():
                                 line=dict(width=3)
                             ))
 
-                        title = f"Fuzzy Membership Functions (from {fuzzy_params['source']})" if fuzzy_params['type'] == 'real' else "Default Membership Functions"
+                        # Создаем русский заголовок в зависимости от датасета
+                        if selected_dataset == 'stanford_dogs':
+                            dataset_title = "Породы собак"
+                        elif selected_dataset == 'cifar10':
+                            dataset_title = "CIFAR-10"
+                        elif selected_dataset == 'ham10000':
+                            dataset_title = "Рак кожи (HAM10000)"
+                        elif selected_dataset == 'chest_xray':
+                            dataset_title = "Рентген грудной клетки"
+                        else:
+                            dataset_title = "Неизвестный датасет"
+                            
+                        title = f"Функции нечеткой принадлежности - {dataset_title}" if fuzzy_params['type'] == 'real' else f"Функции нечеткой принадлежности - {dataset_title} (по умолчанию)"
                         fig_fuzzy.update_layout(
                             title=title,
-                            xaxis_title="Feature Value (x)",
-                            yaxis_title="Membership Degree μ(x)",
+                            xaxis_title="Значение признака (x)",
+                            yaxis_title="Степень принадлежности μ(x)",
                             height=500,
                             xaxis=dict(
-                                title="Feature Value (x)",
+                                title="Значение признака (x)",
                                 showgrid=True,
                                 gridcolor='lightgray',
                                 range=[x_min, x_max]
                             ),
                             yaxis=dict(
-                                title="Membership Degree μ(x)",
+                                title="Степень принадлежности μ(x)",
                                 range=[0, 1.1],
                                 showgrid=True,
                                 gridcolor='lightgray'
@@ -1328,14 +1445,14 @@ def main():
                         )
                         st.plotly_chart(fig_fuzzy, use_container_width=True, key="fuzzy_functions_main")
 
-                        st.markdown("**Membership Function Details:**")
-                        st.markdown("- **Type:** Bell-shaped")
-                        st.markdown("- **Formula:** 1 / (1 + ((x - center) / width)²)")
-                        st.markdown("- **Parameters:** Learnable centers and widths")
-                        st.markdown("- **Heads:** Multiple parallel attention heads")
-                        st.markdown(f"- **Source:** {fuzzy_params['source']}")
-                        st.markdown(f"- **Data Type:** {'Real from model' if fuzzy_params['type'] == 'real' else 'Default fallback'}")
-                        st.markdown(f"- **Number of Functions:** {len(fuzzy_params['centers'])}")
+                        st.markdown("**Детали функций принадлежности:**")
+                        st.markdown("- **Тип:** Колоколообразная (Bell-shaped)")
+                        st.markdown("- **Формула:** 1 / (1 + ((x - center) / width)²)")
+                        st.markdown("- **Параметры:** Обучаемые центры и ширины")
+                        st.markdown("- **Головы внимания:** Множественные параллельные головы")
+                        st.markdown(f"- **Источник:** {fuzzy_params['source']}")
+                        st.markdown(f"- **Тип данных:** {'Реальные из модели' if fuzzy_params['type'] == 'real' else 'По умолчанию'}")
+                        st.markdown(f"- **Количество функций:** {len(fuzzy_params['centers'])}")
 
                     with tab3:
                         st.markdown("### 📈 Производительность Модели")
@@ -1947,22 +2064,23 @@ def main():
                         with col1:
                             st.markdown(f"**ID:** `{rule.rule_id}`")
                             st.markdown(f"**Тип:** {rule.semantic_type}")
-                            st.markdown(f"**Условие текста:** {rule.condition_text}")
-                            st.markdown(f"**Условие изображения:** {rule.condition_image}")
+                            st.markdown(f"**Условие текста:** {rule.conditions.get('text_condition', 'N/A')}")
+                            st.markdown(f"**Условие изображения:** {rule.conditions.get('image_condition', 'N/A')}")
                             st.markdown(f"**Заключение:** {rule.conclusion}")
 
                         with col2:
                             st.markdown(f"**Уверенность:** {rule.confidence:.1%}")
-                            st.markdown(f"**Сила:** {rule.strength:.3f}")
-                            st.markdown(f"**Голова внимания:** {rule.attention_head}")
-                            st.markdown(f"**T-norm:** {rule.tnorm_type}")
+                            st.markdown(f"**Сила:** {rule.attention_strength:.3f}")
+                            st.markdown(f"**Голова внимания:** {rule.conditions.get('attention_head', 'N/A')}")
+                            st.markdown(f"**T-norm:** {rule.conditions.get('tnorm_type', 'N/A')}")
 
                         st.markdown("**Лингвистическое описание:**")
-                        st.info(rule.linguistic_description)
+                        st.info(rule.description)
 
                         # Показываем значения membership
                         st.markdown("**Значения membership функций:**")
-                        for key, value in rule.membership_values.items():
+                        membership_values = rule.conditions.get('membership_values', {})
+                        for key, value in membership_values.items():
                             st.write(f"- {key}: {value:.3f}")
 
                 # Генерируем сводку
@@ -1998,7 +2116,7 @@ def main():
                     )
                     st.plotly_chart(fig, use_container_width=True, key="rule_types")
 
-                st.info(f"💡 {summary['summary']}")
+                st.info(f"💡 {summary['text_summary']}")
             else:
                 st.warning("⚠️ Правила не найдены. Попробуйте изменить параметры.")
 

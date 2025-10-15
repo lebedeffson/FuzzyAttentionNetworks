@@ -307,3 +307,39 @@ class ImprovedRuleExtractor:
                     rules.append(rule)
         
         return rules
+    
+    def generate_rule_summary(self, rules: List[SemanticFuzzyRule]) -> Dict[str, Any]:
+        """Генерирует сводку по правилам"""
+        if not rules:
+            return {
+                'total_rules': 0,
+                'avg_confidence': 0.0,
+                'max_confidence': 0.0,
+                'min_confidence': 0.0,
+                'avg_strength': 0.0,
+                'rule_types': {},
+                'text_summary': "Правила не найдены"
+            }
+        
+        # Группируем по типам
+        by_type = {}
+        for rule in rules:
+            if rule.semantic_type not in by_type:
+                by_type[rule.semantic_type] = []
+            by_type[rule.semantic_type].append(rule)
+        
+        # Вычисляем статистики
+        confidences = [rule.confidence for rule in rules]
+        strengths = [rule.attention_strength for rule in rules]
+        
+        summary = {
+            'total_rules': len(rules),
+            'avg_confidence': sum(confidences) / len(confidences),
+            'max_confidence': max(confidences),
+            'min_confidence': min(confidences),
+            'avg_strength': sum(strengths) / len(strengths),
+            'rule_types': {rule_type: len(type_rules) for rule_type, type_rules in by_type.items()},
+            'text_summary': f"Найдено {len(rules)} правил"
+        }
+        
+        return summary
