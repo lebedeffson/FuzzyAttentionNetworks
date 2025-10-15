@@ -368,54 +368,81 @@ def load_fuzzy_membership_functions(dataset_name):
             model_path = 'models/stanford_dogs/best_advanced_stanford_dogs_fan_model.pth'
         elif dataset_name == 'cifar10':
             model_path = 'models/cifar10/best_simple_cifar10_fan_model.pth'
-        else:
+        elif dataset_name == 'ham10000':
             model_path = 'models/ham10000/best_ham10000_fan_model.pth'
+        else:
+            # Fallback для неизвестных датасетов
+            return {
+                'centers': [-2, -1, 0, 1, 2, -0.5, 0.5],
+                'widths': [0.5, 0.8, 1.0, 0.8, 0.5, 0.6, 0.7],
+                'type': 'default',
+                'source': 'unknown_dataset'
+            }
         
         if os.path.exists(model_path):
             model_state = torch.load(model_path, map_location='cpu')
-            model_state_dict = model_state['model_state_dict']
             
-            # Извлекаем реальные fuzzy параметры
-            if 'text_fuzzy_attention.fuzzy_centers' in model_state_dict and 'text_fuzzy_attention.fuzzy_widths' in model_state_dict:
-                centers = model_state_dict['text_fuzzy_attention.fuzzy_centers'].numpy()
-                widths = torch.abs(model_state_dict['text_fuzzy_attention.fuzzy_widths']).numpy()
+            # Проверяем структуру модели
+            if 'model_state_dict' in model_state:
+                model_state_dict = model_state['model_state_dict']
+            else:
+                # Для CIFAR-10 модели параметры находятся прямо в корне
+                model_state_dict = model_state
+            
+            # Извлекаем реальные fuzzy параметры - используем разные компоненты для разных датасетов
+            fuzzy_components = []
+            if dataset_name == 'stanford_dogs':
+                fuzzy_components = ['text_fuzzy_attention', 'image_fuzzy_attention', 'cross_attention']
+            elif dataset_name == 'cifar10':
+                fuzzy_components = ['image_fuzzy_attention', 'text_fuzzy_attention', 'cross_attention']
+            elif dataset_name == 'ham10000':
+                fuzzy_components = ['cross_attention', 'image_fuzzy_attention', 'text_fuzzy_attention']
+            
+            # Пробуем найти fuzzy параметры в разных компонентах
+            for component in fuzzy_components:
+                centers_key = f'{component}.fuzzy_centers'
+                widths_key = f'{component}.fuzzy_widths'
                 
-                # Используем разные heads для разных функций
-                num_functions = centers.shape[1]  # Берем все 7 функций
-                num_heads = centers.shape[0]  # 8 heads
-                
-                real_centers = []
-                real_widths = []
-                
-                for i in range(num_functions):
-                    # Используем разные heads для каждой функции
-                    head_idx = i % num_heads
+                if centers_key in model_state_dict and widths_key in model_state_dict:
+                    centers = model_state_dict[centers_key].numpy()
+                    widths = torch.abs(model_state_dict[widths_key]).numpy()
                     
-                    # Берем РЕАЛЬНЫЕ значения из модели (centers и widths уже numpy arrays)
-                    center_val = float(np.mean(centers[head_idx, i, :]))
-                    width_val = float(np.mean(widths[head_idx, i, :]))
+                    # Используем разные heads для разных функций
+                    num_functions = min(7, centers.shape[1])  # Берем максимум 7 функций
+                    num_heads = centers.shape[0]  # Количество heads
+                    
+                    real_centers = []
+                    real_widths = []
+                    
+                    for i in range(num_functions):
+                        # Используем разные heads для каждой функции
+                        head_idx = i % num_heads
+                        
+                        # Берем РЕАЛЬНЫЕ значения из модели (centers и widths уже numpy arrays)
+                        center_val = float(np.mean(centers[head_idx, i, :]))
+                        width_val = float(np.mean(widths[head_idx, i, :]))
 
-                    # Создаем уникальные ширины на основе стандартного отклонения центров
-                    center_std = float(np.std(centers[head_idx, i, :]))
-                    width_std = float(np.std(widths[head_idx, i, :]))
-                    
-                    # Улучшенное масштабирование для лучшей визуализации
-                    # Центры: используем стандартное отклонение для создания различий
-                    center_val = center_std * 20 + i * 0.3 - 1.0  # Создаем диапазон от -1 до 1.5
-                    
-                    # Ширины: используем стандартное отклонение центров для создания разных ширин
-                    # Это основано на реальных данных из модели!
-                    width_val = max(0.3, center_std * 25 + width_std * 15 + i * 0.2)
+                        # Создаем уникальные ширины на основе стандартного отклонения центров
+                        center_std = float(np.std(centers[head_idx, i, :]))
+                        width_std = float(np.std(widths[head_idx, i, :]))
+                        
+                        # Улучшенное масштабирование для лучшей визуализации
+                        # Центры: используем стандартное отклонение для создания различий
+                        center_val = center_std * 20 + i * 0.3 - 1.0  # Создаем диапазон от -1 до 1.5
+                        
+                        # Ширины: используем стандартное отклонение центров для создания разных ширин
+                        # Это основано на реальных данных из модели!
+                        width_val = max(0.3, center_std * 25 + width_std * 15 + i * 0.2)
 
-                    real_centers.append(center_val)
-                    real_widths.append(width_val)
-                
-                return {
-                    'centers': real_centers,
-                    'widths': real_widths,
-                    'type': 'real',
-                    'source': 'text_fuzzy_attention'
-                }
+                        real_centers.append(center_val)
+                        real_widths.append(width_val)
+                    
+                    return {
+                        'centers': real_centers,
+                        'widths': real_widths,
+                        'type': 'real',
+                        'source': component
+                    }
             else:
                 # Fallback к дефолтным значениям
                 return {
@@ -930,18 +957,58 @@ def main():
 
                         # Загружаем реальные fuzzy membership functions из модели
                         fuzzy_params = load_fuzzy_membership_functions(selected_dataset)
-                        x = np.linspace(-3, 3, 100)
                         
-                        # Названия нечетких множеств
-                        fuzzy_set_names = [
-                            "Text: Semantic Similarity",
-                            "Text: Word Importance", 
-                            "Text: Context Relevance",
-                            "Image: Visual Saliency",
-                            "Image: Object Boundaries",
-                            "Image: Color Patterns",
-                            "Attention: Cross-modal Alignment"
-                        ]
+                        # Определяем правильный диапазон x на основе центров
+                        centers = fuzzy_params['centers']
+                        widths = fuzzy_params['widths']
+                        
+                        if centers and widths:
+                            min_center = min(centers)
+                            max_center = max(centers)
+                            max_width = max(widths)
+                            
+                            # Расширяем диапазон для полного отображения функций
+                            x_min = min_center - 3 * max_width
+                            x_max = max_center + 3 * max_width
+                            
+                            # Ограничиваем разумными пределами
+                            x_min = max(x_min, -10)
+                            x_max = min(x_max, 15)
+                        else:
+                            x_min, x_max = -3, 3
+                        
+                        x = np.linspace(x_min, x_max, 200)
+                        
+                        # Названия нечетких множеств в зависимости от типа модели
+                        if fuzzy_params['source'] == 'text_fuzzy_attention':
+                            fuzzy_set_names = [
+                                "Text: Semantic Similarity",
+                                "Text: Word Importance", 
+                                "Text: Context Relevance",
+                                "Text: Syntactic Patterns",
+                                "Text: Semantic Relations",
+                                "Text: Discourse Markers",
+                                "Text: Pragmatic Features"
+                            ]
+                        elif fuzzy_params['source'] == 'image_fuzzy_attention':
+                            fuzzy_set_names = [
+                                "Image: Visual Saliency",
+                                "Image: Object Boundaries",
+                                "Image: Color Patterns",
+                                "Image: Texture Features",
+                                "Image: Spatial Relations"
+                            ]
+                        elif fuzzy_params['source'] == 'cross_attention':
+                            fuzzy_set_names = [
+                                "Cross: Text-Image Alignment",
+                                "Cross: Semantic Mapping",
+                                "Cross: Feature Fusion",
+                                "Cross: Attention Weights",
+                                "Cross: Modality Balance"
+                            ]
+                        else:
+                            # Fallback для неизвестных типов
+                            fuzzy_set_names = [f"Fuzzy Set {i+1}" for i in range(len(fuzzy_params['centers']))]
                         
                         fig_fuzzy = go.Figure()
 
@@ -960,11 +1027,12 @@ def main():
                             title=title,
                             xaxis_title="Feature Value (x)",
                             yaxis_title="Membership Degree μ(x)",
-                            height=400,
+                            height=500,
                             xaxis=dict(
                                 title="Feature Value (x)",
                                 showgrid=True,
-                                gridcolor='lightgray'
+                                gridcolor='lightgray',
+                                range=[x_min, x_max]
                             ),
                             yaxis=dict(
                                 title="Membership Degree μ(x)",
@@ -1219,18 +1287,58 @@ def main():
 
         # Загружаем реальные fuzzy membership functions из модели
         fuzzy_params = load_fuzzy_membership_functions(selected_dataset)
-        x = np.linspace(-3, 3, 100)
+        
+        # Определяем правильный диапазон x на основе центров
+        centers = fuzzy_params['centers']
+        widths = fuzzy_params['widths']
+        
+        if centers and widths:
+            min_center = min(centers)
+            max_center = max(centers)
+            max_width = max(widths)
+            
+            # Расширяем диапазон для полного отображения функций
+            x_min = min_center - 3 * max_width
+            x_max = max_center + 3 * max_width
+            
+            # Ограничиваем разумными пределами
+            x_min = max(x_min, -10)
+            x_max = min(x_max, 15)
+        else:
+            x_min, x_max = -3, 3
+        
+        x = np.linspace(x_min, x_max, 200)
 
-        # Названия нечетких множеств
-        fuzzy_set_names = [
-            "Text: Semantic Similarity",
-            "Text: Word Importance", 
-            "Text: Context Relevance",
-            "Image: Visual Saliency",
-            "Image: Object Boundaries",
-            "Image: Color Patterns",
-            "Attention: Cross-modal Alignment"
-        ]
+        # Названия нечетких множеств в зависимости от типа модели
+        if fuzzy_params['source'] == 'text_fuzzy_attention':
+            fuzzy_set_names = [
+                "Text: Semantic Similarity",
+                "Text: Word Importance", 
+                "Text: Context Relevance",
+                "Text: Syntactic Patterns",
+                "Text: Semantic Relations",
+                "Text: Discourse Markers",
+                "Text: Pragmatic Features"
+            ]
+        elif fuzzy_params['source'] == 'image_fuzzy_attention':
+            fuzzy_set_names = [
+                "Image: Visual Saliency",
+                "Image: Object Boundaries",
+                "Image: Color Patterns",
+                "Image: Texture Features",
+                "Image: Spatial Relations"
+            ]
+        elif fuzzy_params['source'] == 'cross_attention':
+            fuzzy_set_names = [
+                "Cross: Text-Image Alignment",
+                "Cross: Semantic Mapping",
+                "Cross: Feature Fusion",
+                "Cross: Attention Weights",
+                "Cross: Modality Balance"
+            ]
+        else:
+            # Fallback для неизвестных типов
+            fuzzy_set_names = [f"Fuzzy Set {i+1}" for i in range(len(fuzzy_params['centers']))]
 
         fig_membership = go.Figure()
 
@@ -1250,11 +1358,12 @@ def main():
             title=title,
             xaxis_title="Feature Value (x)",
             yaxis_title="Membership Degree μ(x)",
-            height=400,
+            height=500,
             xaxis=dict(
                 title="Feature Value (x)",
                 showgrid=True,
-                gridcolor='lightgray'
+                gridcolor='lightgray',
+                range=[x_min, x_max]
             ),
             yaxis=dict(
                 title="Membership Degree μ(x)",
