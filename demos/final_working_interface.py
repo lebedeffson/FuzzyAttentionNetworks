@@ -1203,7 +1203,7 @@ def main():
     set_seed(42)
 
     # Заголовок
-    st.markdown('<div class="main-header"><h1>🧠 Нечеткие Сети Внимания</h1><p>Интерактивный интерфейс для мультимодальной классификации</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header"><h1>🧠 Fuzzy Attention Networks (FAN)</h1><p>Интерактивный интерфейс для мультимодальной классификации</p></div>', unsafe_allow_html=True)
     
     # Загружаем данные
     tokenizer = load_tokenizer()
@@ -1256,7 +1256,7 @@ def main():
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        st.markdown("## 📊 Dataset Information")
+        st.markdown("## 📊 Информация о Датасете")
         
         info_col1, info_col2, info_col3 = st.columns(3)
         
@@ -1290,11 +1290,11 @@ def main():
                 st.markdown(f"• {class_name}")
     
     with col2:
-        st.markdown("## 🎛️ Model Status")
+        st.markdown("## 🎛️ Статус Модели")
         
         if model_exists:
             st.success("✅ Model file found!")
-            st.markdown(f"**Path:** `{info['model_path']}`")
+            st.markdown(f"**Путь:** `{info['model_path']}`")
             
             # Информация о модели
             with st.expander("🏗️ Model Architecture"):
@@ -1336,18 +1336,18 @@ def main():
                     """)
         else:
             st.error("❌ Model file not found!")
-            st.markdown(f"**Expected:** `{info['model_path']}`")
+            st.markdown(f"**Ожидается:** `{info['model_path']}`")
     
     # Разделитель
     st.markdown("---")
     
     # Интерфейс для тестирования
-    st.markdown("## 🧪 Model Testing")
+    st.markdown("## 🧪 Тестирование Модели")
     
     test_col1, test_col2 = st.columns([1, 1])
     
     with test_col1:
-        st.markdown("### 📝 Input Text")
+        st.markdown("### 📝 Входной Текст")
         if selected_dataset == 'stanford_dogs':
             default_text = "A beautiful golden retriever dog playing in the park"
         elif selected_dataset == 'ham10000':
@@ -1362,7 +1362,7 @@ def main():
         )
     
     with test_col2:
-        st.markdown("### 🖼️ Input Image")
+        st.markdown("### 🖼️ Входное Изображение")
         uploaded_file = st.file_uploader(
             "Загрузите изображение:",
             type=['png', 'jpg', 'jpeg'],
@@ -1454,7 +1454,7 @@ def main():
                 )
                 
                 # Показываем результаты
-                st.markdown("## 📈 Prediction Results")
+                st.markdown("## 📈 Результаты Предсказания")
                 
                 pred_col1, pred_col2, pred_col3 = st.columns(3)
                 
@@ -1507,49 +1507,85 @@ def main():
                 
                 with pred_col3:
                     # Дополнительная информация
-                    st.markdown("**Model Details:**")
-                    st.markdown(f"• Dataset: {selected_dataset}")
-                    st.markdown(f"• Text Length: {len(input_text)} chars")
-                    st.markdown(f"• Image Size: {image.size}")
-                    st.markdown(f"• Model Status: {'✅ Loaded' if model_exists else '❌ Missing'}")
-                    st.markdown(f"• Device: {'CUDA' if torch.cuda.is_available() else 'CPU'}")
+                    st.markdown("**Детали Модели:**")
+                    st.markdown(f"• Датасет: {selected_dataset}")
+                    st.markdown(f"• Длина текста: {len(input_text)} символов")
+                    st.markdown(f"• Размер изображения: {image.size}")
+                    st.markdown(f"• Статус модели: {'✅ Загружена' if model_exists else '❌ Отсутствует'}")
+                    st.markdown(f"• Устройство: {'CUDA' if torch.cuda.is_available() else 'CPU'}")
                 
                 # Интерпретируемость
                 if 'explanations' in result:
-                    st.markdown("## 🔍 Model Interpretability")
+                    st.markdown("## 🔍 Интерпретируемость Модели")
                     
                     # Создаем вкладки для разных визуализаций
                     tab1, tab2, tab3, tab4 = st.tabs(
-                        ["🎯 Attention Weights", "📊 Fuzzy Functions", "📈 Performance", "🔧 Rules"])
+                        ["🎯 Веса Внимания", "📊 Нечеткие Функции", "📈 Производительность", "🔧 Правила"])
                     
                     with tab1:
-                        st.markdown("### 🎯 Attention Weights Visualization")
+                        st.markdown("### 🎯 Визуализация Весов Внимания")
                         
                         # Загружаем реальные attention weights из модели
                         attention_weights = load_attention_weights(selected_dataset)
                         
-                        # Heatmap для attention weights
-                        fig_attention = go.Figure(data=go.Heatmap(
-                            z=attention_weights[0],
-                            colorscale='Viridis',
-                            showscale=True
-                        ))
-                        fig_attention.update_layout(
-                            title="Attention Weights (Head 1)",
-                            xaxis_title="Key Positions",
-                            yaxis_title="Query Positions",
-                            height=400
-                        )
+                        # Heatmap для attention weights с улучшенной визуализацией
+                        if attention_weights is not None and len(attention_weights.shape) == 3:
+                            # Берем первый head и нормализуем для лучшей визуализации
+                            attention_data = attention_weights[0]
+                            
+                            # Нормализуем данные для лучшего контраста
+                            attention_data = (attention_data - attention_data.min()) / (attention_data.max() - attention_data.min() + 1e-8)
+                            
+                            # Создаем подписи для осей
+                            text_labels = [f"T{i}" for i in range(10)] + [f"I{i}" for i in range(10)]
+                            
+                            fig_attention = go.Figure(data=go.Heatmap(
+                                z=attention_data,
+                                colorscale='RdYlBu_r',  # Более контрастная палитра
+                                showscale=True,
+                                hoverongaps=False,
+                                text=np.round(attention_data, 3),
+                                texttemplate="%{text}",
+                                textfont={"size": 8}
+                            ))
+                            
+                            fig_attention.update_layout(
+                                title="Attention Weights (Head 1) - Нормализованные",
+                                xaxis_title="Key Positions (T=Text, I=Image)",
+                                yaxis_title="Query Positions (T=Text, I=Image)",
+                                height=500,
+                                width=600,
+                                xaxis=dict(
+                                    tickmode='array',
+                                    tickvals=list(range(20)),
+                                    ticktext=text_labels,
+                                    tickangle=45
+                                ),
+                                yaxis=dict(
+                                    tickmode='array',
+                                    tickvals=list(range(20)),
+                                    ticktext=text_labels
+                                )
+                            )
+                        else:
+                            # Fallback если данные не загружены
+                            fig_attention = go.Figure()
+                            fig_attention.add_annotation(
+                                text="Attention weights не загружены",
+                                xref="paper", yref="paper",
+                                x=0.5, y=0.5, showarrow=False,
+                                font=dict(size=16)
+                            )
                         st.plotly_chart(fig_attention, use_container_width=True, key="attention_weights_main")
                         
-                        st.markdown("**Fuzzy Attention Mechanism:**")
-                        st.markdown("- Bell-shaped membership functions")
-                        st.markdown("- Learnable centers and widths")
-                        st.markdown("- Multi-head architecture")
-                        st.markdown("- Soft attention boundaries")
+                        st.markdown("**Механизм Нечеткого Внимания:**")
+                        st.markdown("- Колоколообразные функции принадлежности")
+                        st.markdown("- Обучаемые центры и ширины")
+                        st.markdown("- Многоголовная архитектура")
+                        st.markdown("- Мягкие границы внимания")
                     
                     with tab2:
-                        st.markdown("### 📊 Fuzzy Membership Functions")
+                        st.markdown("### 📊 Нечеткие Функции Принадлежности")
                         st.markdown("""
                         **Нечеткие множества для модуляции внимания:**
                         - **Текстовые признаки:** Семантическое сходство, важность слов, контекстная релевантность
@@ -1780,8 +1816,8 @@ def main():
                         )
                         st.plotly_chart(fig_fuzzy, use_container_width=True, key="fuzzy_functions_main")
 
-                        st.markdown("**Детали функций принадлежности:**")
-                        st.markdown("- **Тип:** Колоколообразная (Bell-shaped)")
+                        st.markdown("**Детали Функций Принадлежности:**")
+                        st.markdown("- **Тип:** Колоколообразная")
                         st.markdown("- **Формула:** 1 / (1 + ((x - center) / width)²)")
                         st.markdown("- **Параметры:** Обучаемые центры и ширины")
                         st.markdown("- **Головы внимания:** Множественные параллельные головы")
@@ -1790,7 +1826,7 @@ def main():
                         st.markdown(f"- **Количество функций:** {len(fuzzy_params['centers'])}")
                     
                     with tab3:
-                        st.markdown("### 📈 Model Performance")
+                        st.markdown("### 📈 Производительность Модели")
                         
                         # Загружаем реальные метрики из модели
                         model_metrics = load_model_metrics(selected_dataset)
@@ -1830,11 +1866,11 @@ def main():
                             st.metric("Размер Модели", "Доступна")
                     
                     with tab4:
-                        st.markdown("### 🔧 Extracted Rules from Model")
+                        st.markdown("### 🔧 Извлеченные Правила из Модели")
 
                         # Извлекаем РЕАЛЬНЫЕ правила из модели
                         try:
-                            from improved_rule_extractor import ImprovedRuleExtractor
+                            from src.improved_rule_extractor import ImprovedRuleExtractor
                             extractor = ImprovedRuleExtractor()
                             
                             # Загружаем реальные attention weights
@@ -1904,33 +1940,41 @@ def main():
                         except Exception as e:
                             st.error(f"Ошибка извлечения правил: {e}")
 
-                        st.markdown("**Rule Extraction Process:**")
-                        st.markdown("1. Analyze attention weights")
-                        st.markdown("2. Extract fuzzy membership patterns")
-                        st.markdown("3. Generate linguistic rules")
-                        st.markdown("4. Validate rule confidence")
+                        st.markdown("**Процесс Извлечения Правил:**")
+                        st.markdown("1. Анализ весов внимания")
+                        st.markdown("2. Извлечение паттернов нечетких функций")
+                        st.markdown("3. Генерация лингвистических правил")
+                        st.markdown("4. Валидация уверенности правил")
                         
-                        # График уверенности правил (реальные данные)
-                        base_confidence = 0.95 if selected_dataset == 'stanford_dogs' else 0.88
-                        rule_confidence = np.linspace(base_confidence - 0.1, base_confidence + 0.05, len(rules))
-                        rule_confidence = np.clip(rule_confidence, 0.6, 0.95)
+                        # График уверенности правил (используем реальные данные из правил)
+                        if rules:
+                            # rule.confidence уже в долях (0-1), не нужно делить на 100
+                            rule_confidence = [rule.confidence for rule in rules]
+                            rule_names = [f"Правило {i + 1}" for i in range(len(rules))]
+                        else:
+                            rule_confidence = []
+                            rule_names = []
                         # Расширенная палитра цветов для правил
                         rule_colors = [
                             '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff',
                             '#5f27cd', '#00d2d3', '#ff9f43', '#10ac84', '#ee5a24', '#0984e3', '#6c5ce7'
                         ]
-                        fig_rules = go.Figure(data=[
-                            go.Bar(
-                                x=[f"Rule {i + 1}" for i in range(len(rules))],
-                                y=rule_confidence,
-                                marker_color=[rule_colors[i % len(rule_colors)] for i in range(len(rule_confidence))],
-                                text=[f'{c:.2f}' for c in rule_confidence],
-                                textposition='auto'
-                            )
-                        ])
+                        if rule_confidence:  # Только если есть правила
+                            fig_rules = go.Figure(data=[
+                                go.Bar(
+                                    x=rule_names,
+                                    y=rule_confidence,
+                                    marker_color=[rule_colors[i % len(rule_colors)] for i in range(len(rule_confidence))],
+                                    text=[f'{c:.1%}' for c in rule_confidence],
+                                    textposition='auto'
+                                )
+                            ])
+                        else:
+                            fig_rules = go.Figure()  # Пустой график
                         fig_rules.update_layout(
-                            title="Rule Confidence Scores",
-                            yaxis_title="Confidence",
+                            title="Уверенность Правил",
+                            xaxis_title="Правила",
+                            yaxis_title="Уверенность",
                             yaxis=dict(range=[0, 1]),
                             height=300
                         )
@@ -1942,19 +1986,19 @@ def main():
     
     # Новая секция с интерактивными возможностями
     st.markdown("---")
-    st.markdown("## 🎮 Interactive Features")
+    st.markdown("## 🎮 Интерактивные Возможности")
 
     # Создаем вкладки для основных функций
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-        ["📊 Model Comparison", "🔍 Attention Visualization", "📈 Training Progress", "🎯 Performance Analysis",
-         "🧠 Fuzzy Rules Demo", "🔧 Extracted Rules"])
+        ["📊 Сравнение Моделей", "🔍 Визуализация Внимания", "📈 Прогресс Обучения", "🎯 Анализ Производительности",
+         "🧠 Демо Нечетких Правил", "🔧 Извлеченные Правила"])
     
     # Сохраняем состояние активной вкладки
     if 'active_tab' not in st.session_state:
         st.session_state.active_tab = 0
 
     with tab1:
-        st.markdown("### 📊 Model Comparison")
+        st.markdown("### 📊 Сравнение Моделей")
 
         # Загружаем РЕАЛЬНЫЕ метрики для каждой модели
         datasets = ['stanford_dogs', 'cifar10', 'ham10000', 'chest_xray']
@@ -2035,23 +2079,26 @@ def main():
         st.plotly_chart(fig_accuracy, use_container_width=True, key="accuracy_comparison")
     
     # Таблица сравнения
-        st.markdown("### 📋 Detailed Comparison")
+        st.markdown("### 📋 Детальное Сравнение")
     import pandas as pd
     df = pd.DataFrame(comparison_data)
     st.dataframe(df, use_container_width=True)
     
     with tab2:
-        st.markdown("### 🔍 Attention Visualization")
+        st.markdown("### 🔍 Визуализация Внимания")
 
         # Симуляция attention weights
         st.markdown("**Визуализация Весов Нечеткого Внимания**")
         st.markdown("""
-        **Как должны выглядеть графики:**
+        **Как интерпретировать графики:**
         - **Heatmap матрицы:** Показывает, на какие части входной последовательности модель обращает внимание
-        - **Яркие цвета (желтый/белый):** Высокое внимание к этой позиции
+        - **Яркие цвета (красный/желтый):** Высокое внимание к этой позиции
         - **Темные цвета (синий/фиолетовый):** Низкое внимание
+        - **T0-T9:** Текстовые токены (первые 10 позиций)
+        - **I0-I9:** Визуальные токены (последние 10 позиций)
         - **Диагональные паттерны:** Модель фокусируется на близких позициях
         - **Разные heads:** Каждый head специализируется на разных типах внимания
+        - **Нормализация:** Значения от 0 до 1 для лучшего контраста
         """)
 
         # Создаем симуляцию attention weights
@@ -2061,36 +2108,67 @@ def main():
         # Загружаем реальные attention weights из модели
         attention_weights = load_attention_weights(selected_dataset)
 
-        # Нормализуем weights
-        attention_weights = attention_weights / attention_weights.sum(axis=-1, keepdims=True)
+        if attention_weights is not None and len(attention_weights.shape) == 3:
+            # Проверяем реальное количество heads
+            actual_heads = attention_weights.shape[0]
+            max_head = max(0, actual_heads - 1)
+            selected_head = st.slider(f"Выберите Attention Head (0-{max_head})", 0, max_head, 0)
+            
+            # Дополнительная проверка безопасности
+            if selected_head >= actual_heads:
+                selected_head = 0
 
-        # Создаем heatmap для каждого head
-        # Проверяем реальное количество heads
-        actual_heads = attention_weights.shape[0]
-        max_head = max(0, actual_heads - 1)
-        selected_head = st.slider(f"Select Attention Head (0-{max_head})", 0, max_head, 0)
-        
-        # Дополнительная проверка безопасности
-        if selected_head >= actual_heads:
-            selected_head = 0
+            # Берем выбранный head и нормализуем для лучшей визуализации
+            attention_data = attention_weights[selected_head]
+            
+            # Нормализуем данные для лучшего контраста
+            attention_data = (attention_data - attention_data.min()) / (attention_data.max() - attention_data.min() + 1e-8)
+            
+            # Создаем подписи для осей
+            text_labels = [f"T{i}" for i in range(10)] + [f"I{i}" for i in range(10)]
+            
+            fig_attention = go.Figure(data=go.Heatmap(
+                z=attention_data,
+                colorscale='RdYlBu_r',  # Более контрастная палитра
+                showscale=True,
+                hoverongaps=False,
+                text=np.round(attention_data, 3),
+                texttemplate="%{text}",
+                textfont={"size": 8}
+            ))
 
-        fig_attention = go.Figure(data=go.Heatmap(
-            z=attention_weights[selected_head],
-            colorscale='Viridis',
-            showscale=True
-        ))
-
-        fig_attention.update_layout(
-            title=f"Attention Weights - Head {selected_head}",
-            xaxis_title="Key Position",
-            yaxis_title="Query Position",
-            height=500
-        )
+            fig_attention.update_layout(
+                title=f"Attention Weights - Head {selected_head} (Нормализованные)",
+                xaxis_title="Key Positions (T=Text, I=Image)",
+                yaxis_title="Query Positions (T=Text, I=Image)",
+                height=500,
+                width=600,
+                xaxis=dict(
+                    tickmode='array',
+                    tickvals=list(range(20)),
+                    ticktext=text_labels,
+                    tickangle=45
+                ),
+                yaxis=dict(
+                    tickmode='array',
+                    tickvals=list(range(20)),
+                    ticktext=text_labels
+                )
+            )
+        else:
+            # Fallback если данные не загружены
+            fig_attention = go.Figure()
+            fig_attention.add_annotation(
+                text="Attention weights не загружены",
+                xref="paper", yref="paper",
+                x=0.5, y=0.5, showarrow=False,
+                font=dict(size=16)
+            )
 
         st.plotly_chart(fig_attention, use_container_width=True, key="attention_visualization")
 
         # Информация о fuzzy membership functions
-        st.markdown("**Fuzzy Membership Functions**")
+        st.markdown("**Нечеткие Функции Принадлежности**")
         st.markdown("""
         **Fuzzy sets for attention modulation:**
         - **Text Features:** Semantic similarity, word importance, context relevance
@@ -2434,85 +2512,104 @@ def main():
             st.session_state.image_importance = 0.8
         if 'attention_weight' not in st.session_state:
             st.session_state.attention_weight = 0.7
+        if 'conf_thresh' not in st.session_state:
+            st.session_state.conf_thresh = 0.05  # Снижаем с 0.15 до 0.05
+        if 'strong_thresh' not in st.session_state:
+            st.session_state.strong_thresh = 0.15  # Снижаем с 0.25 до 0.15
+        if 'max_rules' not in st.session_state:
+            st.session_state.max_rules = 15  # Увеличиваем с 10 до 15
 
         with col1:
-            st.markdown("**Extraction Parameters**")
+            st.markdown("**Параметры Извлечения**")
             confidence_threshold = st.slider(
-                "Confidence Threshold", 
+                "Порог Уверенности", 
                 0.0, 1.0, 
-                0.1, 
-                0.05, 
+                st.session_state.get('conf_thresh', 0.05),  # Снижаем с 0.15 до 0.05
+                0.01,  # Уменьшаем шаг с 0.05 до 0.01
                 key="conf_thresh", 
-                help="Threshold for filtering weak rules"
+                help="Порог для фильтрации слабых правил (выше = более селективно)"
             )
             strong_threshold = st.slider(
-                "Strong Rules Threshold", 
+                "Порог Сильных Правил", 
                 0.0, 1.0, 
-                0.2, 
-                0.05, 
+                st.session_state.get('strong_thresh', 0.15),  # Снижаем с 0.25 до 0.15
+                0.01,  # Уменьшаем шаг с 0.05 до 0.01
                 key="strong_thresh", 
-                help="Threshold for highlighting strong rules"
+                help="Порог для выделения сильных правил (выше = более селективно)"
             )
             max_rules = st.slider(
-                "Max Rules", 
-                1, 20, 
-                10, 
+                "Максимум Правил", 
+                1, 50,  # Увеличиваем максимум с 20 до 50
+                st.session_state.get('max_rules', 15),  # Увеличиваем по умолчанию с 10 до 15
                 key="max_rules", 
-                help="Maximum number of rules to extract"
+                help="Максимальное количество извлекаемых правил"
             )
             rule_type = st.selectbox(
-                "Rule Type",
-                ["Semantic", "Linguistic", "Technical"],
+                "Тип Правил",
+                ["Семантические", "Лингвистические", "Технические"],
                 key="rule_type", 
-                help="Select type of rules to extract"
+                help="Выберите тип извлекаемых правил"
             )
 
         with col2:
-            st.markdown("**Input Data**")
+            st.markdown("**Входные Данные**")
             text_importance = st.slider(
-                "Text Importance", 
+                "Важность Текста", 
                 0.0, 1.0, 
                 0.5, 
                 0.1, 
                 key="text_imp", 
-                help="Weight of text features"
+                help="Вес текстовых признаков"
             )
             image_importance = st.slider(
-                "Image Importance", 
+                "Важность Изображения", 
                 0.0, 1.0, 
                 0.5, 
                 0.1, 
                 key="img_imp", 
-                help="Weight of visual features"
+                help="Вес признаков изображения"
             )
             attention_weight = st.slider(
-                "Attention Weight", 
+                "Вес Внимания", 
                 0.0, 1.0, 
                 0.7, 
                 0.1, 
                 key="attn_weight", 
-                help="Weight of attention mechanism"
+                help="Вес механизма внимания"
             )
 
         # Extract rules only when button is clicked
-        if st.button("🔍 Extract Rules from Model", key="extract_rules_btn"):
-            st.markdown(f"**Extracted {rule_type.lower()} rules from {selected_dataset.upper()} model:**")
+        if st.button("🔍 Извлечь Правила из Модели", key="extract_rules_btn"):
+            st.markdown(f"**Извлечены {rule_type.lower()} правила из модели {selected_dataset.upper()}:**")
+
+            # Отладочная информация о текущих значениях ползунков
+            st.info(f"🎛️ Текущие значения ползунков: threshold={confidence_threshold}, strong={strong_threshold}, max_rules={max_rules}")
+            st.info(f"🎛️ Session state: conf_thresh={st.session_state.get('conf_thresh', 'НЕТ')}, strong_thresh={st.session_state.get('strong_thresh', 'НЕТ')}, max_rules={st.session_state.get('max_rules', 'НЕТ')}")
 
             # Загружаем РЕАЛЬНЫЕ данные из модели
             try:
-                from improved_rule_extractor import ImprovedRuleExtractor
+                from src.improved_rule_extractor import ImprovedRuleExtractor
                 
-                # Создаем улучшенный извлекатель
+                # Создаем улучшенный извлекатель с параметрами из ползунков
                 extractor = ImprovedRuleExtractor(
                     attention_threshold=confidence_threshold,
                     strong_threshold=strong_threshold,
                     max_rules_per_head=max_rules
                 )
+                
+                # Отладочная информация
+                st.info(f"🔧 Параметры извлечения: threshold={confidence_threshold}, strong={strong_threshold}, max_rules={max_rules}")
+                
                 # Загружаем реальные attention weights
                 attention_weights = load_attention_weights(selected_dataset)
                 if attention_weights is not None and hasattr(attention_weights, '__len__') and len(attention_weights) > 0:
-                    # Берем первый head и конвертируем в 2D
-                    attention_weights = torch.tensor(attention_weights[0])  # Берем первый head, убираем размерность heads
+                    # Для мультимодальных моделей нужны все heads
+                    if len(attention_weights.shape) == 3:  # (num_heads, seq_len, seq_len)
+                        attention_weights = torch.tensor(attention_weights)  # Берем все heads
+                        st.info(f"📊 Загружено attention weights: {attention_weights.shape}")
+                    else:  # (seq_len, seq_len)
+                        attention_weights = torch.tensor(attention_weights[0])  # Берем первый head
+                        st.info(f"📊 Загружено attention weights: {attention_weights.shape}")
                 else:
                     st.error("Не удалось загрузить attention weights из модели")
                     st.stop()
@@ -2568,9 +2665,23 @@ def main():
                 head_idx=0,
                 rule_type=selected_rule_type
             )
+            
+            # Отладочная информация о параметрах экстрактора
+            st.info(f"🔧 Параметры экстрактора: threshold={extractor.attention_threshold}, strong={extractor.strong_threshold}, max_rules={extractor.max_rules_per_head}")
+            
+            # Показываем статистику фильтрации
+            if hasattr(extractor, '_last_filter_stats'):
+                st.info(f"📊 Статистика фильтрации: {extractor._last_filter_stats}")
 
             if rules:
                 st.success(f"✅ Извлечено {len(rules)} {rule_type.lower()} правил из модели {selected_dataset.upper()}")
+                
+                # Статистика уверенности правил
+                confidences = [rule.confidence for rule in rules]
+                min_conf = min(confidences)
+                max_conf = max(confidences)
+                avg_conf = sum(confidences) / len(confidences)
+                st.info(f"📊 Уверенность правил: мин={min_conf:.1%}, макс={max_conf:.1%}, средняя={avg_conf:.1%}")
                 
                 # Отладочная информация о типах правил
                 rule_types = {}

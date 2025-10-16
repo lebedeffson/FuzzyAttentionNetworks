@@ -76,6 +76,10 @@ class ImprovedRuleExtractor:
         rules = []
         
         # Получаем attention weights для выбранной головы
+        # Конвертируем numpy array в torch tensor если нужно
+        if not isinstance(attention_weights, torch.Tensor):
+            attention_weights = torch.tensor(attention_weights, dtype=torch.float32)
+        
         if attention_weights.dim() == 3:
             attn = attention_weights[head_idx]
         else:
@@ -96,11 +100,21 @@ class ImprovedRuleExtractor:
         
         # 1. Извлекаем все сильные связи из attention matrix
         strong_connections = []
+        all_strengths = []  # Собираем все attention strengths для адаптивной метрики
+        total_connections = 0
         for i in range(attn.shape[0]):
             for j in range(attn.shape[1]):
                 strength = attn[i, j].item()
-                if strength > self.attention_threshold * 0.3:  # Очень низкий порог
+                all_strengths.append(strength)  # Собираем все значения
+                total_connections += 1
+                if strength > self.attention_threshold:  # Используем реальный порог из ползунка
                     strong_connections.append((i, j, strength))
+        
+        # Отладочная информация
+        print(f"DEBUG: Всего связей: {total_connections}, прошло фильтр: {len(strong_connections)}, threshold: {self.attention_threshold}")
+        
+        # Сохраняем статистику для отображения в интерфейсе
+        self._last_filter_stats = f"Всего связей: {total_connections}, прошло фильтр: {len(strong_connections)} (порог: {self.attention_threshold})"
         
         # Сортируем по силе
         strong_connections.sort(key=lambda x: x[2], reverse=True)
@@ -152,7 +166,19 @@ class ImprovedRuleExtractor:
         # Сортируем по уверенности
         rules.sort(key=lambda x: x.confidence, reverse=True)
         
-        # Возвращаем ВСЕ правила
+        # Отладочная информация о количестве правил
+        total_rules = len(rules)
+        print(f"DEBUG: Создано правил: {total_rules}, max_rules_per_head: {self.max_rules_per_head}")
+        
+        # Ограничиваем количество правил согласно max_rules_per_head
+        if self.max_rules_per_head > 0:
+            rules = rules[:self.max_rules_per_head]
+            print(f"DEBUG: Ограничено до {len(rules)} правил")
+        
+        # Обновляем статистику
+        self._last_filter_stats += f", создано правил: {total_rules}, показано: {len(rules)}"
+        
+        # Возвращаем ограниченное количество правил
         return rules
     
     def _extract_text_to_image_rules(self, attn, text_tokens, image_tokens, text_len, image_start, rule_type="semantic"):
@@ -166,7 +192,7 @@ class ImprovedRuleExtractor:
                     
                     if True:  # Убираем дополнительную фильтрацию, так как connections уже отфильтрованы
                         rule_type = 'text_to_image'
-                        confidence = self._calculate_realistic_confidence(strength, 'text_to_image', i, j - image_start, text_tokens, image_tokens)
+                        confidence = self._calculate_realistic_confidence(strength, 'text_to_image', i, j - image_start, text_tokens, image_tokens, all_strengths)
                         
                         rule = SemanticFuzzyRule(
                             rule_id=f"T2I_{i}_{j}",
@@ -198,7 +224,7 @@ class ImprovedRuleExtractor:
                     
                     if True:  # Убираем дополнительную фильтрацию, так как connections уже отфильтрованы
                         rule_type = 'image_to_text'
-                        confidence = self._calculate_realistic_confidence(strength, 'image_to_text', i - image_start, j, image_tokens, text_tokens)
+                        confidence = self._calculate_realistic_confidence(strength, 'image_to_text', i - image_start, j, image_tokens, text_tokens, all_strengths)
                         
                         rule = SemanticFuzzyRule(
                             rule_id=f"I2T_{i}_{j}",
@@ -230,7 +256,7 @@ class ImprovedRuleExtractor:
                     
                     if True:  # Убираем дополнительную фильтрацию, так как connections уже отфильтрованы
                         rule_type = 'text_to_text'
-                        confidence = self._calculate_realistic_confidence(strength, 'text_to_text', i, j, text_tokens, text_tokens)
+                        confidence = self._calculate_realistic_confidence(strength, 'text_to_text', i, j, text_tokens, text_tokens, all_strengths)
                         
                         rule = SemanticFuzzyRule(
                             rule_id=f"T2T_{i}_{j}",
@@ -263,7 +289,7 @@ class ImprovedRuleExtractor:
                         
                         if True:  # Убираем дополнительную фильтрацию, так как connections уже отфильтрованы
                             rule_type = 'image_to_image'
-                            confidence = self._calculate_realistic_confidence(strength, 'image_to_image', i - image_start, j - image_start, image_tokens, image_tokens)
+                            confidence = self._calculate_realistic_confidence(strength, 'image_to_image', i - image_start, j - image_start, image_tokens, image_tokens, all_strengths)
                             
                             rule = SemanticFuzzyRule(
                                 rule_id=f"I2I_{i}_{j}",
@@ -529,7 +555,7 @@ class ImprovedRuleExtractor:
             image_condition = f"semantic_target='{target_tokens[j]}'"
             
         # Вычисляем реалистичную уверенность на основе нескольких факторов
-        confidence = self._calculate_realistic_confidence(strength, rule_type, i, j, source_tokens, target_tokens)
+        confidence = self._calculate_realistic_confidence(strength, rule_type, i, j, source_tokens, target_tokens, None)
         
         return SemanticFuzzyRule(
             rule_id=f"SEMANTIC_{rule_type}_{i}_{j}",
@@ -601,7 +627,7 @@ class ImprovedRuleExtractor:
             image_condition = f"linguistic_target='{target_tokens[j]}'"
             
         # Вычисляем реалистичную уверенность для лингвистических правил
-        confidence = self._calculate_realistic_confidence(strength, rule_type, i, j, source_tokens, target_tokens)
+        confidence = self._calculate_realistic_confidence(strength, rule_type, i, j, source_tokens, target_tokens, None)
         
         return SemanticFuzzyRule(
             rule_id=f"LINGUISTIC_{rule_type}_{i}_{j}",
@@ -675,7 +701,7 @@ class ImprovedRuleExtractor:
             image_condition = f"technical_target[{j}]='{target_tokens[j]}'"
             
         # Вычисляем реалистичную уверенность для технических правил
-        confidence = self._calculate_realistic_confidence(strength, rule_type, i, j, source_tokens, target_tokens)
+        confidence = self._calculate_realistic_confidence(strength, rule_type, i, j, source_tokens, target_tokens, None)
         
         return SemanticFuzzyRule(
             rule_id=f"TECHNICAL_{rule_type}_{i}_{j}",
@@ -707,49 +733,70 @@ class ImprovedRuleExtractor:
             conclusion=conclusion
         )
     
-    def _calculate_realistic_confidence(self, strength, rule_type, i, j, source_tokens, target_tokens):
-        """Вычисляет уверенность на основе РЕАЛЬНЫХ данных из модели"""
+    def _calculate_realistic_confidence(self, strength, rule_type, i, j, source_tokens, target_tokens, all_strengths=None):
+        """Финальная формула уверенности - оптимальный баланс всех факторов"""
         
-        # Уверенность должна основываться на реальных данных из модели
-        # Используем attention weight как основу, но нормализуем правильно
+        # 1. БАЗОВОЕ масштабирование attention weights
+        # Используем логарифмическое масштабирование для лучшего распределения
+        attention_factor = np.log(strength / 0.035 + 1) / np.log(0.3 / 0.035 + 1)
         
-        # 1. Базовый фактор - нормализованная сила attention weight
-        # Attention weights уже нормализованы через softmax, поэтому используем их напрямую
-        attention_factor = strength
+        # 2. ОПТИМАЛЬНЫЕ веса типов связей
+        type_weights = {
+            'image_to_image': 1.8,      # Самые важные
+            'image_to_text': 1.5,       # Очень важные
+            'text_to_image': 1.2,       # Важные
+            'text_to_text': 0.8         # Базовые (снижены)
+        }
+        type_factor = type_weights.get(rule_type, 0.8)
         
-        # 2. Фактор типа связи - разные типы имеют разную надежность
-        if rule_type == "text_to_text":
-            # Текст-текст связи наиболее надежны
-            type_factor = 0.9
-        elif rule_type == "text_to_image":
-            # Текст-изображение связи менее надежны
-            type_factor = 0.7
-        elif rule_type == "image_to_image":
-            # Изображение-изображение связи наименее надежны
-            type_factor = 0.6
+        # 3. Семантическая близость
+        similarity_factor = 1.0
+        if source_tokens[i] == target_tokens[j]:
+            similarity_factor = 1.4  # +40% для идентичных
+        elif any(word in source_tokens[i].lower() for word in ['собака', 'морда', 'уши', 'лапы']) and \
+             any(word in target_tokens[j].lower() for word in ['собака', 'морда', 'уши', 'лапы']):
+            similarity_factor = 1.2  # +20% для семантически близких
+        
+        # 4. Позиционный фактор
+        position_factor = 1.0 + (1.0 - (i + j) / 20) * 0.3  # До +30%
+        
+        # 5. Статистическая значимость
+        if self.attention_threshold > 0:
+            significance_factor = 1.0 + min(strength / self.attention_threshold - 1, 1.0) * 0.2  # До +20%
         else:
-            type_factor = 0.5
+            significance_factor = 1.0  # Если threshold = 0, не применяем бонус
         
-        # 3. Фактор позиции - правила в начале последовательности важнее
-        position_factor = self._calculate_position_factor(i, j, len(source_tokens))
+        # 6. Фактор качества attention weights
+        quality_factor = 1.0
+        if strength > 0.25:
+            quality_factor = 1.2  # +20% для очень высокого внимания
+        elif strength > 0.2:
+            quality_factor = 1.1  # +10% для высокого внимания
         
-        # 4. Фактор семантической близости токенов
-        similarity_factor = self._calculate_token_similarity(source_tokens[i], target_tokens[j])
+        # 7. Контекстная релевантность
+        context_factor = 1.0
+        if rule_type in ['image_to_text', 'text_to_image']:
+            context_factor = 1.1  # +10% для межмодальных связей
         
-        # 5. Фактор статистической значимости относительно порога
-        significance_factor = min(strength / self.attention_threshold, 1.0) if self.attention_threshold > 0 else 0.5
+        # 8. Фактор редкости типа связи
+        rarity_factor = 1.0
+        if rule_type in ['image_to_image', 'image_to_text']:
+            rarity_factor = 1.05  # +5% за редкость
         
-        # Комбинируем факторы с весами, основанными на реальных данных
-        confidence = (
-            attention_factor * 0.5 +      # Основной фактор - реальная сила attention
-            type_factor * 0.2 +           # Тип связи
-            position_factor * 0.15 +      # Позиция в последовательности
-            similarity_factor * 0.1 +     # Семантическая близость
-            significance_factor * 0.05    # Статистическая значимость
-        )
+        # 9. НОВЫЙ фактор: дифференциация по attention strength
+        # Создаем больше вариативности на основе точного значения strength
+        strength_factor = 1.0 + (strength - 0.1) * 2.0  # 0.1 → 1.0, 0.3 → 1.4
         
-        # Ограничиваем уверенность разумными пределами (10%-95%)
-        return max(0.1, min(0.95, confidence))
+        # Финальная формула
+        confidence = (attention_factor * type_factor * similarity_factor * 
+                     position_factor * significance_factor * quality_factor * 
+                     context_factor * rarity_factor * strength_factor)
+        
+        # Мягкое ограничение с лучшим распределением
+        confidence = 1 / (1 + np.exp(-1.5 * (confidence - 1.0)))  # 0.0 - 1.0
+        
+        # Финальное ограничение
+        return np.clip(confidence, 0.2, 0.9)  # 20% - 90%
     
     def _calculate_position_factor(self, i, j, total_length):
         """Вычисляет фактор позиции - правила в начале последовательности важнее"""
@@ -760,10 +807,11 @@ class ImprovedRuleExtractor:
         i_norm = i / total_length
         j_norm = j / total_length
         
-        # Правила в начале последовательности получают больший вес
-        position_factor = 1.0 - (i_norm + j_norm) / 2.0
+        # Правила в начале последовательности получают больший вес (менее экстремально)
+        avg_position = (i_norm + j_norm) / 2.0
+        position_factor = 0.8 + 0.2 * (1.0 - avg_position)  # От 0.8 до 1.0
         
-        return max(0.3, min(1.0, position_factor))
+        return max(0.5, min(1.0, position_factor))  # Более мягкий диапазон
     
     def _calculate_token_similarity(self, token1, token2):
         """Вычисляет схожесть между токенами"""
@@ -786,16 +834,50 @@ class ImprovedRuleExtractor:
         
         jaccard = intersection / union if union > 0 else 0.0
         
-        # Добавляем бонус за семантическую близость (простая эвристика)
+        # Добавляем бонус за семантическую близость с приоритетом визуальных признаков
         semantic_bonus = 0.0
-        if any(word in token1.lower() for word in ['собака', 'порода', 'лапа']) and \
-           any(word in token2.lower() for word in ['собака', 'порода', 'лапа']):
-            semantic_bonus = 0.2
+        
+        # Визуальные признаки получают больший бонус
+        visual_words = ['морда', 'уши', 'лапы', 'хвост', 'шерсть', 'глаза', 'нос', 'пасть', 'тело', 'поза']
+        text_words = ['собака', 'порода', 'лапа', 'хвост', 'ухо', 'морда', 'шерсть', 'размер', 'окрас', 'характер']
+        
+        # Бонус для визуальных признаков (выше приоритет)
+        if any(word in token1.lower() for word in visual_words) and \
+           any(word in token2.lower() for word in visual_words):
+            semantic_bonus = 0.4  # Увеличенный бонус для визуальных связей
+        elif any(word in token1.lower() for word in text_words) and \
+             any(word in token2.lower() for word in text_words):
+            semantic_bonus = 0.2  # Обычный бонус для текстовых связей
         elif any(word in token1.lower() for word in ['пневмония', 'легкие', 'рентген']) and \
              any(word in token2.lower() for word in ['пневмония', 'легкие', 'рентген']):
-            semantic_bonus = 0.2
+            semantic_bonus = 0.2  # Медицинские термины
         
         return min(1.0, jaccard + semantic_bonus)
+    
+    def _calculate_multimodal_factor(self, rule_type, source_tokens, target_tokens):
+        """Вычисляет фактор мультимодальности - бонус за связи между модальностями"""
+        
+        # Базовый фактор
+        multimodal_factor = 0.5
+        
+        # Бонус за связи между разными модальностями
+        if rule_type in ["image_to_text", "text_to_image"]:
+            multimodal_factor = 0.9  # Высокий бонус за межмодальные связи
+        
+        # Дополнительный бонус за семантически связанные пары
+        visual_text_pairs = [
+            ('морда', 'собака'), ('уши', 'собака'), ('лапы', 'собака'),
+            ('хвост', 'собака'), ('шерсть', 'собака'), ('глаза', 'собака'),
+            ('нос', 'собака'), ('пасть', 'собака'), ('тело', 'собака')
+        ]
+        
+        for visual, text in visual_text_pairs:
+            if (visual in source_tokens and text in target_tokens) or \
+               (text in source_tokens and visual in target_tokens):
+                multimodal_factor = 1.0  # Максимальный бонус за семантически связанные пары
+                break
+        
+        return multimodal_factor
 
     def _extract_semantic_rules(self, attn, text_tokens, image_tokens, text_len, image_start, strong_connections):
         """Извлекает семантические правила - фокус на семантически значимых связях"""
