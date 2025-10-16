@@ -2,6 +2,11 @@ digraph FAN_Architecture {
     rankdir=TB;
     size="12,14";
     dpi=300;
+    label="Fuzzy Attention Networks (FAN) Architecture\nMultimodal Classification with Fuzzy Modulation";
+    labelloc="t";
+    fontname="Arial";
+    fontsize=14;
+    fontcolor="#000000";
     
     // Node settings - clear contrasts
     node [fontname="Arial", fontsize=10, shape=box, style=filled, penwidth=1.5];

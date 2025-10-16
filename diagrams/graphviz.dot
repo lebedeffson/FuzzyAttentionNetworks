@@ -8,7 +8,7 @@ digraph FAN_Architecture {
     edge [fontname="Arial", fontsize=9, penwidth=1.5, color="#333333"];
     
     // Входные данные - светлые с темным текстом
-    text_input [label="Текстовый вход\n\"Золотистый ретривер\"", fillcolor="#E6F3FF", shape=ellipse, fontcolor="#000000", penwidth=2];
+    text_input [label="Текстовый вход", fillcolor="#E6F3FF", shape=ellipse, fontcolor="#000000", penwidth=2];
     image_input [label="Изображение\n224×224×3", fillcolor="#E6FFE6", shape=ellipse, fontcolor="#000000", penwidth=2];
     
     // Текстовый путь - светлые серые
