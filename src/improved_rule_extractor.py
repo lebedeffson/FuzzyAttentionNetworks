@@ -27,9 +27,9 @@ class ImprovedRuleExtractor:
     """Улучшенный извлекатель семантических правил"""
     
     def __init__(self, 
-                 attention_threshold: float = 0.1,
+                 attention_threshold: float = 0.01,
                  strong_threshold: float = 0.15,
-                 max_rules_per_head: int = 10):
+                 max_rules_per_head: int = 35):
         """
         Инициализация извлекателя правил
         
@@ -575,7 +575,7 @@ class ImprovedRuleExtractor:
                 'tnorm_type': 'max',  # Семантические правила используют max
                 'membership_values': {
                     'semantic_weight': strength,
-                    'semantic_threshold': 0.1,
+                    'semantic_threshold': self.attention_threshold,
                     'semantic_confidence': {
                         'semantic_strength': strength,
                         'semantic_type': rule_type,
@@ -649,7 +649,7 @@ class ImprovedRuleExtractor:
                     'linguistic': strength,
                     'semantic': strength * 0.9,
                     'weight': strength,
-                    'threshold': 0.1,
+                    'threshold': self.attention_threshold,
                     'confidence_factors': {
                         'attention_strength': strength,
                         'rule_type': rule_type,

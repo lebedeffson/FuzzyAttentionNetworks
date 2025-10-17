@@ -18,6 +18,52 @@ import torchvision.transforms as transforms
 import random
 
 # Function for creating understandable rule interpretation
+def create_simple_rule_display(rule, i):
+    """Создает понятное отображение правила в простом формате"""
+    
+    # Извлекаем информацию из правила
+    conclusion = rule.conclusion
+    confidence = rule.confidence
+    strength = rule.attention_strength
+    rule_type = rule.semantic_type
+    
+    # Определяем тип связи и создаем понятное описание
+    import re
+    
+    if rule_type == "text_to_text":
+        words = re.findall(r"'([^']+)'", conclusion)
+        if len(words) >= 2:
+            word1, word2 = words[0], words[1]
+            if word1 == word2:
+                return f"**Правило {i}:** Слово '{word1}' имеет высокую важность в тексте\n  - Уверенность: {confidence:.1%} | Сила связи: {strength:.3f}"
+            else:
+                return f"**Правило {i}:** Слова '{word1}' и '{word2}' связаны в тексте\n  - Уверенность: {confidence:.1%} | Сила связи: {strength:.3f}"
+    
+    elif rule_type == "text_to_image":
+        words = re.findall(r"'([^']+)'", conclusion)
+        if len(words) >= 2:
+            word, feature = words[0], words[1]
+            return f"**Правило {i}:** Текст '{word}' связан с визуальным признаком '{feature}'\n  - Уверенность: {confidence:.1%} | Сила связи: {strength:.3f}"
+    
+    elif rule_type == "image_to_text":
+        words = re.findall(r"'([^']+)'", conclusion)
+        if len(words) >= 2:
+            feature, word = words[0], words[1]
+            return f"**Правило {i}:** Визуальный признак '{feature}' связан с текстом '{word}'\n  - Уверенность: {confidence:.1%} | Сила связи: {strength:.3f}"
+    
+    elif rule_type == "image_to_image":
+        words = re.findall(r"'([^']+)'", conclusion)
+        if len(words) >= 2:
+            feature1, feature2 = words[0], words[1]
+            if feature1 == feature2:
+                return f"**Правило {i}:** Визуальный признак '{feature1}' очень важен\n  - Уверенность: {confidence:.1%} | Сила связи: {strength:.3f}"
+            else:
+                return f"**Правило {i}:** Визуальные признаки '{feature1}' и '{feature2}' связаны\n  - Уверенность: {confidence:.1%} | Сила связи: {strength:.3f}"
+    
+    # Fallback для неизвестных типов
+    return f"**Правило {i}:** {conclusion}\n  - Уверенность: {confidence:.1%} | Сила связи: {strength:.3f}"
+
+
 def create_rule_interpretation(rule, rule_type, dataset):
     """Creates understandable rule interpretation for user"""
     
@@ -1826,7 +1872,7 @@ def main():
                         st.markdown(f"- **Количество функций:** {len(fuzzy_params['centers'])}")
                     
                     with tab3:
-                        st.markdown("### 📈 Производительность Модели")
+                        st.markdown("### 🎯 Анализ Производительности")
                         
                         # Загружаем реальные метрики из модели
                         model_metrics = load_model_metrics(selected_dataset)
@@ -1904,6 +1950,9 @@ def main():
                                     image_tokens = ["визуальный_признак1", "визуальный_признак2", "визуальный_признак3", "визуальный_признак4", "визуальный_признак5", "визуальный_признак6", "визуальный_признак7", "визуальный_признак8", "визуальный_признак9", "визуальный_признак10"]
                                     class_names = ["класс1", "класс2", "класс3", "класс4"]
                                 
+                                # Инициализируем переменную rules
+                                rules = []
+                                
                                 # Извлекаем правила выбранного типа
                                 rule_type_mapping = {
                                     "Семантические": "semantic",
@@ -1912,24 +1961,26 @@ def main():
                                 }
                                 selected_rule_type = rule_type_mapping.get(st.session_state.rule_type, "semantic")
                                 
-                                rules = extractor.extract_semantic_rules(
-                                    attention_weights,
-                                    text_tokens,
-                                    image_tokens=image_tokens,
-                                    class_names=class_names,
-                                    head_idx=0,
-                                    rule_type=selected_rule_type
-                                )
+                                try:
+                                    rules = extractor.extract_semantic_rules(
+                                        attention_weights,
+                                        text_tokens,
+                                        image_tokens=image_tokens,
+                                        class_names=class_names,
+                                        head_idx=0,
+                                        rule_type=selected_rule_type
+                                    )
+                                except Exception as e:
+                                    st.error(f"Ошибка при извлечении правил: {e}")
+                                    rules = []
                                 
                                 if rules:
                                     st.success(f"✅ Извлечено {len(rules)} правил из модели {selected_dataset.upper()}")
                                     
-                                    # Показываем правила
-                                    for i, rule in enumerate(rules[:10], 1):  # Показываем первые 10 правил
-                                        st.markdown(f"**Rule {i}:** {rule.conclusion}")
-                                        st.markdown(f"  - Условие: {rule.conditions.get('text_condition', 'N/A')}")
-                                        st.markdown(f"  - Уверенность: {rule.confidence:.1%}")
-                                        st.markdown(f"  - Сила: {rule.attention_strength:.3f}")
+                                    # Показываем правила в понятном формате
+                                    for i, rule in enumerate(rules, 1):  # Показываем все правила
+                                        rule_display = create_simple_rule_display(rule, i)
+                                        st.markdown(rule_display)
                                     
                                     st.markdown("---")
                                 else:
@@ -1990,8 +2041,8 @@ def main():
 
     # Создаем вкладки для основных функций
     tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
-        ["📊 Сравнение Моделей", "🔍 Визуализация Внимания", "📈 Прогресс Обучения", "🎯 Анализ Производительности",
-         "🧠 Демо Нечетких Правил", "🔧 Извлеченные Правила"])
+        ["📊 Сравнение Моделей", "🔍 Визуализация Внимания", "🎯 Анализ Производительности", "📈 Прогресс Обучения", 
+         "🎯 Анализ Производительности", "🔧 Извлеченные Правила"])
     
     # Сохраняем состояние активной вкладки
     if 'active_tab' not in st.session_state:
@@ -2292,7 +2343,7 @@ def main():
         st.plotly_chart(fig_membership, use_container_width=True, key="membership_functions")
 
     with tab4:
-        st.markdown("### 📈 Training Progress")
+        st.markdown("### 📈 Прогресс Обучения")
 
         # Загружаем реальную историю обучения из модели
         training_history = load_training_history(selected_dataset)
@@ -2369,7 +2420,7 @@ def main():
             st.metric("Лучшая Точность", f"{best_acc:.2%}")
 
     with tab5:
-        st.markdown("### 🎯 Performance Analysis")
+        st.markdown("### 🎯 Анализ Производительности")
 
         # Confusion Matrix simulation
         st.markdown(f"**Матрица Ошибок - {selected_dataset.upper()}**")
@@ -2490,7 +2541,7 @@ def main():
                 st.write(f"- {classes[idx]}: {f1_values[idx]:.1%} F1 Score")
 
     with tab6:
-        st.markdown("### 🧠 Advanced Rule Extraction")
+        st.markdown("### 🔧 Извлеченные Правила")
 
         st.markdown("**Семантически осмысленные fuzzy правила**")
 
@@ -2502,8 +2553,6 @@ def main():
             st.session_state.confidence_threshold = 0.7
         if 'strong_threshold' not in st.session_state:
             st.session_state.strong_threshold = 0.15
-        if 'max_rules' not in st.session_state:
-            st.session_state.max_rules = 10
         if 'rule_type' not in st.session_state:
             st.session_state.rule_type = "Семантические"
         if 'text_importance' not in st.session_state:
@@ -2513,34 +2562,34 @@ def main():
         if 'attention_weight' not in st.session_state:
             st.session_state.attention_weight = 0.7
         if 'conf_thresh' not in st.session_state:
-            st.session_state.conf_thresh = 0.05  # Снижаем с 0.15 до 0.05
+            st.session_state.conf_thresh = 0.01  # Очень низкий порог для максимального извлечения
         if 'strong_thresh' not in st.session_state:
-            st.session_state.strong_thresh = 0.15  # Снижаем с 0.25 до 0.15
+            st.session_state.strong_thresh = 0.15  # Средний порог для сильных правил
         if 'max_rules' not in st.session_state:
-            st.session_state.max_rules = 15  # Увеличиваем с 10 до 15
+            st.session_state.max_rules = 35  # Больше правил для детального анализа
 
         with col1:
             st.markdown("**Параметры Извлечения**")
             confidence_threshold = st.slider(
                 "Порог Уверенности", 
                 0.0, 1.0, 
-                st.session_state.get('conf_thresh', 0.05),  # Снижаем с 0.15 до 0.05
-                0.01,  # Уменьшаем шаг с 0.05 до 0.01
+                st.session_state.get('conf_thresh', 0.01),  # Очень низкий порог по умолчанию
+                0.01,  # Точный шаг настройки
                 key="conf_thresh", 
                 help="Порог для фильтрации слабых правил (выше = более селективно)"
             )
             strong_threshold = st.slider(
                 "Порог Сильных Правил", 
                 0.0, 1.0, 
-                st.session_state.get('strong_thresh', 0.15),  # Снижаем с 0.25 до 0.15
-                0.01,  # Уменьшаем шаг с 0.05 до 0.01
+                st.session_state.get('strong_thresh', 0.15),  # Средний порог по умолчанию
+                0.01,  # Точный шаг настройки
                 key="strong_thresh", 
                 help="Порог для выделения сильных правил (выше = более селективно)"
             )
             max_rules = st.slider(
                 "Максимум Правил", 
-                1, 50,  # Увеличиваем максимум с 20 до 50
-                st.session_state.get('max_rules', 15),  # Увеличиваем по умолчанию с 10 до 15
+                1, 50,  # Максимум 50 правил
+                st.session_state.get('max_rules', 35),  # Больше правил по умолчанию
                 key="max_rules", 
                 help="Максимальное количество извлекаемых правил"
             )
