@@ -9,7 +9,7 @@
 
 ## Overview
 
-Fuzzy Attention Networks (FAN) is an innovative multimodal classification system that integrates fuzzy logic with attention mechanisms for analyzing textual and visual data. The system demonstrates high effectiveness across various classification tasks, including medical diagnosis applications.
+Fuzzy Attention Networks (FAN) is an innovative multimodal classification system that integrates fuzzy logic with attention mechanisms for analyzing textual and visual data. The system demonstrates high effectiveness across various classification tasks, including medical diagnosis applications. 
 
 ### Key Features
 
