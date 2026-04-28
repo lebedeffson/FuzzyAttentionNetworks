@@ -182,19 +182,31 @@ The system demonstrates robust performance across different domains:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Contact
+## Publication
 
-- **Project**: Fuzzy Attention Networks
-- **Author**: [Your Name]
-- **Email**: [your.email@example.com]
-- **GitHub**: [@your-username](https://github.com/your-username)
+This project is associated with the article:
 
-## Acknowledgments
+**A Fuzzy Transformer for Multimodal AI: Differential Fuzzy Attention and Adaptive Explanations**
 
-- PyTorch team for the excellent framework
-- Streamlit for the intuitive web interface
-- Community for inspiration and support
+Yuri V. Trofimov, Alexey N. Averkin, Andrey S. Ilin, Alexander D. Lebedev, Ivan P. Muravyov, Alexey V. Shevchenko.
 
----
+The paper presents a Fuzzy Transformer / Fuzzy Attention Network architecture that replaces standard self-attention with differentiable fuzzy inference based on learnable membership functions and t-norms. The approach is designed for end-to-end training, multimodal text–image reasoning, and built-in interpretability without relying only on post-hoc explanation pipelines.
+
+- **DOI:** `10.36871/2618-9976.2025.11.003`
+- **Keywords:** Explainable AI, Neuro-fuzzy systems, Multimodal transformers, Fuzzy logic, Attention mechanisms, Differentiable reasoning
+- **Article page:** https://s-lib.com/en/issues/smc_2025_11_a3/
+
+### Citation
+
+If you use this repository or build on this work, please cite:
+
+```bibtex
+@article{trofimov2025fuzzytransformer,
+  title   = {A Fuzzy Transformer for Multimodal AI: Differential Fuzzy Attention and Adaptive Explanations},
+  author  = {Trofimov, Yuri V. and Averkin, Alexey N. and Ilin, Andrey S. and Lebedev, Alexander D. and Muravyov, Ivan P. and Shevchenko, Alexey V.},
+  year    = {2025},
+  doi     = {10.36871/2618-9976.2025.11.003}
+}
+```
 
 **⭐ If this project was helpful, please give it a star!**
