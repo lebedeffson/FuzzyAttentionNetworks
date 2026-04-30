@@ -15,3 +15,6 @@ schematics reproducible and publication-style.
 
 The multi-seed result tables are stored in `tables/` and are generated from
 `experiments/icp/run_review_experiments.py`.
+
+Raw CSV/JSON outputs used for the paper tables are stored in `results/`.
+Reviewer-facing completion notes are in `REVIEW_FIX_CHECKLIST.md`.
