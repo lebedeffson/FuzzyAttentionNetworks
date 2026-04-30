@@ -221,17 +221,20 @@ For each concept $k$, the predicted concept activation $c_k$ is interpreted as t
 \begin{equation}
 \mu_k = m_k(c_k), \qquad \mu_k \in [0,1],
 \end{equation}
-where $m_k(\cdot)$ denotes the membership function associated with the $k$-th concept. In the differentiable implementation used in the prototype, the membership function is parameterized as
+where $m_k(\cdot)$ denotes the membership function associated with the $k$-th concept. In the differentiable implementation used in the prototype, the membership function is parameterized as a learnable Gaussian:
 \begin{equation}
-\mu_k = \sigma(a_k c_k + b_k),
+\mu_k =
+\exp\!\left(
+-\frac{(c_k-\beta_k)^2}{2\delta_k^2}
+\right),
 \end{equation}
-where $a_k$ and $b_k$ are learnable parameters. This formulation preserves differentiability while allowing concept activations to be interpreted as graded degrees of membership in semantically meaningful system states.
+where $\beta_k$ and $\delta_k$ are learnable center and width parameters. This formulation preserves differentiability while allowing concept activations to be interpreted as graded degrees of membership in semantically meaningful system states.
 
 The FAN block computes a relevance score for each concept using both its membership value and the context provided by the full concept vector:
 \begin{equation}
 s_k = r_{\omega}(\mu_k, c),
 \end{equation}
-where $r_{\omega}(\cdot)$ is a trainable relevance function. In the prototype implementation, $r_{\omega}$ is implemented as a lightweight neural scoring module shared across concepts. The resulting fuzzy attention weights are obtained by normalized exponentiation:
+where $r_{\omega}(\cdot)$ is a trainable relevance function. In the prototype implementation, $r_{\omega}$ is implemented as a lightweight neural scoring module over the concatenated concept and membership vectors. The resulting fuzzy attention weights are obtained by normalized exponentiation:
 \begin{equation}
 \alpha_k =
 \frac{\exp(s_k/\tau)}

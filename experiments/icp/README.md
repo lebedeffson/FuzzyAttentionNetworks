@@ -8,6 +8,9 @@ concept-oriented FAN paper:
 - Transformer temporal baseline;
 - removal- and insertion-based concept faithfulness tests.
 
+The canonical concept-level model implementation lives in `src/concept_fan.py`;
+the runner imports that module instead of carrying a separate copy of the FAN.
+
 Run examples:
 
 ```bash

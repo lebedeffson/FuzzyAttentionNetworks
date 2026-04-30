@@ -71,6 +71,18 @@ except ModuleNotFoundError as exc:
         "`pip install -r requirements.txt` before running training."
     ) from exc
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from src.concept_fan import (  # noqa: E402
+    CNNBaseline,
+    ConceptBottleneckBaseline,
+    SafetyCriticalConceptFAN,
+    TransformerBaseline,
+    structural_alignment_loss,
+)
+
 
 CONCEPTS = {
     "swat": [
@@ -252,102 +264,17 @@ def concept_targets(x: torch.Tensor, dataset: str) -> torch.Tensor:
     return ((c - lo) / (hi - lo + 1e-6)).clamp(0, 1)
 
 
-class Encoder(nn.Module):
-    def __init__(self, in_channels: int, hidden: int, latent: int):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Conv1d(in_channels, hidden, 5, padding=2),
-            nn.BatchNorm1d(hidden),
-            nn.ReLU(),
-            nn.Conv1d(hidden, hidden, 3, padding=1),
-            nn.BatchNorm1d(hidden),
-            nn.ReLU(),
-            nn.AdaptiveAvgPool1d(1),
-        )
-        self.proj = nn.Linear(hidden, latent)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return self.proj(self.net(x).squeeze(-1))
-
-
-class FANClassifier(nn.Module):
-    def __init__(self, in_channels: int, cfg: Config):
-        super().__init__()
-        self.encoder = Encoder(in_channels, cfg.hidden_dim, cfg.latent_dim)
-        self.concepts = nn.Sequential(nn.Linear(cfg.latent_dim, 4), nn.Sigmoid())
-        self.centers = nn.Parameter(torch.full((4,), 0.5))
-        self.widths = nn.Parameter(torch.full((4,), 0.25))
-        self.attn = nn.Sequential(nn.Linear(8, cfg.hidden_dim), nn.ReLU(), nn.Linear(cfg.hidden_dim, 4))
-        self.head = nn.Sequential(nn.Linear(4, cfg.hidden_dim), nn.ReLU(), nn.Linear(cfg.hidden_dim, 1))
-
-    def membership(self, c: torch.Tensor) -> torch.Tensor:
-        widths = self.widths.abs().clamp_min(1e-3)
-        return torch.exp(-((c - self.centers) ** 2) / (2.0 * widths ** 2))
-
-    def forward_from_concepts(self, c: torch.Tensor):
-        mu = self.membership(c)
-        alpha = torch.softmax(self.attn(torch.cat([c, mu], dim=1)), dim=1)
-        logit = self.head(alpha * mu).squeeze(1)
-        return logit, alpha, mu
-
-    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
-        z = self.encoder(x)
-        c = self.concepts(z)
-        logit, alpha, mu = self.forward_from_concepts(c)
-        return {"logit": logit, "z": z, "concepts": c, "alpha": alpha, "membership": mu}
-
-
-class CBMClassifier(nn.Module):
-    def __init__(self, in_channels: int, cfg: Config):
-        super().__init__()
-        self.encoder = Encoder(in_channels, cfg.hidden_dim, cfg.latent_dim)
-        self.concepts = nn.Sequential(nn.Linear(cfg.latent_dim, 4), nn.Sigmoid())
-        self.head = nn.Linear(4, 1)
-
-    def forward_from_concepts(self, c: torch.Tensor):
-        return self.head(c).squeeze(1), torch.softmax(c.abs(), dim=1), c
-
-    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
-        z = self.encoder(x)
-        c = self.concepts(z)
-        logit, alpha, mu = self.forward_from_concepts(c)
-        return {"logit": logit, "z": z, "concepts": c, "alpha": alpha, "membership": mu}
-
-
-class CNNClassifier(nn.Module):
-    def __init__(self, in_channels: int, cfg: Config):
-        super().__init__()
-        self.encoder = Encoder(in_channels, cfg.hidden_dim, cfg.latent_dim)
-        self.head = nn.Linear(cfg.latent_dim, 1)
-
-    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
-        return {"logit": self.head(self.encoder(x)).squeeze(1)}
-
-
-class TransformerClassifier(nn.Module):
-    def __init__(self, in_channels: int, cfg: Config):
-        super().__init__()
-        self.input_proj = nn.Linear(in_channels, cfg.hidden_dim)
-        layer = nn.TransformerEncoderLayer(
-            d_model=cfg.hidden_dim, nhead=4, dim_feedforward=cfg.hidden_dim * 2,
-            dropout=0.1, batch_first=True
-        )
-        self.encoder = nn.TransformerEncoder(layer, num_layers=2)
-        self.head = nn.Linear(cfg.hidden_dim, 1)
-
-    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
-        h = self.input_proj(x.transpose(1, 2))
-        h = self.encoder(h).mean(dim=1)
-        return {"logit": self.head(h).squeeze(1)}
-
-
 def build_model(cfg: Config, in_channels: int):
-    return {
-        "fan": FANClassifier,
-        "cbm": CBMClassifier,
-        "cnn": CNNClassifier,
-        "transformer": TransformerClassifier,
-    }[cfg.model](in_channels, cfg)
+    num_concepts = len(CONCEPTS[cfg.dataset])
+    if cfg.model == "fan":
+        return SafetyCriticalConceptFAN(in_channels, num_concepts, cfg.hidden_dim, cfg.latent_dim)
+    if cfg.model == "cbm":
+        return ConceptBottleneckBaseline(in_channels, num_concepts, cfg.hidden_dim, cfg.latent_dim)
+    if cfg.model == "cnn":
+        return CNNBaseline(in_channels, cfg.hidden_dim, cfg.latent_dim)
+    if cfg.model == "transformer":
+        return TransformerBaseline(in_channels, cfg.hidden_dim)
+    raise ValueError(cfg.model)
 
 
 def metrics_from_probs(targets: Iterable[float], probs: Iterable[float]) -> Dict[str, float]:
@@ -373,12 +300,6 @@ def evaluate(model, loader, cfg: Config) -> Dict[str, float]:
             probs.extend(torch.sigmoid(out["logit"]).cpu().numpy().tolist())
             targets.extend(y.numpy().tolist())
     return metrics_from_probs(targets, probs)
-
-
-def structural_alignment_loss(z: torch.Tensor, c: torch.Tensor) -> torch.Tensor:
-    z_norm = F.normalize(z, dim=1)
-    c_norm = F.normalize(c, dim=1)
-    return F.mse_loss(z_norm @ z_norm.T, c_norm @ c_norm.T)
 
 
 def train_one(cfg: Config) -> Tuple[Dict[str, float], nn.Module, DataLoader]:
