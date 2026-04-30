@@ -45,6 +45,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--limit-test", type=int, default=None,
                    help="Optional cap for quick/debug runs.")
     p.add_argument("--faithfulness-top-k", nargs="+", type=int, default=[1, 2])
+    p.add_argument("--membership", choices=["gaussian", "bell", "sigmoid", "mixed"], default="gaussian",
+                   help="Concept membership family used by the FAN model.")
     p.add_argument("--smoke-test", action="store_true",
                    help="Use synthetic data to validate the training path without real datasets.")
     return p
@@ -121,6 +123,7 @@ class Config:
     limit_train: Optional[int] = None
     limit_test: Optional[int] = None
     smoke_test: bool = False
+    membership: str = "gaussian"
 
 
 class WindowDataset(Dataset):
@@ -267,7 +270,13 @@ def concept_targets(x: torch.Tensor, dataset: str) -> torch.Tensor:
 def build_model(cfg: Config, in_channels: int):
     num_concepts = len(CONCEPTS[cfg.dataset])
     if cfg.model == "fan":
-        return SafetyCriticalConceptFAN(in_channels, num_concepts, cfg.hidden_dim, cfg.latent_dim)
+        return SafetyCriticalConceptFAN(
+            in_channels,
+            num_concepts,
+            cfg.hidden_dim,
+            cfg.latent_dim,
+            membership_family=cfg.membership,
+        )
     if cfg.model == "cbm":
         return ConceptBottleneckBaseline(in_channels, num_concepts, cfg.hidden_dim, cfg.latent_dim)
     if cfg.model == "cnn":
@@ -341,7 +350,12 @@ def train_one(cfg: Config) -> Tuple[Dict[str, float], nn.Module, DataLoader]:
     if best_state:
         model.load_state_dict(best_state)
     metrics = evaluate(model, test_loader, cfg)
-    metrics.update({"dataset": cfg.dataset, "model": cfg.model, "seed": cfg.seed})
+    metrics.update({
+        "dataset": cfg.dataset,
+        "model": cfg.model,
+        "seed": cfg.seed,
+        "membership": cfg.membership if cfg.model == "fan" else "none",
+    })
     return metrics, model, test_loader
 
 
@@ -371,6 +385,7 @@ def faithfulness(model, loader, cfg: Config, ks: Iterable[int]) -> List[Dict[str
                 "dataset": cfg.dataset,
                 "model": cfg.model,
                 "seed": cfg.seed,
+                "membership": cfg.membership if cfg.model == "fan" else "none",
                 "mode": mode,
                 "top_k": k,
                 **metrics,
@@ -379,9 +394,9 @@ def faithfulness(model, loader, cfg: Config, ks: Iterable[int]) -> List[Dict[str
 
 
 def add_faithfulness_deltas(rows: List[Dict[str, float]], baseline_rows: List[Dict[str, float]]) -> None:
-    baseline = {(r["dataset"], r["model"], r["seed"]): r for r in baseline_rows}
+    baseline = {(r["dataset"], r["model"], r["seed"], r.get("membership", "none")): r for r in baseline_rows}
     for row in rows:
-        base = baseline.get((row["dataset"], row["model"], row["seed"]))
+        base = baseline.get((row["dataset"], row["model"], row["seed"], row.get("membership", "none")))
         if not base:
             continue
         for metric in ("accuracy", "precision", "recall", "f1", "roc_auc"):
@@ -428,6 +443,13 @@ def metric_cell(row: Dict[str, float], metric: str) -> str:
     return f"{mean:.4f} $\\pm$ {ci:.4f}"
 
 
+def display_model(row: Dict[str, float]) -> str:
+    if row["model"] != "fan":
+        return str(row["model"]).upper()
+    membership = row.get("membership", "gaussian")
+    return "Proposed FAN" if membership == "gaussian" else f"FAN-{membership}"
+
+
 def write_latex_summary(path: Path, rows: List[Dict[str, float]]) -> None:
     lines = [
         "\\begin{tabular}{lccccc}",
@@ -435,8 +457,8 @@ def write_latex_summary(path: Path, rows: List[Dict[str, float]]) -> None:
         "Model & Accuracy & Precision & Recall & F1-score & ROC-AUC \\\\",
         "\\midrule",
     ]
-    for row in sorted(rows, key=lambda r: r["model"]):
-        model = str(row["model"]).upper() if row["model"] != "fan" else "Proposed FAN"
+    for row in sorted(rows, key=lambda r: (r["model"], r.get("membership", ""))):
+        model = display_model(row)
         lines.append(
             f"{model} & {metric_cell(row, 'accuracy')} & {metric_cell(row, 'precision')} & "
             f"{metric_cell(row, 'recall')} & {metric_cell(row, 'f1')} & {metric_cell(row, 'roc_auc')} \\\\"
@@ -446,15 +468,15 @@ def write_latex_summary(path: Path, rows: List[Dict[str, float]]) -> None:
 
 
 def write_latex_faithfulness(path: Path, rows: List[Dict[str, float]]) -> None:
-    summary = summarize(rows, ["dataset", "model", "mode", "top_k"])
+    summary = summarize(rows, ["dataset", "model", "membership", "mode", "top_k"])
     lines = [
         "\\begin{tabular}{llccc}",
         "\\toprule",
         "Model & Intervention & Top-K & F1 & $\\Delta$F1 \\\\",
         "\\midrule",
     ]
-    for row in sorted(summary, key=lambda r: (r["model"], r["mode"], r["top_k"])):
-        model = str(row["model"]).upper() if row["model"] != "fan" else "Proposed FAN"
+    for row in sorted(summary, key=lambda r: (r["model"], r.get("membership", ""), r["mode"], r["top_k"])):
+        model = display_model(row)
         f1 = metric_cell(row, "f1")
         delta = metric_cell(row, "f1_delta") if "f1_delta_mean" in row else "--"
         lines.append(f"{model} & {row['mode']} & {row['top_k']} & {f1} & {delta} \\\\")
@@ -485,6 +507,7 @@ def main() -> None:
                 limit_train=args.limit_train,
                 limit_test=args.limit_test,
                 smoke_test=args.smoke_test,
+                membership=args.membership,
             )
             metrics, model, test_loader = train_one(cfg)
             result_rows.append(metrics)
@@ -492,7 +515,7 @@ def main() -> None:
             print(json.dumps(metrics, sort_keys=True))
 
     add_faithfulness_deltas(faith_rows, result_rows)
-    summary = summarize(result_rows, ["dataset", "model"])
+    summary = summarize(result_rows, ["dataset", "model", "membership"])
     write_csv(args.out_dir / f"{args.dataset}_raw.csv", result_rows)
     write_csv(args.out_dir / f"{args.dataset}_summary.csv", summary)
     write_csv(args.out_dir / f"{args.dataset}_faithfulness.csv", faith_rows)

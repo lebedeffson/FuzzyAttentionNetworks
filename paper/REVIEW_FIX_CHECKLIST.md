@@ -9,6 +9,7 @@ Addressed reviewer requirements:
 - Figures replaced: generated reproducible publication-style schematic figures in `paper/figures/`.
 - Weak direct-download conference PDF reference replaced with a DOI-backed journal article reference.
 - Concept-level FAN implementation moved into `src/concept_fan.py` and covered by tests.
+- Multiple concept membership functions added and evaluated: Gaussian, bell, sigmoid, and mixed.
 - Multi-seed evaluation added: SWaT and FD001 are reported over seeds `42, 43, 44` with mean and 95% CI.
 - External baselines added: CNN, CBM, and Transformer are implemented in `experiments/icp/run_review_experiments.py`.
 - Faithfulness added: removal- and insertion-based concept interventions are reported for FAN and CBM.

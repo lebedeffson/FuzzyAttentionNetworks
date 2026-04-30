@@ -221,14 +221,26 @@ For each concept $k$, the predicted concept activation $c_k$ is interpreted as t
 \begin{equation}
 \mu_k = m_k(c_k), \qquad \mu_k \in [0,1],
 \end{equation}
-where $m_k(\cdot)$ denotes the membership function associated with the $k$-th concept. In the differentiable implementation used in the prototype, the membership function is parameterized as a learnable Gaussian:
+where $m_k(\cdot)$ denotes the membership function associated with the $k$-th concept. In the implementation, several differentiable membership families are supported. The Gaussian and bell-shaped variants are defined as
 \begin{equation}
-\mu_k =
+\mu^{\mathrm{G}}_k =
 \exp\!\left(
 -\frac{(c_k-\beta_k)^2}{2\delta_k^2}
 \right),
+\qquad
+\mu^{\mathrm{B}}_k =
+\frac{1}{1+\left((c_k-\beta_k)/\delta_k\right)^2},
 \end{equation}
-where $\beta_k$ and $\delta_k$ are learnable center and width parameters. This formulation preserves differentiability while allowing concept activations to be interpreted as graded degrees of membership in semantically meaningful system states.
+where $\beta_k$ and $\delta_k$ are learnable center and width parameters. A sigmoid membership $\mu^{\mathrm{S}}_k=\sigma((c_k-\beta_k)/\delta_k)$ is also supported. The main reported variant uses a learnable mixed membership
+\begin{equation}
+\mu_k =
+\omega_{\mathrm{G}}\mu^{\mathrm{G}}_k
++ \omega_{\mathrm{B}}\mu^{\mathrm{B}}_k
++ \omega_{\mathrm{S}}\mu^{\mathrm{S}}_k,
+\qquad
+\omega=\operatorname{softmax}(u),
+\end{equation}
+where $u$ is a learnable vector of mixture logits. This formulation preserves differentiability while allowing concept activations to be interpreted as graded degrees of membership in semantically meaningful system states.
 
 The FAN block computes a relevance score for each concept using both its membership value and the context provided by the full concept vector:
 \begin{equation}
@@ -391,6 +403,15 @@ A limited ablation study was additionally conducted on SWaT in order to assess t
 \end{table}
 
 The faithfulness tests provide quantitative support for the role of concept-level evidence. On SWaT, removing the top-ranked FAN concepts causes a large F1-score drop, while retaining only the dominant concept preserves most of the decision signal. A similar pattern is observed on FD001, where top-concept removal substantially degrades the FAN model. This behavior is weaker for CBM, indicating that FAN produces a more concentrated and intervention-sensitive concept ranking.
+
+\begin{table}[tbp]
+\caption{Sensitivity of the proposed FAN to concept membership functions.}
+\label{tab:membership_sensitivity}
+\centering
+\input{tables/membership_sensitivity}
+\end{table}
+
+The membership-function sensitivity analysis indicates that the proposed concept-level aggregation is not tied to a single handcrafted membership shape. Bell-shaped and mixed memberships provide the strongest SWaT results, while mixed and sigmoid memberships are strongest on FD001. For this reason, the main comparison reports the mixed FAN variant, which provides the most balanced behavior across the two scenarios.
 
 \begin{table}[tbp]
 \caption{Representative concept-level explanations for selected SWaT test samples.}

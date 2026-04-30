@@ -1,14 +1,25 @@
 import torch
 
 from src.concept_fan import (
+    ConceptMembership,
     ConceptFANBlock,
     SafetyCriticalConceptFAN,
     structural_alignment_loss,
 )
 
 
+def test_membership_families_are_bounded():
+    concepts = torch.rand(5, 4)
+
+    for family in ("gaussian", "bell", "sigmoid", "mixed"):
+        membership = ConceptMembership(num_concepts=4, family=family)
+        values = membership(concepts)
+        assert values.shape == (5, 4)
+        assert torch.all((values >= 0) & (values <= 1))
+
+
 def test_concept_fan_block_returns_weighted_membership_evidence():
-    block = ConceptFANBlock(num_concepts=4, hidden_dim=8)
+    block = ConceptFANBlock(num_concepts=4, hidden_dim=8, membership_family="mixed")
     concepts = torch.rand(3, 4)
 
     evidence, alpha, membership = block(concepts)

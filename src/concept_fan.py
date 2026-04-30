@@ -34,25 +34,66 @@ class TimeSeriesEncoder(nn.Module):
         return self.proj(self.net(x).squeeze(-1))
 
 
-class GaussianConceptMembership(nn.Module):
-    """Learnable Gaussian membership for concept activations in [0, 1]."""
+class ConceptMembership(nn.Module):
+    """Learnable concept membership functions.
 
-    def __init__(self, num_concepts: int, center: float = 0.5, width: float = 0.25):
+    Supported families:
+    - ``gaussian``: exp(-((c - center)^2) / 2 width^2)
+    - ``bell``: 1 / (1 + ((c - center) / width)^2)
+    - ``sigmoid``: sigmoid((c - center) / width)
+    - ``mixed``: learnable convex combination of gaussian, bell, and sigmoid
+    """
+
+    def __init__(
+        self,
+        num_concepts: int,
+        family: str = "gaussian",
+        center: float = 0.5,
+        width: float = 0.25,
+    ):
         super().__init__()
+        if family not in {"gaussian", "bell", "sigmoid", "mixed"}:
+            raise ValueError(f"Unsupported membership family: {family}")
+        self.family = family
         self.centers = nn.Parameter(torch.full((num_concepts,), center))
         self.widths = nn.Parameter(torch.full((num_concepts,), width))
+        self.mixture_logits = nn.Parameter(torch.zeros(3))
+
+    def _all_memberships(self, concepts: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        widths = self.widths.abs().clamp_min(1e-3)
+        normalized = (concepts - self.centers) / widths
+        gaussian = torch.exp(-(normalized ** 2) / 2.0)
+        bell = 1.0 / (1.0 + normalized ** 2)
+        sigmoid = torch.sigmoid(normalized)
+        return gaussian, bell, sigmoid
 
     def forward(self, concepts: torch.Tensor) -> torch.Tensor:
-        widths = self.widths.abs().clamp_min(1e-3)
-        return torch.exp(-((concepts - self.centers) ** 2) / (2.0 * widths ** 2))
+        gaussian, bell, sigmoid = self._all_memberships(concepts)
+        if self.family == "gaussian":
+            return gaussian
+        if self.family == "bell":
+            return bell
+        if self.family == "sigmoid":
+            return sigmoid
+        weights = torch.softmax(self.mixture_logits, dim=0)
+        return weights[0] * gaussian + weights[1] * bell + weights[2] * sigmoid
+
+
+GaussianConceptMembership = ConceptMembership
 
 
 class ConceptFANBlock(nn.Module):
     """Fuzzy attention over grounded concept memberships."""
 
-    def __init__(self, num_concepts: int, hidden_dim: int = 64, temperature: float = 1.0):
+    def __init__(
+        self,
+        num_concepts: int,
+        hidden_dim: int = 64,
+        temperature: float = 1.0,
+        membership_family: str = "gaussian",
+    ):
         super().__init__()
-        self.membership = GaussianConceptMembership(num_concepts)
+        self.membership = ConceptMembership(num_concepts, family=membership_family)
         self.temperature = temperature
         self.attn = nn.Sequential(
             nn.Linear(num_concepts * 2, hidden_dim),
@@ -71,11 +112,22 @@ class ConceptFANBlock(nn.Module):
 class SafetyCriticalConceptFAN(nn.Module):
     """Concept-oriented FAN classifier used as the proposed model."""
 
-    def __init__(self, in_channels: int, num_concepts: int, hidden_dim: int, latent_dim: int):
+    def __init__(
+        self,
+        in_channels: int,
+        num_concepts: int,
+        hidden_dim: int,
+        latent_dim: int,
+        membership_family: str = "gaussian",
+    ):
         super().__init__()
         self.encoder = TimeSeriesEncoder(in_channels, hidden_dim, latent_dim)
         self.concepts = nn.Sequential(nn.Linear(latent_dim, num_concepts), nn.Sigmoid())
-        self.fan = ConceptFANBlock(num_concepts, hidden_dim=hidden_dim)
+        self.fan = ConceptFANBlock(
+            num_concepts,
+            hidden_dim=hidden_dim,
+            membership_family=membership_family,
+        )
         self.head = nn.Sequential(
             nn.Linear(num_concepts, hidden_dim),
             nn.ReLU(),

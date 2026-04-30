@@ -7,6 +7,7 @@ concept-oriented FAN paper:
 - CBM baseline with the same encoder and concept predictor;
 - Transformer temporal baseline;
 - removal- and insertion-based concept faithfulness tests.
+- configurable concept membership functions: `gaussian`, `bell`, `sigmoid`, `mixed`.
 
 The canonical concept-level model implementation lives in `src/concept_fan.py`;
 the runner imports that module instead of carrying a separate copy of the FAN.
@@ -27,6 +28,18 @@ python experiments/icp/run_review_experiments.py \
   --models fan cbm transformer cnn \
   --seeds 42 43 44 \
   --out-dir results/icp
+```
+
+Membership-function sensitivity:
+
+```bash
+experiments/icp/run_membership_ablation.sh swat /path/to/ICP results/icp_membership_ablation
+experiments/icp/run_membership_ablation.sh fd001 /path/to/ICP results/icp_membership_ablation
+
+python experiments/icp/summarize_membership_ablation.py \
+  --root results/icp_membership_ablation \
+  --out-tex paper/tables/membership_sensitivity.tex \
+  --out-csv paper/results/membership_sensitivity.csv
 ```
 
 Outputs are written as CSV and JSON under `results/icp/`.
