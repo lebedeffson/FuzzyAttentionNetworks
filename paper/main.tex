@@ -335,39 +335,25 @@ Faithfulness is evaluated by concept intervention at inference time. In the remo
 
 \section{Results}
 
-The empirical evaluation indicates that the first prototype realization of the proposed framework is operationally viable in heterogeneous safety-relevant time-series settings. Across the considered experiments, the proposed architecture maintained competitive predictive quality while introducing a concept-consistent intermediate representation and a concept-level fuzzy attention mechanism into the decision process.
+The empirical evaluation indicates that the first prototype realization of the proposed framework is operationally viable in heterogeneous safety-relevant time-series settings. Tables report mean values with 95\% confidence intervals over three random seeds. Across the considered experiments, the proposed architecture maintained competitive predictive quality while introducing a concept-consistent intermediate representation and a concept-level fuzzy attention mechanism into the decision process.
 
 \begin{table}[tbp]
-\caption{Comparison of the baseline and the proposed FAN-based concept-oriented model on SWaT.}
+\caption{Multi-seed comparison on SWaT.}
 \label{tab:swat_results}
 \centering
-\begin{tabular}{lccccc}
-\toprule
-Model & Accuracy & Precision & Recall & F1-score & ROC-AUC \\
-\midrule
-Baseline 1D CNN & 0.9881 & 0.7746 & 0.9663 & 0.8599 & 0.9985 \\
-Proposed FAN-based model & 0.9939 & 0.9064 & 0.9356 & 0.9207 & 0.9980 \\
-\bottomrule
-\end{tabular}
+\input{tables/swat_summary}
 \end{table}
 
-In the anomaly-aware monitoring scenario, the proposed model improved the balance between detection sensitivity and reliability relative to the black-box convolutional baseline, with the clearest gains observed in precision and F1-score. This is particularly relevant in safety-critical settings, where excessive false alarms reduce the practical utility of intelligent decision support.
+In the anomaly-aware monitoring scenario, the proposed model improved the balance between detection sensitivity and reliability relative to the black-box CNN, CBM, and Transformer baselines, with the clearest gain observed in F1-score. This is particularly relevant in safety-critical settings, where excessive false alarms reduce the practical utility of intelligent decision support.
 
 \begin{table}[tbp]
-\caption{Comparison of the baseline and the proposed FAN-based concept-oriented model on NASA FD001.}
+\caption{Multi-seed comparison on NASA FD001.}
 \label{tab:fd001_results}
 \centering
-\begin{tabular}{lccccc}
-\toprule
-Model & Accuracy & Precision & Recall & F1-score & ROC-AUC \\
-\midrule
-Baseline 1D CNN & 0.9848 & 0.8290 & 0.6717 & 0.7421 & 0.9890 \\
-Proposed FAN-based model & 0.9840 & 0.7522 & 0.7590 & 0.7556 & 0.9908 \\
-\bottomrule
-\end{tabular}
+\input{tables/fd001_summary}
 \end{table}
 
-In the degradation-aware risk prediction scenario, the comparative picture was more balanced, but the proposed architecture remained competitive and preserved stable predictive behavior under a more gradual and structurally difficult decision setting. The obtained trade-off suggests that the proposed concept-oriented organization is not restricted to anomaly-oriented monitoring alone and remains feasible under degradation-aware prognostic conditions.
+In the degradation-aware risk prediction scenario, the comparative picture was more balanced. The Transformer achieved the highest F1-score, while the proposed FAN model outperformed the CNN and CBM baselines and remained close to the attention-based baseline. The obtained trade-off suggests that the proposed concept-oriented organization is not restricted to anomaly-oriented monitoring alone and remains feasible under degradation-aware prognostic conditions.
 
 \begin{table}[tbp]
 \caption{Limited ablation study on SWaT.}
@@ -386,6 +372,22 @@ Without entropy term & 0.9928 & 0.8762 & 0.9429 & 0.9083 & 0.9981 \\
 \end{table}
 
 A limited ablation study was additionally conducted on SWaT in order to assess the contribution of the main architectural components and regularization terms. The results indicate that the proposed gain is not attributable to a single component alone. Removing FAN reduces the overall balance of concept-level aggregation and leads to a clear decrease in F1-score and ROC-AUC. Removing concept supervision produces a different effect: the model shifts toward a high-recall but lower-precision regime, which substantially reduces F1-score despite preserving high ROC-AUC. Removing the entropy-based concentration term has a milder effect, but still leads to lower precision and F1-score than the full model. Taken together, these observations suggest that the best overall performance is obtained when concept supervision, FAN-based aggregation, and entropy-based concentration are used jointly.
+
+\begin{table}[tbp]
+\caption{Removal- and insertion-based concept faithfulness on SWaT.}
+\label{tab:faithfulness_swat}
+\centering
+\input{tables/swat_faithfulness}
+\end{table}
+
+\begin{table}[tbp]
+\caption{Removal- and insertion-based concept faithfulness on NASA FD001.}
+\label{tab:faithfulness_fd001}
+\centering
+\input{tables/fd001_faithfulness}
+\end{table}
+
+The faithfulness tests provide quantitative support for the role of concept-level evidence. On SWaT, removing the top-ranked FAN concepts causes a large F1-score drop, while retaining only the dominant concept preserves most of the decision signal. A similar pattern is observed on FD001, where top-concept removal substantially degrades the FAN model. This behavior is weaker for CBM, indicating that FAN produces a more concentrated and intervention-sensitive concept ranking.
 
 \begin{table}[tbp]
 \caption{Representative concept-level explanations for selected SWaT test samples.}
@@ -437,9 +439,9 @@ The obtained results support the feasibility of organizing safety-critical intel
 
 From a methodological perspective, the proposed framework occupies an intermediate position between classical fuzzy expert systems, concept-based neural models, and conventional attention-based architectures. In contrast to classical fuzzy systems, the proposed model does not require a fully hand-crafted rule base and can learn latent temporal representations from data. In contrast to standard deep models, the final decision is not produced directly from distributed hidden features. In contrast to ordinary concept bottleneck models, the concept representation is not only an intermediate prediction layer, but also the object of context-dependent fuzzy evidence weighting. Finally, in contrast to conventional attention mechanisms, the FAN block operates at the level of semantically grounded concept memberships rather than at the level of opaque latent features, tokens, or temporal positions. This distinction is important because it defines the main novelty of the approach: decision formation is formulated as fuzzy aggregation of concept-level evidence.
 
-The empirical results suggest that the effect of the proposed organization depends on the structure of the decision problem. In the SWaT anomaly-aware monitoring scenario, the proposed model achieved a clear improvement in precision and F1-score relative to the convolutional baseline. This indicates a more reliable alarm behavior, which is especially relevant for safety-critical monitoring because excessive false alarms can reduce operator trust and weaken the practical value of an intelligent decision support system. The reduction in recall relative to the baseline should not be ignored; however, the improved balance between precision and recall suggests that the model shifts from a very broad detection regime toward a more selective and operationally useful alarm regime.
+The empirical results suggest that the effect of the proposed organization depends on the structure of the decision problem. In the SWaT anomaly-aware monitoring scenario, the proposed model achieved the strongest F1-score among the CNN, CBM, and Transformer baselines. This indicates a more reliable alarm behavior, which is especially relevant for safety-critical monitoring because excessive false alarms can reduce operator trust and weaken the practical value of an intelligent decision support system. The results also show that the gain is not explained only by generic attention, since the Transformer baseline remained below the FAN model in F1-score on this task.
 
-In the NASA FD001 degradation-aware risk prediction scenario, the comparative picture was more balanced. The proposed model improved recall, F1-score, and ROC-AUC, but showed lower precision than the baseline. This behavior is consistent with the more gradual and structurally ambiguous nature of degradation processes. Unlike abrupt anomaly detection, degradation-aware risk prediction requires the model to distinguish between normal operating variability and early signs of progressive failure. The results therefore suggest that the proposed concept-oriented architecture is not restricted to abrupt anomaly detection, but also remains applicable to prognostic decision support. At the same time, the FD001 results indicate that degradation-specific concept grounding should be strengthened in future work.
+In the NASA FD001 degradation-aware risk prediction scenario, the comparative picture was more balanced. The proposed model outperformed the CNN and CBM baselines in F1-score, while the Transformer baseline achieved the highest overall F1-score. This behavior is consistent with the more gradual and structurally ambiguous nature of degradation processes. Unlike abrupt anomaly detection, degradation-aware risk prediction requires the model to distinguish between normal operating variability and early signs of progressive failure. The results therefore suggest that the proposed concept-oriented architecture is applicable beyond abrupt anomaly detection, but also indicate that degradation-specific concept grounding and temporal modeling should be strengthened in future work.
 
 The ablation results further clarify the role of the main architectural components. Removing the FAN block led to a substantial decrease in F1-score and ROC-AUC, which suggests that concept-level fuzzy aggregation contributes to the predictive behavior of the model rather than only to its explanatory form. Removing concept supervision produced a high-recall but lower-precision regime, indicating that concept consistency helps prevent the model from producing overly broad alarm responses. Removing the entropy-based concentration term had a smaller but still observable effect, reducing the compactness and reliability of the concept-level evidence. These observations support the view that the model benefits from the joint use of concept supervision, FAN-based weighting, and concentration of concept evidence.
 
@@ -449,9 +451,9 @@ At the same time, the present results should be interpreted as evidence of feasi
 
 The second limitation concerns the current operational meaning of concept--latent alignment. The proposed formulation constrains latent representations through concept consistency and, in the extended formulation, through structural consistency between latent and concept neighborhoods. However, this does not yet amount to a complete theory of alignment between latent and conceptual spaces. Future work should provide a more rigorous treatment of the relation between latent geometry, concept semantics, and decision-relevant evidence aggregation.
 
-The third limitation concerns the experimental protocol. The current evaluation demonstrates operational viability on two safety-relevant time-series tasks, but a stronger journal-level validation requires broader comparison with additional baselines, including recurrent models, temporal convolutional models, transformer encoders, concept bottleneck models, and non-fuzzy concept attention models. Multi-seed statistics are also necessary to assess the stability of the reported improvements. A full ablation study should isolate the effects of the concept layer, fuzzy membership functions, FAN weighting, concept supervision, sparsity regularization, structural alignment, and calibration regularization.
+The third limitation concerns the experimental protocol. The current evaluation now includes multi-seed statistics and comparison with CNN, CBM, and Transformer baselines, but a stronger journal-level validation still requires broader comparison with recurrent models, temporal convolutional models, and non-fuzzy concept attention models. A full ablation study should isolate the effects of the concept layer, fuzzy membership functions, FAN weighting, concept supervision, sparsity regularization, structural alignment, and calibration regularization.
 
-The fourth limitation concerns the evaluation of interpretability. The current qualitative examples show that the proposed model produces sparse concept-level explanations, but qualitative inspection is not sufficient for a strong claim of faithful interpretability. Future validation should include concept removal tests, concept intervention experiments, explanation stability under perturbations, sparsity metrics, and expert-oriented validation. Such evaluation is necessary to demonstrate that the dominant concepts are not merely plausible labels, but are genuinely relevant to the model's decision process.
+The fourth limitation concerns the evaluation of interpretability. The current evaluation includes removal- and insertion-based faithfulness tests, but these tests only cover a first intervention protocol. Future validation should include explanation stability under perturbations, sparsity metrics, calibration of concept activations, and expert-oriented validation. Such evaluation is necessary to demonstrate that the dominant concepts are not merely plausible labels, but are genuinely relevant to the model's decision process under operational variation.
 
 The fifth limitation concerns safety relevance. Although the selected datasets represent safety-relevant monitoring and degradation scenarios, standard classification metrics alone do not fully establish safety-critical suitability. A stronger evaluation should include calibration analysis, robustness under sensor noise and missing data, temporal generalization tests, out-of-distribution evaluation, and cost-sensitive failure analysis. In particular, false negatives and false positives should be analyzed under different operational cost assumptions, since their consequences are not equivalent in safety-critical decision support.
 
@@ -463,9 +465,9 @@ This study proposed a concept-oriented framework for safety-critical intelligent
 
 The proposed framework differs from conventional black-box neural models by introducing an intermediate concept space, from standard concept bottleneck formulations by adding context-dependent fuzzy concept aggregation, and from ordinary attention mechanisms by applying attention to concept-level evidence rather than to opaque latent features. This organization makes it possible to analyze a decision in terms of activated concepts, fuzzy membership-like evidence, and their weighted contribution to the final prediction.
 
-The empirical results demonstrate the feasibility of the proposed organization in two safety-relevant time-series scenarios: anomaly-aware monitoring and degradation-aware risk prediction. In the SWaT setting, the proposed model improved precision and F1-score relative to the convolutional baseline, indicating a more reliable alarm behavior. In the NASA FD001 setting, the model remained competitive and improved recall, F1-score, and ROC-AUC, suggesting applicability beyond abrupt anomaly detection. The ablation results further indicate that concept supervision, FAN-based aggregation, and entropy-based concentration jointly contribute to the observed behavior of the model.
+The empirical results demonstrate the feasibility of the proposed organization in two safety-relevant time-series scenarios: anomaly-aware monitoring and degradation-aware risk prediction. In the SWaT setting, the proposed model achieved the strongest F1-score among CNN, CBM, and Transformer baselines, indicating a more reliable alarm behavior. In the NASA FD001 setting, the model outperformed CNN and CBM baselines and remained close to the Transformer baseline, suggesting applicability beyond abrupt anomaly detection. The ablation results further indicate that concept supervision, FAN-based aggregation, and entropy-based concentration jointly contribute to the observed behavior of the model.
 
-At the same time, the current study should be understood as a proof-of-concept rather than as a deployment-ready solution. The concept targets are derived from heuristic transformations of observed variables, which limits semantic fidelity. Future work should incorporate expert-validated concept definitions and extend the evaluation to additional seeds, CBM and Transformer baselines, quantitative faithfulness tests, calibration analysis, robustness analysis, temporal generalization, and cost-sensitive safety evaluation.
+At the same time, the current study should be understood as a proof-of-concept rather than as a deployment-ready solution. The concept targets are derived from heuristic transformations of observed variables, which limits semantic fidelity. Future work should incorporate expert-validated concept definitions and extend the evaluation to additional datasets, stronger temporal baselines, calibration analysis, robustness analysis, temporal generalization, and cost-sensitive safety evaluation.
 
 Overall, the study supports the view that interpretable decision support in safety-critical environments should be approached as a problem of internal model organization. The proposed FAN-based concept-oriented framework provides a methodological basis for further development of intelligent decision support systems that combine predictive capacity with semantically structured, concept-grounded, and operationally analyzable decision formation.
 

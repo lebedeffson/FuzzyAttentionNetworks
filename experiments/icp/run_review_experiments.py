@@ -192,7 +192,19 @@ def load_data(cfg: Config):
         x_test = np.load(cfg.data_dir / "X_test.npy")
         y_test = np.load(cfg.data_dir / "y_test.npy")
     elif cfg.dataset == "fd001":
-        (x_train, y_train), (x_test, y_test) = load_fd001(cfg.data_dir)
+        prepared = [
+            cfg.data_dir / "X_train_fd001.npy",
+            cfg.data_dir / "y_train_fd001.npy",
+            cfg.data_dir / "X_test_fd001.npy",
+            cfg.data_dir / "y_test_fd001.npy",
+        ]
+        if all(path.exists() for path in prepared):
+            x_train = np.load(prepared[0])
+            y_train = np.load(prepared[1])
+            x_test = np.load(prepared[2])
+            y_test = np.load(prepared[3])
+        else:
+            (x_train, y_train), (x_test, y_test) = load_fd001(cfg.data_dir)
     else:
         raise ValueError(cfg.dataset)
 
@@ -463,7 +475,10 @@ def summarize(rows: List[Dict[str, float]], keys: List[str]) -> List[Dict[str, f
     out = []
     for key, items in groups.items():
         record = dict(zip(keys, key))
-        for metric in ("accuracy", "precision", "recall", "f1", "roc_auc"):
+        for metric in (
+            "accuracy", "precision", "recall", "f1", "roc_auc",
+            "accuracy_delta", "precision_delta", "recall_delta", "f1_delta", "roc_auc_delta",
+        ):
             vals = np.asarray([r[metric] for r in items if metric in r], dtype=float)
             if len(vals):
                 record[f"{metric}_mean"] = float(np.nanmean(vals))

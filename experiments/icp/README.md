@@ -32,6 +32,28 @@ The runner also writes LaTeX table fragments:
 - `results/icp/<dataset>_summary.tex`
 - `results/icp/<dataset>_faithfulness.tex`
 
+Full 3-seed runs used for the current paper tables:
+
+```bash
+python experiments/icp/run_review_experiments.py \
+  --dataset swat \
+  --data-dir /home/lebedeffson/Code/андрей/archive_preview/ICP \
+  --models fan cbm transformer cnn \
+  --seeds 42 43 44 \
+  --epochs 15 \
+  --batch-size 512 \
+  --out-dir results/icp_swat_3seed
+
+python experiments/icp/run_review_experiments.py \
+  --dataset fd001 \
+  --data-dir /home/lebedeffson/Code/андрей/archive_preview/ICP \
+  --models fan cbm transformer cnn \
+  --seeds 42 43 44 \
+  --epochs 15 \
+  --batch-size 512 \
+  --out-dir results/icp_fd001_3seed
+```
+
 Quick implementation smoke check:
 
 ```bash
