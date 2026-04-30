@@ -17,8 +17,8 @@ Addressed reviewer requirements:
 
 Current empirical summary:
 
-- SWaT: Proposed FAN achieves the best F1-score: `0.9363 +/- 0.0099`.
-- FD001: Proposed FAN outperforms CNN/CBM in F1-score; Transformer remains higher: `FAN 0.7288 +/- 0.0230`, `Transformer 0.7606 +/- 0.0594`.
+- SWaT: FAN with mixed memberships achieves the best F1-score: `0.9202 +/- 0.0231`.
+- FD001: FAN with mixed memberships outperforms CNN/CBM in F1-score; Transformer remains higher: `FAN 0.7279 +/- 0.0272`, `Transformer 0.7606 +/- 0.0594`.
 - Faithfulness: removing top-ranked FAN concepts strongly reduces F1 on both datasets.
 
 Run commands are documented in `experiments/icp/README.md`.

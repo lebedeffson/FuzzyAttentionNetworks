@@ -45,7 +45,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--limit-test", type=int, default=None,
                    help="Optional cap for quick/debug runs.")
     p.add_argument("--faithfulness-top-k", nargs="+", type=int, default=[1, 2])
-    p.add_argument("--membership", choices=["gaussian", "bell", "sigmoid", "mixed"], default="gaussian",
+    p.add_argument("--membership", choices=["gaussian", "bell", "sigmoid", "mixed"], default="mixed",
                    help="Concept membership family used by the FAN model.")
     p.add_argument("--smoke-test", action="store_true",
                    help="Use synthetic data to validate the training path without real datasets.")
@@ -123,7 +123,7 @@ class Config:
     limit_train: Optional[int] = None
     limit_test: Optional[int] = None
     smoke_test: bool = False
-    membership: str = "gaussian"
+    membership: str = "mixed"
 
 
 class WindowDataset(Dataset):
@@ -444,10 +444,11 @@ def metric_cell(row: Dict[str, float], metric: str) -> str:
 
 
 def display_model(row: Dict[str, float]) -> str:
+    labels = {"cbm": "CBM", "cnn": "CNN", "transformer": "Transformer"}
     if row["model"] != "fan":
-        return str(row["model"]).upper()
-    membership = row.get("membership", "gaussian")
-    return "Proposed FAN" if membership == "gaussian" else f"FAN-{membership}"
+        return labels.get(str(row["model"]), str(row["model"]))
+    membership = row.get("membership", "mixed")
+    return f"FAN ({membership})"
 
 
 def write_latex_summary(path: Path, rows: List[Dict[str, float]]) -> None:

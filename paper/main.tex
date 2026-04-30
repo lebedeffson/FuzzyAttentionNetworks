@@ -344,7 +344,7 @@ The revised evaluation protocol compares the proposed FAN-based concept-oriented
 
 A limited component-level ablation study was additionally conducted on SWaT. The evaluated variants include the full FAN-based model, a model without the FAN block, a model without the concept loss, and a model without the entropy-based sparsity term. These variants were selected to test whether concept supervision, FAN-based aggregation, and concentration of concept evidence contribute to the observed predictive behavior.
 
-The principal predictive metrics are accuracy, precision, recall, F1-score, and ROC-AUC. All final comparisons are intended to be reported as mean, standard deviation, and 95\% confidence interval over at least three random seeds. In addition to aggregate predictive performance, representative concept-level explanations were inspected for selected correctly classified and misclassified samples.
+The principal predictive metrics are accuracy, precision, recall, F1-score, and ROC-AUC. All final comparisons are reported as mean, standard deviation, and 95\% confidence interval over three random seeds. In addition to aggregate predictive performance, representative concept-level explanations were inspected for selected correctly classified and misclassified samples.
 
 Faithfulness is evaluated by concept intervention at inference time. In the removal-based test, the top-ranked concepts are zeroed out and the decrease in predictive quality is measured. In the insertion-based test, only the top-ranked concepts are retained. A faithful concept-level explanation should show a stronger performance drop under removal of dominant concepts and a stronger performance retention under insertion of the same concepts than would be expected from diffuse or irrelevant concept rankings.
 
@@ -456,10 +456,6 @@ operational stress (0.4371) $>$ efficiency loss (0.0149) $>$ pressure instabilit
 \end{table}
 
 Qualitative inspection of concept-level explanations indicates concentrated concept evidence rather than diffuse latent interactions. As shown in Tables~\ref{tab:qualitative_swat} and~\ref{tab:qualitative_fd001}, normal SWaT windows are predominantly associated with actuator--sensor inconsistency, whereas correctly detected attack windows are dominated by tank-level deviation. In the NASA FD001 setting, both low-risk and misclassified high-risk cases are primarily driven by operational stress, with substantially smaller contributions from the remaining concepts. These examples support the claim that the model operates through sparse and analyzable concept-level aggregation, while also indicating that certain failure cases remain insufficiently separated at the current prototype stage.
-
-Taken together, the results should be interpreted as evidence for the feasibility of the proposed methodological principles rather than as a final empirical validation of the framework. At the current stage, the implementation remains a proof-of-concept realization. Nevertheless, the obtained results show that concept-consistent representation formation and FAN-based concept aggregation can be operationalized in a predictive architecture while maintaining practical relevance and internal interpretability.
-
-
 
 \section{Discussion}
 
