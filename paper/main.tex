@@ -357,7 +357,16 @@ The empirical evaluation indicates that the first prototype realization of the p
 \label{tab:swat_results}
 \centering
 {\scriptsize\setlength{\tabcolsep}{1.6pt}
-\input{tables/swat_summary}
+\begin{tabular}{lccccc}
+\toprule
+Model & Accuracy & Precision & Recall & F1-score & ROC-AUC \\
+\midrule
+CBM & 0.9906 $\pm$ 0.0039 & 0.8387 $\pm$ 0.0689 & 0.9336 $\pm$ 0.0298 & 0.8831 $\pm$ 0.0458 & 0.9927 $\pm$ 0.0004 \\
+CNN & 0.9920 $\pm$ 0.0007 & 0.8375 $\pm$ 0.0188 & 0.9785 $\pm$ 0.0091 & 0.9024 $\pm$ 0.0072 & 0.9993 $\pm$ 0.0002 \\
+FAN (mixed) & 0.9936 $\pm$ 0.0020 & 0.8751 $\pm$ 0.0485 & 0.9712 $\pm$ 0.0078 & 0.9202 $\pm$ 0.0231 & 0.9993 $\pm$ 0.0001 \\
+Transformer & 0.9925 $\pm$ 0.0019 & 0.8500 $\pm$ 0.0418 & 0.9776 $\pm$ 0.0149 & 0.9089 $\pm$ 0.0202 & 0.9990 $\pm$ 0.0002 \\
+\bottomrule
+\end{tabular}
 }
 \end{table}
 
@@ -368,7 +377,16 @@ In the anomaly-aware monitoring scenario, the proposed model improved the balanc
 \label{tab:fd001_results}
 \centering
 {\scriptsize\setlength{\tabcolsep}{1.6pt}
-\input{tables/fd001_summary}
+\begin{tabular}{lccccc}
+\toprule
+Model & Accuracy & Precision & Recall & F1-score & ROC-AUC \\
+\midrule
+CBM & 0.9814 $\pm$ 0.0020 & 0.7870 $\pm$ 0.0512 & 0.5964 $\pm$ 0.1341 & 0.6720 $\pm$ 0.0675 & 0.9696 $\pm$ 0.0200 \\
+CNN & 0.9826 $\pm$ 0.0029 & 0.7822 $\pm$ 0.0470 & 0.6456 $\pm$ 0.0734 & 0.7065 $\pm$ 0.0563 & 0.9837 $\pm$ 0.0007 \\
+FAN (mixed) & 0.9831 $\pm$ 0.0016 & 0.7701 $\pm$ 0.0577 & 0.6948 $\pm$ 0.0699 & 0.7279 $\pm$ 0.0272 & 0.9816 $\pm$ 0.0083 \\
+Transformer & 0.9838 $\pm$ 0.0044 & 0.7350 $\pm$ 0.0699 & 0.7892 $\pm$ 0.0590 & 0.7606 $\pm$ 0.0594 & 0.9917 $\pm$ 0.0050 \\
+\bottomrule
+\end{tabular}
 }
 \end{table}
 
@@ -396,14 +414,40 @@ A limited ablation study was additionally conducted on SWaT in order to assess t
 \caption{Removal- and insertion-based concept faithfulness on SWaT.}
 \label{tab:faithfulness_swat}
 \centering
-\input{tables/swat_faithfulness}
+\begin{tabular}{llccc}
+\toprule
+Model & Intervention & Top-K & F1 & $\Delta$F1 \\
+\midrule
+CBM & insert & 1 & 0.8754 $\pm$ 0.0660 & 0.0077 $\pm$ 0.0204 \\
+CBM & insert & 2 & 0.8743 $\pm$ 0.0791 & 0.0088 $\pm$ 0.0368 \\
+CBM & remove & 1 & 0.9076 $\pm$ 0.0337 & -0.0245 $\pm$ 0.0190 \\
+CBM & remove & 2 & 0.6290 $\pm$ 0.6164 & 0.2541 $\pm$ 0.5816 \\
+FAN (mixed) & insert & 1 & 0.9355 $\pm$ 0.0087 & -0.0154 $\pm$ 0.0197 \\
+FAN (mixed) & insert & 2 & 0.9451 $\pm$ 0.0093 & -0.0250 $\pm$ 0.0276 \\
+FAN (mixed) & remove & 1 & 0.1181 $\pm$ 0.1197 & 0.8021 $\pm$ 0.1217 \\
+FAN (mixed) & remove & 2 & 0.3304 $\pm$ 0.3239 & 0.5898 $\pm$ 0.3165 \\
+\bottomrule
+\end{tabular}
 \end{table}
 
 \begin{table}[tbp]
 \caption{Removal- and insertion-based concept faithfulness on NASA FD001.}
 \label{tab:faithfulness_fd001}
 \centering
-\input{tables/fd001_faithfulness}
+\begin{tabular}{llccc}
+\toprule
+Model & Intervention & Top-K & F1 & $\Delta$F1 \\
+\midrule
+CBM & insert & 1 & 0.6730 $\pm$ 0.0693 & -0.0011 $\pm$ 0.0230 \\
+CBM & insert & 2 & 0.6722 $\pm$ 0.0698 & -0.0002 $\pm$ 0.0029 \\
+CBM & remove & 1 & 0.6714 $\pm$ 0.0496 & 0.0006 $\pm$ 0.0204 \\
+CBM & remove & 2 & 0.4976 $\pm$ 0.3328 & 0.1744 $\pm$ 0.4004 \\
+FAN (mixed) & insert & 1 & 0.7278 $\pm$ 0.0263 & 0.0000 $\pm$ 0.0101 \\
+FAN (mixed) & insert & 2 & 0.6836 $\pm$ 0.0393 & 0.0442 $\pm$ 0.0254 \\
+FAN (mixed) & remove & 1 & 0.0507 $\pm$ 0.0096 & 0.6772 $\pm$ 0.0345 \\
+FAN (mixed) & remove & 2 & 0.0835 $\pm$ 0.0240 & 0.6444 $\pm$ 0.0429 \\
+\bottomrule
+\end{tabular}
 \end{table}
 
 The faithfulness tests provide quantitative support for the role of concept-level evidence. On SWaT, removing the top-ranked FAN concepts causes a large F1-score drop, while retaining only the dominant concept preserves most of the decision signal. A similar pattern is observed on FD001, where top-concept removal substantially degrades the FAN model. This behavior is weaker for CBM, indicating that FAN produces a more concentrated and intervention-sensitive concept ranking.
@@ -412,7 +456,16 @@ The faithfulness tests provide quantitative support for the role of concept-leve
 \caption{Sensitivity of the proposed FAN to concept membership functions.}
 \label{tab:membership_sensitivity}
 \centering
-\input{tables/membership_sensitivity}
+\begin{tabular}{lcccc}
+\toprule
+Membership & SWaT F1 & SWaT ROC-AUC & FD001 F1 & FD001 ROC-AUC \\
+\midrule
+Gaussian & 0.9095 $\pm$ 0.0209 & 0.9990 $\pm$ 0.0006 & 0.7152 $\pm$ 0.0240 & 0.9823 $\pm$ 0.0010 \\
+Bell & 0.9283 $\pm$ 0.0187 & 0.9992 $\pm$ 0.0004 & 0.7138 $\pm$ 0.0571 & 0.9697 $\pm$ 0.0184 \\
+Sigmoid & 0.9110 $\pm$ 0.0354 & 0.9986 $\pm$ 0.0005 & 0.7260 $\pm$ 0.0173 & 0.9663 $\pm$ 0.0146 \\
+Mixed & 0.9202 $\pm$ 0.0231 & 0.9993 $\pm$ 0.0001 & 0.7279 $\pm$ 0.0272 & 0.9816 $\pm$ 0.0083 \\
+\bottomrule
+\end{tabular}
 \end{table}
 
 The membership-function sensitivity analysis indicates that the proposed concept-level aggregation is not tied to a single handcrafted membership shape. Bell-shaped and mixed memberships provide the strongest SWaT results, while mixed and sigmoid memberships are strongest on FD001. For this reason, the main comparison reports the mixed FAN variant, which provides the most balanced behavior across the two scenarios.
@@ -504,7 +557,41 @@ The research was carried out within the state assignment of the Ministry of Scie
 The authors have no competing interests to declare that are relevant to the content of this article.
 \end{credits}
 
-\bibliographystyle{splncs04}
-\bibliography{references}
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{kaggle_nasa_cmaps}
+{Behrad3d}: Nasa turbofan jet engine data set (2024), \url{https://www.kaggle.com/datasets/behrad3d/nasa-cmaps}, kaggle dataset, accessed 2026-04-17
+
+\bibitem{chakraborty2025fantf}
+Chakraborty, S., Heintz, F.: Enhancing time series forecasting with fuzzy attention-integrated transformers. arXiv preprint arXiv:2504.00070  (2025). \doi{10.48550/arXiv.2504.00070}
+
+\bibitem{koh2020cbm}
+Koh, P.W., Nguyen, T., Tang, Y.S., Mussmann, S., Pierson, E., Kim, B., Liang, P.: Concept bottleneck models. In: Proceedings of the 37th International Conference on Machine Learning. Proceedings of Machine Learning Research, vol.~119, pp. 5338--5348. PMLR (2020), \url{https://proceedings.mlr.press/v119/koh20a.html}
+
+\bibitem{onwujekwe2025idss}
+Onwujekwe, G., Weistroffer, H.R.: Intelligent decision support systems: An analysis of the literature and a framework for development. Information Systems Frontiers  \textbf{27}(5),  2027--2058 (2025). \doi{10.1007/s10796-024-10571-1}
+
+\bibitem{schwalbe2024criticalxai}
+Schwalbe, G., Finzel, B.: Explainable machine learning in critical decision systems: Ensuring safe application and correctness. AI  \textbf{5}(4), ~138 (2024). \doi{10.3390/ai5040138}
+
+\bibitem{trofimov2025fuzzytransformer}
+Trofimov, Y.V., Averkin, A.N., Ilin, A.S., Lebedev, A.D., Muravyov, I.P., Shevchenko, A.V.: A fuzzy transformer for multimodal ai: Differential fuzzy attention and adaptive explanations. Soft Measurements and Computing (11), ~3 (2025). \doi{10.36871/2618-9976.2025.11.003}, \url{https://s-lib.com/en/issues/smc_2025_11_a3/}
+
+\bibitem{vaswani2017attention}
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.N., Kaiser, {\L}., Polosukhin, I.: Attention is all you need. In: Advances in Neural Information Processing Systems 30. Curran Associates, Inc. (2017), \url{https://proceedings.neurips.cc/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html}
+
+\bibitem{kaggle_swat_dataset}
+{Vishal Agrawal}: Swat dataset: Secure water treatment system (2025), \url{https://www.kaggle.com/datasets/vishala28/swat-dataset-secure-water-treatment-system}, kaggle dataset, accessed 2026-04-17
+
+\bibitem{zhang2025hfan}
+Zhang, L., Li, Y., Hao, X., Zhang, Q., Yang, A., Guo, J., Zhang, L.: Hypergraph representation learning based on fuzzy attention network. Applied Soft Computing  \textbf{183},  113602 (2025). \doi{10.1016/j.asoc.2025.113602}
+
+\bibitem{zhao2026fanl}
+Zhao, Z., Song, D.H., Kim, K.B.: Fuzzy attention convolutional neural networks: A novel approach combining intuitionistic fuzzy sets and deep learning. Computers, Materials \& Continua  \textbf{87}(2), ~32 (2026). \doi{10.32604/cmc.2026.073969}
+
+\end{thebibliography}
 
 \end{document}
