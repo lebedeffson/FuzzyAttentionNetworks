@@ -6,9 +6,9 @@
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{array}
-\usepackage{hyperref}
-\usepackage{float}
 \usepackage{tabularx}
+\usepackage{url}
+\urlstyle{rm}
 
 \begin{document}
 
@@ -125,16 +125,16 @@ The concept grounding principles for the two datasets are summarized in Tables~\
 \toprule
 Concept & Grounding and semantic interpretation \\
 \midrule
-tank\_level\_deviation &
+Tank-level deviation &
 Derived from level-related sensors; represents abnormal deviation of tank level from the expected operating range. \\
 
-flow\_instability &
+Flow instability &
 Derived from flow-related sensors; represents irregular or abrupt changes in process flow dynamics. \\
 
-pressure\_instability &
+Pressure instability &
 Derived from pressure-related sensors; represents abnormal pressure behavior associated with process instability. \\
 
-actuator\_sensor\_inconsistency &
+Actuator--sensor inconsistency &
 Derived from actuator states and sensor readings; represents mismatch between commanded actuator state and observed physical response. \\
 \bottomrule
 \end{tabularx}
@@ -151,16 +151,16 @@ Derived from actuator states and sensor readings; represents mismatch between co
 \toprule
 Concept & Grounding and semantic interpretation \\
 \midrule
-operational\_stress &
+Operational stress &
 Derived from operational settings and sensor variables; represents an operating regime associated with increased mechanical or thermodynamic load. \\
 
-efficiency\_loss &
+Efficiency loss &
 Derived from temperature, pressure, and rotational variables; represents degradation patterns associated with reduced engine efficiency. \\
 
-thermal\_degradation &
+Thermal degradation &
 Derived from temperature-related variables; represents thermal behavior associated with progressive equipment degradation. \\
 
-pressure\_instability &
+Pressure instability &
 Derived from pressure-related variables; represents pressure-related deviation associated with abnormal operating or degradation behavior. \\
 \bottomrule
 \end{tabularx}
@@ -356,7 +356,9 @@ The empirical evaluation indicates that the first prototype realization of the p
 \caption{Multi-seed comparison on SWaT.}
 \label{tab:swat_results}
 \centering
+{\scriptsize\setlength{\tabcolsep}{1.6pt}
 \input{tables/swat_summary}
+}
 \end{table}
 
 In the anomaly-aware monitoring scenario, the proposed model improved the balance between detection sensitivity and reliability relative to the black-box CNN, CBM, and Transformer baselines, with the clearest gain observed in F1-score. This is particularly relevant in safety-critical settings, where excessive false alarms reduce the practical utility of intelligent decision support.
@@ -365,7 +367,9 @@ In the anomaly-aware monitoring scenario, the proposed model improved the balanc
 \caption{Multi-seed comparison on NASA FD001.}
 \label{tab:fd001_results}
 \centering
+{\scriptsize\setlength{\tabcolsep}{1.6pt}
 \input{tables/fd001_summary}
+}
 \end{table}
 
 In the degradation-aware risk prediction scenario, the comparative picture was more balanced. The Transformer achieved the highest F1-score, while the proposed FAN model outperformed the CNN and CBM baselines and remained close to the attention-based baseline. The obtained trade-off suggests that the proposed concept-oriented organization is not restricted to anomaly-oriented monitoring alone and remains feasible under degradation-aware prognostic conditions.
@@ -423,11 +427,11 @@ The membership-function sensitivity analysis indicates that the proposed concept
 Sample & Case & Pred. prob. & Dominant evidence \\
 \midrule
 0   & Normal & 0.0028 &
-actuator\_sensor\_inconsistency (0.4236) $>$ tank\_level\_deviation (0.0016) $>$ pressure\_instability (0.0000) \\
+actuator--sensor inconsistency (0.4236) $>$ tank-level deviation (0.0016) $>$ pressure instability (0.0000) \\
 41  & Attack & 0.9984 &
-tank\_level\_deviation (0.9586) $>$ flow\_instability (0.0001) $>$ pressure\_instability (0.0000) \\
+tank-level deviation (0.9586) $>$ flow instability (0.0001) $>$ pressure instability (0.0000) \\
 109 & Attack, pred. Normal & 0.3596 &
-tank\_level\_deviation (0.1028) $>$ flow\_instability (0.0003) $>$ actuator\_sensor\_inconsistency (0.0001) \\
+tank-level deviation (0.1028) $>$ flow instability (0.0003) $>$ actuator--sensor inconsistency (0.0001) \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -442,16 +446,16 @@ tank\_level\_deviation (0.1028) $>$ flow\_instability (0.0003) $>$ actuator\_sen
 Sample & Case & Pred. prob. & Dominant evidence \\
 \midrule
 0    & Low-risk & 0.0238 &
-operational\_stress (0.8661) $>$ efficiency\_loss (0.0054) $>$ thermal\_degradation (0.0005) \\
+operational stress (0.8661) $>$ efficiency loss (0.0054) $>$ thermal degradation (0.0005) \\
 1591 & High-risk, pred. Low-risk & 0.1140 &
-operational\_stress (0.3725) $>$ efficiency\_loss (0.0287) $>$ pressure\_instability (0.0009) \\
+operational stress (0.3725) $>$ efficiency loss (0.0287) $>$ pressure instability (0.0009) \\
 1593 & High-risk, pred. Low-risk & 0.0870 &
-operational\_stress (0.4371) $>$ efficiency\_loss (0.0149) $>$ pressure\_instability (0.0007) \\
+operational stress (0.4371) $>$ efficiency loss (0.0149) $>$ pressure instability (0.0007) \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-Qualitative inspection of concept-level explanations indicates that the proposed model forms decisions through highly concentrated concept evidence rather than through uniformly distributed latent interactions. As shown in Tables~\ref{tab:qualitative_swat} and~\ref{tab:qualitative_fd001}, normal SWaT windows are predominantly associated with actuator\_sensor\_inconsistency, whereas correctly detected attack windows are dominated by tank\_level\_deviation. In the NASA FD001 setting, both low-risk and misclassified high-risk cases are primarily driven by operational\_stress, with substantially smaller contributions from the remaining concepts. These examples support the claim that the model operates through sparse and analyzable concept-level aggregation, while also indicating that certain failure cases remain insufficiently separated at the current prototype stage.
+Qualitative inspection of concept-level explanations indicates concentrated concept evidence rather than diffuse latent interactions. As shown in Tables~\ref{tab:qualitative_swat} and~\ref{tab:qualitative_fd001}, normal SWaT windows are predominantly associated with actuator--sensor inconsistency, whereas correctly detected attack windows are dominated by tank-level deviation. In the NASA FD001 setting, both low-risk and misclassified high-risk cases are primarily driven by operational stress, with substantially smaller contributions from the remaining concepts. These examples support the claim that the model operates through sparse and analyzable concept-level aggregation, while also indicating that certain failure cases remain insufficiently separated at the current prototype stage.
 
 Taken together, the results should be interpreted as evidence for the feasibility of the proposed methodological principles rather than as a final empirical validation of the framework. At the current stage, the implementation remains a proof-of-concept realization. Nevertheless, the obtained results show that concept-consistent representation formation and FAN-based concept aggregation can be operationalized in a predictive architecture while maintaining practical relevance and internal interpretability.
 
@@ -497,8 +501,8 @@ Overall, the study supports the view that interpretable decision support in safe
 
 \begin{credits}
 \subsubsection{\ackname}
-The research was carried out within the state assignment of Ministry of Science and Higher Education of the Russian Federation
-(theme No.~124112200072-2).
+The research was carried out within the state assignment of the Ministry of Science and Higher Education of the Russian Federation
+(theme No. 124112200072-2).
 
 \subsubsection{\discintname}
 The authors have no competing interests to declare that are relevant to the content of this article.
