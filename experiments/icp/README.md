@@ -27,3 +27,22 @@ python experiments/icp/run_review_experiments.py \
 ```
 
 Outputs are written as CSV and JSON under `results/icp/`.
+The runner also writes LaTeX table fragments:
+
+- `results/icp/<dataset>_summary.tex`
+- `results/icp/<dataset>_faithfulness.tex`
+
+Quick implementation smoke check:
+
+```bash
+python experiments/icp/run_review_experiments.py \
+  --dataset swat \
+  --data-dir . \
+  --models fan cbm transformer cnn \
+  --seeds 42 \
+  --epochs 1 \
+  --limit-train 128 \
+  --limit-test 64 \
+  --smoke-test \
+  --out-dir results/icp_smoke
+```
