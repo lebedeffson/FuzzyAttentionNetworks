@@ -1,0 +1,36 @@
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{kaggle_nasa_cmaps}
+{Behrad3d}: Nasa turbofan jet engine data set (2024), \url{https://www.kaggle.com/datasets/behrad3d/nasa-cmaps}, kaggle dataset, accessed 2026-04-17
+
+\bibitem{chakraborty2025fantf}
+Chakraborty, S., Heintz, F.: Enhancing time series forecasting with fuzzy attention-integrated transformers. arXiv preprint arXiv:2504.00070  (2025). \doi{10.48550/arXiv.2504.00070}
+
+\bibitem{koh2020cbm}
+Koh, P.W., Nguyen, T., Tang, Y.S., Mussmann, S., Pierson, E., Kim, B., Liang, P.: Concept bottleneck models. In: Proceedings of the 37th International Conference on Machine Learning. Proceedings of Machine Learning Research, vol.~119, pp. 5338--5348. PMLR (2020), \url{https://proceedings.mlr.press/v119/koh20a.html}
+
+\bibitem{onwujekwe2025idss}
+Onwujekwe, G., Weistroffer, H.R.: Intelligent decision support systems: An analysis of the literature and a framework for development. Information Systems Frontiers  \textbf{27}(5),  2027--2058 (2025). \doi{10.1007/s10796-024-10571-1}
+
+\bibitem{schwalbe2024criticalxai}
+Schwalbe, G., Finzel, B.: Explainable machine learning in critical decision systems: Ensuring safe application and correctness. AI  \textbf{5}(4), ~138 (2024). \doi{10.3390/ai5040138}
+
+\bibitem{trofimov2024fan}
+Trofimov, Y.V., Averkin, A.N., Lebedev, A.D., Ilin, A.S., Lebedev, M.D.: Fuzzy attention networks for multimodal ai: Embedded interpretability in transformer architecture (2024), \url{https://www.mce.su/archive/doc507579/eng.pdf}, conference material / accepted abstract
+
+\bibitem{vaswani2017attention}
+Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.N., Kaiser, {\L}., Polosukhin, I.: Attention is all you need. In: Advances in Neural Information Processing Systems 30. Curran Associates, Inc. (2017), \url{https://proceedings.neurips.cc/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html}
+
+\bibitem{kaggle_swat_dataset}
+{Vishal Agrawal}: Swat dataset: Secure water treatment system (2025), \url{https://www.kaggle.com/datasets/vishala28/swat-dataset-secure-water-treatment-system}, kaggle dataset, accessed 2026-04-17
+
+\bibitem{zhang2025hfan}
+Zhang, L., Li, Y., Hao, X., Zhang, Q., Yang, A., Guo, J., Zhang, L.: Hypergraph representation learning based on fuzzy attention network. Applied Soft Computing  \textbf{183},  113602 (2025). \doi{10.1016/j.asoc.2025.113602}
+
+\bibitem{zhao2026fanl}
+Zhao, Z., Song, D.H., Kim, K.B.: Fuzzy attention convolutional neural networks: A novel approach combining intuitionistic fuzzy sets and deep learning. Computers, Materials \& Continua  \textbf{87}(2), ~32 (2026). \doi{10.32604/cmc.2026.073969}
+
+\end{thebibliography}
