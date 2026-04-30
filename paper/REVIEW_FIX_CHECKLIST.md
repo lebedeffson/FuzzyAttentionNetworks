@@ -7,6 +7,7 @@ Addressed reviewer requirements:
 - Conclusion cleaned: removed recursive/duplicated wording and rewrote the limitation paragraph.
 - Full text scan: removed stale artifact phrases and shortened figure captions.
 - Figures replaced: generated reproducible publication-style schematic figures in `paper/figures/`.
+- Weak direct-download conference PDF reference replaced with a DOI-backed journal article reference.
 - Multi-seed evaluation added: SWaT and FD001 are reported over seeds `42, 43, 44` with mean and 95% CI.
 - External baselines added: CNN, CBM, and Transformer are implemented in `experiments/icp/run_review_experiments.py`.
 - Faithfulness added: removal- and insertion-based concept interventions are reported for FAN and CBM.

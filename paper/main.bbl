@@ -18,8 +18,8 @@ Onwujekwe, G., Weistroffer, H.R.: Intelligent decision support systems: An analy
 \bibitem{schwalbe2024criticalxai}
 Schwalbe, G., Finzel, B.: Explainable machine learning in critical decision systems: Ensuring safe application and correctness. AI  \textbf{5}(4), ~138 (2024). \doi{10.3390/ai5040138}
 
-\bibitem{trofimov2024fan}
-Trofimov, Y.V., Averkin, A.N., Lebedev, A.D., Ilin, A.S., Lebedev, M.D.: Fuzzy attention networks for multimodal ai: Embedded interpretability in transformer architecture (2024), \url{https://www.mce.su/archive/doc507579/eng.pdf}, conference material / accepted abstract
+\bibitem{trofimov2025fuzzytransformer}
+Trofimov, Y.V., Averkin, A.N., Ilin, A.S., Lebedev, A.D., Muravyov, I.P., Shevchenko, A.V.: A fuzzy transformer for multimodal ai: Differential fuzzy attention and adaptive explanations. Soft Measurements and Computing (11), ~3 (2025). \doi{10.36871/2618-9976.2025.11.003}, \url{https://s-lib.com/en/issues/smc_2025_11_a3/}
 
 \bibitem{vaswani2017attention}
 Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A.N., Kaiser, {\L}., Polosukhin, I.: Attention is all you need. In: Advances in Neural Information Processing Systems 30. Curran Associates, Inc. (2017), \url{https://proceedings.neurips.cc/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html}
