@@ -1,0 +1,51 @@
+dataset:
+  name: med_circuitbench
+  n_samples: 10000
+  sequence_length: 42
+  window: 36
+  horizon: 6
+  seed: 42
+
+model:
+  input_dim: 27
+  layers: 4
+  d_model: 128
+  heads: 4
+  d_ffn: 512
+  dropout: 0.1
+
+training:
+  batch_size: 128
+  learning_rate: 0.0001
+  weight_decay: 0.01
+  minimum_epochs: 10
+  maximum_epochs: 50
+  patience: 8
+
+sctc:
+  n_features: 512
+  lambda_1: [0.00001, 0.00003, 0.0001, 0.0003, 0.001]
+  lambda_b: [0.05, 0.10, 0.20]
+  lambda_t: [0.0, 0.0001, 0.0003]
+  minimum_support: 0.01
+  maximum_support: 0.30
+  maximum_delta_auroc: 0.01
+  maximum_delta_auprc: 0.01
+  maximum_probability_error: 0.02
+
+interventions:
+  top_features: 20
+  candidates_per_feature: 5
+  high_activation_windows: 100
+  random_directions: 1000
+  minimum_dr: 0.10
+  fdr_alpha: 0.05
+
+circuits:
+  minimum_cie: 0.10
+  minimum_ip: 0.30
+  minimum_stability: 0.60
+  top_k: 3
+
+artifacts:
+  root: artifacts/medical
