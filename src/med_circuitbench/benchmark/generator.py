@@ -76,6 +76,10 @@ class BenchmarkConfig:
     sequence_length: int = 42
     input_window: int = 36
     prediction_horizon: int = 6
+    target_threshold: float = 0.65
+    fallback_positive_rate: float = 0.25
+    infection_prevalence: float = 0.25
+    infection_impulse_strength: float = 3.0
 
 
 def sigmoid(x: np.ndarray) -> np.ndarray:
@@ -134,9 +138,11 @@ def generate_episode(episode_id: int, cfg: BenchmarkConfig, rng: np.random.Gener
     observations = np.zeros((cfg.sequence_length, 8), dtype=np.float64)
     masks = np.zeros((cfg.sequence_length, 8), dtype=np.float64)
     infection_start = int(rng.integers(0, max(1, cfg.input_window // 2)))
+    infection_active = bool(rng.random() < cfg.infection_prevalence)
     impulse = np.zeros(cfg.sequence_length, dtype=np.float64)
-    impulse[infection_start] = 1.0
-    states[0] = sigmoid(BIAS + 1.4 * impulse[0] * np.asarray([1, 0, 0, 0, 0]) + rng.normal(0.0, 0.03, 5))
+    if infection_active:
+        impulse[infection_start:] = cfg.infection_impulse_strength
+    states[0] = sigmoid(BIAS + impulse[0] * np.ones(5) + rng.normal(0.0, 0.03, 5))
     for t in range(cfg.sequence_length):
         if t > 0:
             treatments[t] = _treatment_policy(states[t - 1], rng)
@@ -149,7 +155,7 @@ def generate_episode(episode_id: int, cfg: BenchmarkConfig, rng: np.random.Gener
                 BIAS
                 + A @ states[t - 1]
                 + B @ delayed
-                + 1.4 * impulse[t] * np.asarray([1, 0, 0, 0, 0])
+                + impulse[t] * np.ones(5)
                 + rng.normal(0.0, 0.03, 5)
             )
         observations[t] = np.clip(
@@ -165,7 +171,8 @@ def generate_episode(episode_id: int, cfg: BenchmarkConfig, rng: np.random.Gener
         [values[: cfg.input_window], masks[: cfg.input_window], deltas[: cfg.input_window], treatments[: cfg.input_window]],
         axis=1,
     )
-    target = int(states[cfg.input_window : cfg.sequence_length, 4].max() >= 0.65)
+    shock_score = float(states[cfg.input_window : cfg.sequence_length, 4].max())
+    target = int(shock_score >= cfg.target_threshold)
     return {
         "episode_id": int(episode_id),
         "states": states,
@@ -174,6 +181,9 @@ def generate_episode(episode_id: int, cfg: BenchmarkConfig, rng: np.random.Gener
         "masks": masks,
         "delta_time": deltas,
         "model_input": model_input,
+        "shock_score": shock_score,
+        "infection_active": infection_active,
+        "infection_start": infection_start,
         "target": target,
     }
 
@@ -198,10 +208,22 @@ def _array_to_list(row: Dict[str, object]) -> Dict[str, object]:
     return out
 
 
+def _apply_target_fallback(episodes: List[Dict[str, object]], cfg: BenchmarkConfig) -> tuple[float, bool]:
+    targets = np.asarray([int(ep["target"]) for ep in episodes], dtype=int)
+    if np.unique(targets).size > 1:
+        return cfg.target_threshold, False
+    scores = np.asarray([float(ep["shock_score"]) for ep in episodes], dtype=np.float64)
+    threshold = float(np.quantile(scores, 1.0 - cfg.fallback_positive_rate))
+    for ep in episodes:
+        ep["target"] = int(float(ep["shock_score"]) >= threshold)
+    return threshold, True
+
+
 def write_benchmark(out_dir: Path, cfg: BenchmarkConfig) -> Dict[str, str]:
     out_dir.mkdir(parents=True, exist_ok=True)
     rng = np.random.default_rng(cfg.seed)
     episodes = [_array_to_list(generate_episode(i, cfg, rng)) for i in range(cfg.n_samples)]
+    effective_threshold, used_fallback = _apply_target_fallback(episodes, cfg)
     pd.DataFrame(episodes).to_parquet(out_dir / "episodes.parquet", index=False)
     graph = true_graph()
     (out_dir / "true_graph.json").write_text(json.dumps(graph, indent=2), encoding="utf-8")
@@ -211,6 +233,12 @@ def write_benchmark(out_dir: Path, cfg: BenchmarkConfig) -> Dict[str, str]:
         "created_at": datetime.now(timezone.utc).isoformat(),
         "dataset": "med_circuitbench",
         "config": asdict(cfg),
+        "target": {
+            "source_threshold": cfg.target_threshold,
+            "effective_threshold": effective_threshold,
+            "fallback_used": used_fallback,
+            "positive_rate": float(np.mean([int(ep["target"]) for ep in episodes])),
+        },
         "files": {
             "episodes": "episodes.parquet",
             "true_graph": "true_graph.json",

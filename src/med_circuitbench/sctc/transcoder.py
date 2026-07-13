@@ -11,7 +11,9 @@ import torch.nn.functional as F
 class SparseClinicalTranscoder(nn.Module):
     def __init__(self, d_model: int = 128, n_features: int = 512):
         super().__init__()
-        self.encoder = nn.Sequential(nn.Linear(d_model, n_features), nn.ReLU())
+        encoder = nn.Linear(d_model, n_features)
+        nn.init.constant_(encoder.bias, -0.25)
+        self.encoder = nn.Sequential(encoder, nn.ReLU())
         self.decoder = nn.Linear(n_features, d_model)
 
     def forward(self, h: torch.Tensor) -> Dict[str, torch.Tensor]:
