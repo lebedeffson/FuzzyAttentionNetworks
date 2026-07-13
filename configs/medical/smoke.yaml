@@ -5,9 +5,10 @@ dataset:
   window: 36
   horizon: 6
   seed: 42
-  target_threshold: 0.65
-  allow_target_fallback: true
-  fallback_positive_rate: 0.25
+  target_threshold: 0.0715
+  allow_target_fallback: false
+  positive_rate_min: 0.20
+  positive_rate_max: 0.30
   infection_prevalence: 0.25
   infection_impulse_strength: 3.0
 
@@ -26,16 +27,22 @@ training:
   minimum_epochs: 1
   maximum_epochs: 2
   patience: 1
+  gradient_clip: 1.0
+  monitor: validation_auprc
 
 cls:
   max_layers: 2
   relative_threshold: 0.40
-  half_split_repeats: 2
-  concept_threshold: 0.50
+  stability_repeats: 2
+  trim_gradient_top_fraction: 0.01
 
 sctc:
   n_features: 64
   max_training_windows: 32
+  maximum_epochs: 2
+  patience: 1
+  learning_rate: 0.001
+  weight_decay: 0.00001
   lambda_1: [0.0001]
   lambda_b: [0.10]
   lambda_t: [0.0]

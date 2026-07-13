@@ -5,22 +5,14 @@ dataset:
   window: 36
   horizon: 6
   seed: 42
-  target_threshold: 0.65
+  seeds: [42, 43, 44]
+  target_threshold: 0.0715
   allow_target_fallback: false
-  fallback_positive_rate: 0.25
+  positive_rate_min: 0.20
+  positive_rate_max: 0.30
+  split: [0.60, 0.20, 0.20]
   infection_prevalence: 0.25
   infection_impulse_strength: 3.0
-
-cls:
-  max_layers: 3
-  relative_threshold: 0.40
-  half_split_repeats: 20
-  concept_threshold: 0.50
-  weights:
-    decodability: 0.35
-    sparsity: 0.20
-    sensitivity: 0.30
-    stability: 0.15
 
 model:
   input_dim: 27
@@ -29,6 +21,7 @@ model:
   heads: 4
   d_ffn: 512
   dropout: 0.1
+  pooling: mean
 
 training:
   batch_size: 128
@@ -37,15 +30,35 @@ training:
   minimum_epochs: 10
   maximum_epochs: 50
   patience: 8
+  gradient_clip: 1.0
+  monitor: validation_auprc
+
+cls:
+  concepts: latent_states_median_train
+  stability_repeats: 20
+  trim_gradient_top_fraction: 0.01
+  max_layers: 3
+  relative_threshold: 0.40
+  weights:
+    decodability: 0.35
+    sparsity: 0.20
+    sensitivity: 0.30
+    stability: 0.15
 
 sctc:
   n_features: 512
   max_training_windows: 128
+  maximum_epochs: 30
+  patience: 5
+  learning_rate: 0.001
+  weight_decay: 0.00001
   lambda_1: [0.00001, 0.00003, 0.0001, 0.0003, 0.001]
   lambda_b: [0.05, 0.10, 0.20]
   lambda_t: [0.0, 0.0001, 0.0003]
   minimum_support: 0.01
   maximum_support: 0.30
+  minimum_eligible_features: 32
+  minimum_eligible_fraction: 0.10
   maximum_delta_auroc: 0.01
   maximum_delta_auprc: 0.01
   maximum_probability_error: 0.02
@@ -56,13 +69,23 @@ interventions:
   high_activation_windows: 100
   random_directions: 1000
   minimum_dr: 0.10
+  minimum_abs_dr: 0.10
   fdr_alpha: 0.05
+  require_ablate_push_consistency: true
 
 circuits:
+  minimum_edges: 2
+  maximum_candidate_paths: 500
   minimum_cie: 0.10
   minimum_ip: 0.30
   minimum_stability: 0.60
   top_k: 3
+  correction_delta_probability: 0.05
+
+stability:
+  reference_seed: 2026
+  match_threshold: 0.70
+  minimum_presence_fraction: 0.60
 
 artifacts:
   root: artifacts/medical

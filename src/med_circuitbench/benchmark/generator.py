@@ -76,7 +76,7 @@ class BenchmarkConfig:
     sequence_length: int = 42
     input_window: int = 36
     prediction_horizon: int = 6
-    target_threshold: float = 0.65
+    target_threshold: float = 0.0715
     allow_target_fallback: bool = False
     fallback_positive_rate: float = 0.25
     infection_prevalence: float = 0.25
@@ -121,7 +121,7 @@ def _missing_mask(obs: np.ndarray, state: np.ndarray, rng: np.random.Generator) 
 
 def _delta_times(mask: np.ndarray) -> np.ndarray:
     out = np.zeros_like(mask, dtype=np.float64)
-    last_seen = np.full(mask.shape[1], -10_000, dtype=int)
+    last_seen = np.repeat(-10_000, mask.shape[1]).astype(int)
     for t in range(mask.shape[0]):
         for j in range(mask.shape[1]):
             if mask[t, j] == 1:

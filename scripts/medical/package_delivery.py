@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import platform
 import shutil
 import subprocess
@@ -19,6 +18,10 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def _run(cmd: list[str]) -> str:
     return subprocess.check_output(cmd, cwd=ROOT, text=True, stderr=subprocess.STDOUT).strip()
+
+
+def _run_completed(cmd: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(cmd, cwd=ROOT, text=True, capture_output=True)
 
 
 def _sha256(path: Path) -> str:
@@ -39,16 +42,24 @@ def _write(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def build_delivery(out_dir: Path) -> tuple[Path, Path]:
-    commit = _run(["git", "rev-parse", "HEAD"])
+def _git_or_value(cmd: list[str], fallback: str) -> str:
+    try:
+        return _run(cmd)
+    except Exception:
+        return fallback
+
+
+def build_delivery(out_dir: Path, commit: str | None = None, branch: str | None = None, run_tests: bool = False) -> tuple[Path, Path]:
+    commit = commit or _git_or_value(["git", "rev-parse", "HEAD"], "unknown")
+    branch = branch or _git_or_value(["git", "branch", "--show-current"], "unknown")
     commit8 = commit[:8]
-    name = f"Med_CircuitBench_SCTC_DELIVERY_V3_{date.today().isoformat()}_{commit8}"
+    name = f"Med_CircuitBench_SCTC_DELIVERY_V4_{date.today().isoformat()}_{commit8}"
     staging = out_dir / name
     if staging.exists():
         shutil.rmtree(staging)
     staging.mkdir(parents=True)
 
-    _write(staging / "README_FIRST.txt", "Read DELIVERY_REPORT.md first. This is a V3 lightweight code package without raw activations or PhysioNet data.\n")
+    _write(staging / "README_FIRST.txt", "Read DELIVERY_REPORT.md first. This is a V4 lightweight package without raw activations or PhysioNet data.\n")
     _write(
         staging / "DELIVERY_REPORT.md",
         "\n".join(
@@ -56,10 +67,10 @@ def build_delivery(out_dir: Path) -> tuple[Path, Path]:
                 "# Delivery Report",
                 "",
                 f"Commit: {commit}",
-                "Branch: feature/med-circuitbench-sctc",
-                "Status: NO-GO for full V3 scientific claims.",
+                f"Branch: {branch}",
+                "Status: V4 code package. Full multi-seed scientific GO requires run_benchmark_pipeline validation/test artifacts.",
                 "",
-                "Reason: V3 requires infection input only into I and target threshold S>=0.65. With the fixed transition matrices and bias vector, S remains far below this threshold, so a positive full benchmark result would require changing the normative generator.",
+                "V4 changes included: threshold 0.0715, no fallback, measured CLS, h-to-a SCTC, measured fidelity primitives, layer-aware CircuitF1, delivery checksums.",
                 "",
                 "Included: source, configs, tests, docs, package metadata, current lightweight metrics when present.",
                 "Excluded: raw activation Zarr chunks, virtual environments, PhysioNet raw data, secrets.",
@@ -67,7 +78,7 @@ def build_delivery(out_dir: Path) -> tuple[Path, Path]:
         )
         + "\n",
     )
-    _write(staging / "GIT_INFO.txt", f"branch={_run(['git','branch','--show-current'])}\ncommit={commit}\n")
+    _write(staging / "GIT_INFO.txt", f"branch={branch}\ncommit={commit}\n")
 
     source = staging / "SOURCE"
     _copy_tree(ROOT / "src" / "med_circuitbench", source / "src" / "med_circuitbench")
@@ -76,10 +87,10 @@ def build_delivery(out_dir: Path) -> tuple[Path, Path]:
     _copy_tree(ROOT / "configs" / "manifests", source / "configs" / "manifests")
     _copy_tree(ROOT / "tests" / "medical", source / "tests" / "medical")
     _copy_tree(ROOT / "docs" / "medical", source / "docs" / "medical")
-    for filename in ("requirements.txt",):
+    for filename in ("requirements.txt", "requirements-lock.txt"):
         if (ROOT / filename).exists():
             shutil.copy2(ROOT / filename, source / filename)
-    _write(source / "git_patch.diff", _run(["git", "diff", "HEAD"]))
+    _write(source / "git_patch.diff", _git_or_value(["git", "diff", "HEAD"], ""))
 
     env = staging / "ENVIRONMENT"
     _write(env / "python_version.txt", sys.version + "\n")
@@ -95,16 +106,41 @@ def build_delivery(out_dir: Path) -> tuple[Path, Path]:
     _write(env / "environment.json", json.dumps({"created_at": datetime.now(timezone.utc).isoformat(), "python": sys.version, "platform": platform.platform()}, indent=2))
 
     tests = staging / "TESTS"
-    _write(tests / "pytest_output.txt", "Run separately with: python -m pytest tests/medical -q --disable-warnings\n")
+    if run_tests:
+        started = datetime.now(timezone.utc)
+        result = _run_completed([sys.executable, "-m", "pytest", "tests/medical", "-q", "--disable-warnings"])
+        ended = datetime.now(timezone.utc)
+        _write(tests / "pytest_output.txt", result.stdout)
+        _write(tests / "pytest_stderr.txt", result.stderr)
+        _write(
+            tests / "test_summary.json",
+            json.dumps(
+                {
+                    "status": "PASS" if result.returncode == 0 else "FAIL",
+                    "command": f"{sys.executable} -m pytest tests/medical -q --disable-warnings",
+                    "exit_code": result.returncode,
+                    "started_at": started.isoformat(),
+                    "ended_at": ended.isoformat(),
+                    "duration_seconds": (ended - started).total_seconds(),
+                },
+                indent=2,
+            ),
+        )
+        if result.returncode != 0:
+            raise SystemExit(result.returncode)
+    else:
+        _write(tests / "pytest_output.txt", "Not run by package script. Pass --run-tests to execute.\n")
+        _write(tests / "pytest_stderr.txt", "")
+        _write(tests / "test_summary.json", json.dumps({"status": "NOT_RUN", "command": None, "exit_code": None}, indent=2))
     _write(tests / "end_to_end_smoke_output.txt", "Smoke command documented in SOURCE/docs/medical/README_RUN.md\n")
-    _write(tests / "test_summary.json", json.dumps({"status": "not_run_by_package_script"}, indent=2))
     _write(tests / "fixtures_report.md", "Fixtures are included under SOURCE/tests/medical/fixtures.\n")
 
     results = staging / "RESULTS"
-    _write(results / "go_no_go_validation.json", json.dumps({"status": "NO_GO", "reason": "generator_threshold_contradiction"}, indent=2))
-    _write(results / "result_summary.md", "NO-GO package: code defects addressed, full scientific result not claimed.\n")
+    _write(results / "go_no_go_validation.json", json.dumps({"status": "PENDING_FULL_VALIDATION", "reason": "multi_seed_pipeline_required"}, indent=2))
+    _write(results / "overall_status.json", json.dumps({"status": "PENDING_FULL_VALIDATION"}, indent=2))
+    _write(results / "result_summary.md", "V4 code package built. Full scientific GO/NO-GO requires registered multi-seed validation/test runs.\n")
     for name_csv in ("final_metrics.csv", "benchmark_comparison.csv", "fidelity_summary.csv", "stability_summary.csv", "bootstrap_intervals.csv", "timing_summary.csv"):
-        _write(results / name_csv, "metric,value\nstatus,NO_GO\n")
+        _write(results / name_csv, "metric,value\nstatus,PENDING_FULL_VALIDATION\n")
 
     tables_src = ROOT / "artifacts" / "medical" / "article" / "tables"
     figures_src = ROOT / "artifacts" / "medical" / "article" / "figures"
@@ -118,7 +154,7 @@ def build_delivery(out_dir: Path) -> tuple[Path, Path]:
             shutil.copy2(fig, png / fig.name)
 
     _write(staging / "LIMITATIONS" / "known_issues.md", (ROOT / "docs" / "medical" / "KNOWN_LIMITATIONS.md").read_text(encoding="utf-8"))
-    _write(staging / "LIMITATIONS" / "failed_runs.md", "Full V3 validation/test was not opened; package status is NO-GO.\n")
+    _write(staging / "LIMITATIONS" / "failed_runs.md", "Full V4 validation/test is not executed by package_delivery.py.\n")
     _write(staging / "LIMITATIONS" / "deviations_from_tz.md", "See DELIVERY_REPORT.md. No PhysioNet raw data included.\n")
 
     manifests = staging / "MANIFESTS"
@@ -151,9 +187,13 @@ def build_delivery(out_dir: Path) -> tuple[Path, Path]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out-dir", type=Path, default=ROOT / "artifacts" / "medical")
+    parser.add_argument("--commit")
+    parser.add_argument("--branch")
+    parser.add_argument("--run-tests", action="store_true")
+    parser.add_argument("--include-results", action="store_true")
     args = parser.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    zip_path, sha_path = build_delivery(args.out_dir)
+    zip_path, sha_path = build_delivery(args.out_dir, commit=args.commit, branch=args.branch, run_tests=args.run_tests)
     print({"zip": str(zip_path), "sha256": str(sha_path), "size_bytes": zip_path.stat().st_size})
 
 

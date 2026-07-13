@@ -65,7 +65,7 @@ def main() -> None:
     random_prob = rng.random(len(val_ids))
     rows.append({"method": "random_scores", **_metrics(y[val_ids], random_prob)})
 
-    majority_prob = np.full(len(val_ids), float(y[train_ids].mean()))
+    majority_prob = np.repeat(float(y[train_ids].mean()), len(val_ids))
     rows.append({"method": "majority_rate", **_metrics(y[val_ids], majority_prob)})
 
     out = root / args.dataset / "baselines"

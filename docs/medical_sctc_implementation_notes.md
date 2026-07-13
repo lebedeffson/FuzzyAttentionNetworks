@@ -38,7 +38,7 @@ Clarified contradictions and implementation choices:
 - The Word document describes a broader system including API, React UI, VAE counterfactuals and optional LLM annotation. The user assignment excludes those from MVP. This branch implements the research-core MVP first.
 - The Word document mentions Python 3.11 or compatible. The available local environment is Python 3.14.6 and successfully runs the current tests.
 - The Word document contains broader baseline ambitions than the MVP acceptance list. This branch includes baseline entry points and core baseline primitives; full GAM/EBM/LIME/SHAP integration remains a later extension.
-- The document states `y = 1` when `max(S[36:42]) >= 0.65`, but with the listed bias vector and infection input restricted to `I`, the generated `S` values stay far below the threshold. V3 prohibits direct infection injection into `R`, `V`, `O`, and `S`; therefore the full benchmark is treated as a NO-GO until the generator specification is amended. Fallback is allowed only in `configs/medical/smoke.yaml`.
+- V4 replaces the incompatible `0.65` target threshold with fixed `target_threshold=0.0715`. Fallback is disabled in benchmark and smoke configs. Infection input remains restricted to `I`.
 
 Current verified commands:
 
@@ -76,7 +76,7 @@ Current verified commands:
 
 Known limitation of this increment:
 
-- Med-CircuitBench full V3 is currently NO-GO because the fixed generator cannot produce the required target while respecting the V3 causal-injection rule.
+- Med-CircuitBench V4 generator now uses fixed threshold `0.0715`, no fallback, and seed 42/43/44 positive rates were checked in the required 0.20--0.30 range.
 - SCTC training now maps `h_l -> z_l -> a_hat_l`, computes behavior through frozen-transformer replacement, and measures validation fidelity rather than filling constants.
 - Circuit construction currently uses decoder/encoder direction association and random-direction significance. Full downstream intervention propagation through later transformer layers remains the next required strengthening step before strong mechanistic claims.
 - PhysioNet preparation and command entry points are present, but a full PhysioNet run requires external raw data, which must stay outside Git.

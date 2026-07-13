@@ -20,4 +20,4 @@ python scripts/medical/train_sctc.py --dataset med_circuitbench --config configs
 python scripts/medical/build_circuits.py --dataset med_circuitbench --config configs/medical/smoke.yaml
 ```
 
-V3 status: the full benchmark remains NO-GO until the generator contradiction around `S>=0.65` with infection input only into `I` is resolved.
+V4 status: Med-CircuitBench uses fixed `target_threshold=0.0715`, no fallback, and infection input only into `I`.
