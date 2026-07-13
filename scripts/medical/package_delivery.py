@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import platform
+import shutil
+import subprocess
+import sys
+import zipfile
+from datetime import date, datetime, timezone
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def _run(cmd: list[str]) -> str:
+    return subprocess.check_output(cmd, cwd=ROOT, text=True, stderr=subprocess.STDOUT).strip()
+
+
+def _sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _copy_tree(src: Path, dst: Path) -> None:
+    if src.exists():
+        shutil.copytree(src, dst, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache"))
+
+
+def _write(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
+def build_delivery(out_dir: Path) -> tuple[Path, Path]:
+    commit = _run(["git", "rev-parse", "HEAD"])
+    commit8 = commit[:8]
+    name = f"Med_CircuitBench_SCTC_DELIVERY_V3_{date.today().isoformat()}_{commit8}"
+    staging = out_dir / name
+    if staging.exists():
+        shutil.rmtree(staging)
+    staging.mkdir(parents=True)
+
+    _write(staging / "README_FIRST.txt", "Read DELIVERY_REPORT.md first. This is a V3 lightweight code package without raw activations or PhysioNet data.\n")
+    _write(
+        staging / "DELIVERY_REPORT.md",
+        "\n".join(
+            [
+                "# Delivery Report",
+                "",
+                f"Commit: {commit}",
+                "Branch: feature/med-circuitbench-sctc",
+                "Status: NO-GO for full V3 scientific claims.",
+                "",
+                "Reason: V3 requires infection input only into I and target threshold S>=0.65. With the fixed transition matrices and bias vector, S remains far below this threshold, so a positive full benchmark result would require changing the normative generator.",
+                "",
+                "Included: source, configs, tests, docs, package metadata, current lightweight metrics when present.",
+                "Excluded: raw activation Zarr chunks, virtual environments, PhysioNet raw data, secrets.",
+            ]
+        )
+        + "\n",
+    )
+    _write(staging / "GIT_INFO.txt", f"branch={_run(['git','branch','--show-current'])}\ncommit={commit}\n")
+
+    source = staging / "SOURCE"
+    _copy_tree(ROOT / "src" / "med_circuitbench", source / "src" / "med_circuitbench")
+    _copy_tree(ROOT / "scripts" / "medical", source / "scripts" / "medical")
+    _copy_tree(ROOT / "configs" / "medical", source / "configs" / "medical")
+    _copy_tree(ROOT / "configs" / "manifests", source / "configs" / "manifests")
+    _copy_tree(ROOT / "tests" / "medical", source / "tests" / "medical")
+    _copy_tree(ROOT / "docs" / "medical", source / "docs" / "medical")
+    for filename in ("requirements.txt",):
+        if (ROOT / filename).exists():
+            shutil.copy2(ROOT / filename, source / filename)
+    _write(source / "git_patch.diff", _run(["git", "diff", "HEAD"]))
+
+    env = staging / "ENVIRONMENT"
+    _write(env / "python_version.txt", sys.version + "\n")
+    _write(env / "system_info.txt", f"platform={platform.platform()}\n")
+    try:
+        _write(env / "pip_freeze.txt", _run([sys.executable, "-m", "pip", "freeze"]) + "\n")
+    except Exception as exc:
+        _write(env / "pip_freeze.txt", f"pip freeze failed: {exc}\n")
+    try:
+        _write(env / "gpu_info.txt", _run(["nvidia-smi"]) + "\n")
+    except Exception as exc:
+        _write(env / "gpu_info.txt", f"nvidia-smi unavailable: {exc}\n")
+    _write(env / "environment.json", json.dumps({"created_at": datetime.now(timezone.utc).isoformat(), "python": sys.version, "platform": platform.platform()}, indent=2))
+
+    tests = staging / "TESTS"
+    _write(tests / "pytest_output.txt", "Run separately with: python -m pytest tests/medical -q --disable-warnings\n")
+    _write(tests / "end_to_end_smoke_output.txt", "Smoke command documented in SOURCE/docs/medical/README_RUN.md\n")
+    _write(tests / "test_summary.json", json.dumps({"status": "not_run_by_package_script"}, indent=2))
+    _write(tests / "fixtures_report.md", "Fixtures are included under SOURCE/tests/medical/fixtures.\n")
+
+    results = staging / "RESULTS"
+    _write(results / "go_no_go_validation.json", json.dumps({"status": "NO_GO", "reason": "generator_threshold_contradiction"}, indent=2))
+    _write(results / "result_summary.md", "NO-GO package: code defects addressed, full scientific result not claimed.\n")
+    for name_csv in ("final_metrics.csv", "benchmark_comparison.csv", "fidelity_summary.csv", "stability_summary.csv", "bootstrap_intervals.csv", "timing_summary.csv"):
+        _write(results / name_csv, "metric,value\nstatus,NO_GO\n")
+
+    tables_src = ROOT / "artifacts" / "medical" / "article" / "tables"
+    figures_src = ROOT / "artifacts" / "medical" / "article" / "figures"
+    _copy_tree(tables_src, staging / "TABLES")
+    if figures_src.exists():
+        png = staging / "FIGURES" / "PNG"
+        pdf = staging / "FIGURES" / "PDF"
+        png.mkdir(parents=True, exist_ok=True)
+        pdf.mkdir(parents=True, exist_ok=True)
+        for fig in figures_src.glob("*.png"):
+            shutil.copy2(fig, png / fig.name)
+
+    _write(staging / "LIMITATIONS" / "known_issues.md", (ROOT / "docs" / "medical" / "KNOWN_LIMITATIONS.md").read_text(encoding="utf-8"))
+    _write(staging / "LIMITATIONS" / "failed_runs.md", "Full V3 validation/test was not opened; package status is NO-GO.\n")
+    _write(staging / "LIMITATIONS" / "deviations_from_tz.md", "See DELIVERY_REPORT.md. No PhysioNet raw data included.\n")
+
+    manifests = staging / "MANIFESTS"
+    manifests.mkdir(parents=True, exist_ok=True)
+    if (ROOT / "configs" / "manifests" / "article.yaml").exists():
+        shutil.copy2(ROOT / "configs" / "manifests" / "article.yaml", manifests / "article_manifest.yaml")
+    checksums = []
+    for file in sorted(p for p in staging.rglob("*") if p.is_file()):
+        rel = file.relative_to(staging)
+        if rel == Path("MANIFESTS/checksums.sha256"):
+            continue
+        checksums.append(f"{_sha256(file)}  {rel.as_posix()}")
+    _write(manifests / "checksums.sha256", "\n".join(checksums) + "\n")
+    _write(
+        manifests / "delivery_manifest.json",
+        json.dumps({"name": name, "commit": commit, "created_at": datetime.now(timezone.utc).isoformat(), "files": len(checksums)}, indent=2),
+    )
+
+    zip_path = out_dir / f"{name}.zip"
+    sha_path = out_dir / f"{name}.zip.sha256"
+    if zip_path.exists():
+        zip_path.unlink()
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for file in sorted(p for p in staging.rglob("*") if p.is_file()):
+            zf.write(file, file.relative_to(out_dir))
+    _write(sha_path, f"{_sha256(zip_path)}  {zip_path.name}\n")
+    return zip_path, sha_path
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--out-dir", type=Path, default=ROOT / "artifacts" / "medical")
+    args = parser.parse_args()
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    zip_path, sha_path = build_delivery(args.out_dir)
+    print({"zip": str(zip_path), "sha256": str(sha_path), "size_bytes": zip_path.stat().st_size})
+
+
+if __name__ == "__main__":
+    main()

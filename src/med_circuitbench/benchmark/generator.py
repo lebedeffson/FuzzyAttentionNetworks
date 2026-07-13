@@ -77,6 +77,7 @@ class BenchmarkConfig:
     input_window: int = 36
     prediction_horizon: int = 6
     target_threshold: float = 0.65
+    allow_target_fallback: bool = False
     fallback_positive_rate: float = 0.25
     infection_prevalence: float = 0.25
     infection_impulse_strength: float = 3.0
@@ -132,6 +133,18 @@ def _delta_times(mask: np.ndarray) -> np.ndarray:
     return out
 
 
+def infection_input_at(impulse_value: float) -> np.ndarray:
+    infection_input = np.zeros(5, dtype=np.float64)
+    infection_input[0] = float(impulse_value)
+    return infection_input
+
+
+def initial_state(impulse_value: float, noise: np.ndarray | None = None) -> np.ndarray:
+    if noise is None:
+        noise = np.zeros(5, dtype=np.float64)
+    return sigmoid(BIAS + infection_input_at(impulse_value) + noise)
+
+
 def generate_episode(episode_id: int, cfg: BenchmarkConfig, rng: np.random.Generator) -> Dict[str, object]:
     states = np.zeros((cfg.sequence_length, 5), dtype=np.float64)
     treatments = np.zeros((cfg.sequence_length, 3), dtype=np.float64)
@@ -142,7 +155,7 @@ def generate_episode(episode_id: int, cfg: BenchmarkConfig, rng: np.random.Gener
     impulse = np.zeros(cfg.sequence_length, dtype=np.float64)
     if infection_active:
         impulse[infection_start:] = cfg.infection_impulse_strength
-    states[0] = sigmoid(BIAS + impulse[0] * np.ones(5) + rng.normal(0.0, 0.03, 5))
+    states[0] = initial_state(impulse[0], rng.normal(0.0, 0.03, 5))
     for t in range(cfg.sequence_length):
         if t > 0:
             treatments[t] = _treatment_policy(states[t - 1], rng)
@@ -155,7 +168,7 @@ def generate_episode(episode_id: int, cfg: BenchmarkConfig, rng: np.random.Gener
                 BIAS
                 + A @ states[t - 1]
                 + B @ delayed
-                + impulse[t] * np.ones(5)
+                + infection_input_at(impulse[t])
                 + rng.normal(0.0, 0.03, 5)
             )
         observations[t] = np.clip(
@@ -211,6 +224,8 @@ def _array_to_list(row: Dict[str, object]) -> Dict[str, object]:
 def _apply_target_fallback(episodes: List[Dict[str, object]], cfg: BenchmarkConfig) -> tuple[float, bool]:
     targets = np.asarray([int(ep["target"]) for ep in episodes], dtype=int)
     if np.unique(targets).size > 1:
+        return cfg.target_threshold, False
+    if not cfg.allow_target_fallback:
         return cfg.target_threshold, False
     scores = np.asarray([float(ep["shock_score"]) for ep in episodes], dtype=np.float64)
     threshold = float(np.quantile(scores, 1.0 - cfg.fallback_positive_rate))

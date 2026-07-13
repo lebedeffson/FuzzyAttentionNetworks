@@ -36,18 +36,23 @@ def main() -> None:
         x = np.stack([np.stack(v).astype(np.float32) for v in df["model_input"]])
         y = df["target"].to_numpy(dtype=np.float32)
         window_ids = df["episode_id"].to_numpy(dtype=np.int64)
+        subject_ids = window_ids.copy()
         split = np.asarray([0] * len(splits["train"]) + [1] * len(splits["validation"]), dtype=np.int8)
     else:
         prep = Path(cfg["dataset"]["prepared_dir"])
         x = np.concatenate([np.load(prep / "train_x.npy"), np.load(prep / "validation_x.npy")]).astype(np.float32)
         y = np.concatenate([np.load(prep / "train_y.npy"), np.load(prep / "validation_y.npy")]).astype(np.float32)
         window_ids = np.arange(len(y), dtype=np.int64)
+        subject_ids = window_ids.copy()
         split = np.asarray([0] * len(np.load(prep / "train_y.npy")) + [1] * len(np.load(prep / "validation_y.npy")), dtype=np.int8)
     delta = max_prediction_delta_with_hooks(model, torch.tensor(x[:16]))
     if delta >= 1e-6:
         raise SystemExit(f"hooks changed prediction: {delta}")
     store = collect_ffn_activations(model, DataLoader(TensorDataset(torch.tensor(x), torch.tensor(y)), batch_size=64))
+    store["x"] = x
+    store["x_observed"] = x[:, :, :8]
     store["window_id"] = window_ids
+    store["subject_id"] = subject_ids
     store["split"] = split
     out_dir = root / args.dataset / "activations"
     write_activation_store_zarr(store, out_dir)

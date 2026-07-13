@@ -38,7 +38,7 @@ Clarified contradictions and implementation choices:
 - The Word document describes a broader system including API, React UI, VAE counterfactuals and optional LLM annotation. The user assignment excludes those from MVP. This branch implements the research-core MVP first.
 - The Word document mentions Python 3.11 or compatible. The available local environment is Python 3.14.6 and successfully runs the current tests.
 - The Word document contains broader baseline ambitions than the MVP acceptance list. This branch includes baseline entry points and core baseline primitives; full GAM/EBM/LIME/SHAP integration remains a later extension.
-- The document states `y = 1` when `max(S[36:42]) >= 0.65`, but with the listed bias vector and a one-step `+1.4` impulse into `I`, the generated `S` values stay near 0.07 and the label is degenerate. The implemented benchmark mode therefore uses a persistent systemic infection impulse for a controlled positive subset. The original threshold `0.65` is preserved and the manifest records whether any fallback threshold was used.
+- The document states `y = 1` when `max(S[36:42]) >= 0.65`, but with the listed bias vector and infection input restricted to `I`, the generated `S` values stay far below the threshold. V3 prohibits direct infection injection into `R`, `V`, `O`, and `S`; therefore the full benchmark is treated as a NO-GO until the generator specification is amended. Fallback is allowed only in `configs/medical/smoke.yaml`.
 
 Current verified commands:
 
@@ -76,7 +76,7 @@ Current verified commands:
 
 Known limitation of this increment:
 
-- Med-CircuitBench now reaches the validation AUPRC gate in the controlled MVP benchmark mode. This mode is intentionally easy and should not be presented as final external clinical validation.
-- SCTC training performs a bounded MVP grid over saved FFN activations and writes selected layer checkpoints, a feature catalog, an edge catalog and a circuit catalog. Behavior fidelity is currently recorded as zero-delta for the activation-reconstruction stage; a stricter follow-up should compute logit deltas by reinserting reconstructed activations through the transformer.
+- Med-CircuitBench full V3 is currently NO-GO because the fixed generator cannot produce the required target while respecting the V3 causal-injection rule.
+- SCTC training now maps `h_l -> z_l -> a_hat_l`, computes behavior through frozen-transformer replacement, and measures validation fidelity rather than filling constants.
 - Circuit construction currently uses decoder/encoder direction association and random-direction significance. Full downstream intervention propagation through later transformer layers remains the next required strengthening step before strong mechanistic claims.
 - PhysioNet preparation and command entry points are present, but a full PhysioNet run requires external raw data, which must stay outside Git.

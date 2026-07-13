@@ -22,6 +22,7 @@ def main() -> None:
         input_window=int(ds["window"]),
         prediction_horizon=int(ds["horizon"]),
         target_threshold=float(ds.get("target_threshold", 0.65)),
+        allow_target_fallback=bool(ds.get("allow_target_fallback", False)),
         fallback_positive_rate=float(ds.get("fallback_positive_rate", 0.25)),
         infection_prevalence=float(ds.get("infection_prevalence", 0.25)),
         infection_impulse_strength=float(ds.get("infection_impulse_strength", 3.0)),

@@ -47,9 +47,9 @@ def main() -> None:
             circuit_rows = [
                 {
                     "rank": c["rank"],
-                    "nodes": " -> ".join(f"L{n['layer']}:F{n['feature_id']}" for n in c["ordered_nodes"]),
-                    "CIE": c["CIE"],
-                    "IP": c["IP"],
+                    "nodes": " -> ".join(f"L{n['layer']}:F{n['feature_id']}" for n in c.get("nodes", c.get("ordered_nodes", []))),
+                    "CIE_abs": c.get("CIE_abs", c.get("CIE", 0.0)),
+                    "IP_pearson": c.get("IP_pearson", c.get("IP", 0.0)),
                     "Completeness": c["Completeness"],
                     "OTE": c["OTE"],
                 }

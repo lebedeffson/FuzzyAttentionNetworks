@@ -6,9 +6,21 @@ dataset:
   horizon: 6
   seed: 42
   target_threshold: 0.65
+  allow_target_fallback: false
   fallback_positive_rate: 0.25
   infection_prevalence: 0.25
   infection_impulse_strength: 3.0
+
+cls:
+  max_layers: 3
+  relative_threshold: 0.40
+  half_split_repeats: 20
+  concept_threshold: 0.50
+  weights:
+    decodability: 0.35
+    sparsity: 0.20
+    sensitivity: 0.30
+    stability: 0.15
 
 model:
   input_dim: 27

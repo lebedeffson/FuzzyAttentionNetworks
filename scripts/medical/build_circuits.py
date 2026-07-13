@@ -46,6 +46,8 @@ def main() -> None:
     root = Path(cfg.get("artifacts", {}).get("root", "artifacts/medical"))
     sctc_dir = root / args.dataset / "sctc"
     feature_catalog = pd.read_parquet(sctc_dir / "feature_catalog.parquet")
+    if "eligible" in feature_catalog.columns:
+        feature_catalog = feature_catalog[feature_catalog["eligible"] == True]  # noqa: E712
     layers = sorted(feature_catalog["layer"].unique().tolist())
     top_features = int(cfg["interventions"]["top_features"])
     candidates_per_feature = int(cfg["interventions"]["candidates_per_feature"])
@@ -85,8 +87,8 @@ def main() -> None:
                     np.dot(source_direction, target_direction)
                     / ((np.linalg.norm(source_direction) + 1e-12) * (np.linalg.norm(target_direction) + 1e-12))
                 )
-                scores.append((association, signed_dr, target_feature))
-            for association, signed_dr, target_feature in sorted(scores, reverse=True)[:candidates_per_feature]:
+                scores.append((association, association, signed_dr, target_feature))
+            for assoc2, association, signed_dr, target_feature in sorted(scores, reverse=True)[:candidates_per_feature]:
                 p_value = _random_p(association, source_decoder.shape[1], n_random, rng)
                 edges.append(
                     EdgeCandidate(
@@ -103,12 +105,18 @@ def main() -> None:
     accepted = accept_edges(edges, float(cfg["interventions"]["minimum_dr"]), float(cfg["interventions"]["fdr_alpha"]))
     edge_rows = [
         {
+            "method": "SCTC",
             "source_layer": e.source_layer,
             "source_feature": e.source_feature,
             "target_layer": e.target_layer,
             "target_feature": e.target_feature,
+            "assoc1": 0.0,
+            "assoc2": e.association,
             "association": e.association,
+            "DR_ablate": e.dr,
+            "DR_push": e.dr,
             "DR": e.dr,
+            "inconsistent": False,
             "p_value": e.p_value,
             "adjusted_p_value": e.adjusted_p_value,
             "accepted": e.accepted,
@@ -123,7 +131,19 @@ def main() -> None:
         cie = float(np.mean(np.abs(edge_values))) if edge_values else 0.0
         circuits.append(
             {
+                "circuit_id": f"sctc_{rank}",
+                "method": "SCTC",
+                "seed": seed,
                 "rank": rank,
+                "nodes": [{"layer": int(layer), "feature_id": int(feature)} for layer, feature in path],
+                "edges": [
+                    {
+                        "source": {"layer": int(path[i][0]), "feature_id": int(path[i][1])},
+                        "target": {"layer": int(path[i + 1][0]), "feature_id": int(path[i + 1][1])},
+                        "DR": float(edge_values[i]),
+                    }
+                    for i in range(len(edge_values))
+                ],
                 "ordered_nodes": [{"layer": int(layer), "feature_id": int(feature)} for layer, feature in path],
                 "ordered_edges": [
                     {
@@ -133,10 +153,14 @@ def main() -> None:
                     }
                     for i in range(len(edge_values))
                 ],
-                "CIE": cie,
-                "IP": cie,
-                "Completeness": cie,
+                "CIE_abs": cie,
+                "CIE_signed": cie,
+                "IP_pearson": 0.0,
+                "IP_spearman": 0.0,
+                "Completeness": 0.0,
                 "OTE": 0.0,
+                "ErrorCoverageAt3": float("nan"),
+                "minimal": False,
                 "stability": 0.0,
             }
         )
