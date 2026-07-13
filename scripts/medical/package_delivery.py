@@ -37,6 +37,24 @@ def _copy_tree(src: Path, dst: Path) -> None:
         shutil.copytree(src, dst, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache"))
 
 
+def _copy_runs_lightweight(src: Path, dst: Path) -> None:
+    if not src.exists():
+        return
+    if dst.exists():
+        shutil.rmtree(dst)
+    for path in sorted(src.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(src)
+        if "work" in rel.parts:
+            continue
+        if "checkpoints" in rel.parts or "activations" in rel.parts:
+            continue
+        target = dst / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, target)
+
+
 def _write(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
@@ -53,13 +71,13 @@ def build_delivery(out_dir: Path, commit: str | None = None, branch: str | None 
     commit = commit or _git_or_value(["git", "rev-parse", "HEAD"], "unknown")
     branch = branch or _git_or_value(["git", "branch", "--show-current"], "unknown")
     commit8 = commit[:8]
-    name = f"Med_CircuitBench_SCTC_DELIVERY_V4_{date.today().isoformat()}_{commit8}"
+    name = f"Med_CircuitBench_SCTC_FINAL_BENCHMARK_RESULTS_{date.today().isoformat()}_{commit8}"
     staging = out_dir / name
     if staging.exists():
         shutil.rmtree(staging)
     staging.mkdir(parents=True)
 
-    _write(staging / "README_FIRST.txt", "Read DELIVERY_REPORT.md first. This is a V4 lightweight package without raw activations or PhysioNet data.\n")
+    _write(staging / "README_FIRST.txt", "Read DELIVERY_REPORT.md first. This package contains the V5 code, tests, manifests, and available benchmark run outputs. It excludes raw activations and PhysioNet data.\n")
     _write(
         staging / "DELIVERY_REPORT.md",
         "\n".join(
@@ -68,9 +86,9 @@ def build_delivery(out_dir: Path, commit: str | None = None, branch: str | None 
                 "",
                 f"Commit: {commit}",
                 f"Branch: {branch}",
-                "Status: V4 code package. Full multi-seed scientific GO requires run_benchmark_pipeline validation/test artifacts.",
+                "Status: V5 final benchmark-results package. If full validation artifacts are absent, the package reports NO_GO_MISSING_FULL_VALIDATION.",
                 "",
-                "V4 changes included: threshold 0.0715, no fallback, measured CLS, h-to-a SCTC, measured fidelity primitives, layer-aware CircuitF1, delivery checksums.",
+                "Included changes: threshold 0.0715, no fallback, measured CLS, h-to-a SCTC, forward-replacement interventions, layer-aware CircuitF1, GO/NO-GO aggregation, delivery checksums.",
                 "",
                 "Included: source, configs, tests, docs, package metadata, current lightweight metrics when present.",
                 "Excluded: raw activation Zarr chunks, virtual environments, PhysioNet raw data, secrets.",
@@ -109,9 +127,12 @@ def build_delivery(out_dir: Path, commit: str | None = None, branch: str | None 
     if run_tests:
         started = datetime.now(timezone.utc)
         result = _run_completed([sys.executable, "-m", "pytest", "tests/medical", "-q", "--disable-warnings"])
+        compile_result = _run_completed([sys.executable, "-m", "compileall", "src/med_circuitbench", "scripts/medical"])
         ended = datetime.now(timezone.utc)
         _write(tests / "pytest_output.txt", result.stdout)
         _write(tests / "pytest_stderr.txt", result.stderr)
+        _write(tests / "compileall_output.txt", compile_result.stdout)
+        _write(tests / "compileall_stderr.txt", compile_result.stderr)
         _write(
             tests / "test_summary.json",
             json.dumps(
@@ -119,6 +140,7 @@ def build_delivery(out_dir: Path, commit: str | None = None, branch: str | None 
                     "status": "PASS" if result.returncode == 0 else "FAIL",
                     "command": f"{sys.executable} -m pytest tests/medical -q --disable-warnings",
                     "exit_code": result.returncode,
+                    "compileall_exit_code": compile_result.returncode,
                     "started_at": started.isoformat(),
                     "ended_at": ended.isoformat(),
                     "duration_seconds": (ended - started).total_seconds(),
@@ -128,19 +150,37 @@ def build_delivery(out_dir: Path, commit: str | None = None, branch: str | None 
         )
         if result.returncode != 0:
             raise SystemExit(result.returncode)
+        if compile_result.returncode != 0:
+            raise SystemExit(compile_result.returncode)
     else:
         _write(tests / "pytest_output.txt", "Not run by package script. Pass --run-tests to execute.\n")
         _write(tests / "pytest_stderr.txt", "")
+        _write(tests / "compileall_output.txt", "Not run by package script. Pass --run-tests to execute.\n")
+        _write(tests / "compileall_stderr.txt", "")
         _write(tests / "test_summary.json", json.dumps({"status": "NOT_RUN", "command": None, "exit_code": None}, indent=2))
     _write(tests / "end_to_end_smoke_output.txt", "Smoke command documented in SOURCE/docs/medical/README_RUN.md\n")
     _write(tests / "fixtures_report.md", "Fixtures are included under SOURCE/tests/medical/fixtures.\n")
 
     results = staging / "RESULTS"
-    _write(results / "go_no_go_validation.json", json.dumps({"status": "PENDING_FULL_VALIDATION", "reason": "multi_seed_pipeline_required"}, indent=2))
-    _write(results / "overall_status.json", json.dumps({"status": "PENDING_FULL_VALIDATION"}, indent=2))
-    _write(results / "result_summary.md", "V4 code package built. Full scientific GO/NO-GO requires registered multi-seed validation/test runs.\n")
+    aggregate_src = ROOT / "artifacts" / "medical" / "runs" / "aggregate" / "benchmark_validation"
+    runs_src = ROOT / "artifacts" / "medical" / "runs"
+    if aggregate_src.exists():
+        _copy_tree(aggregate_src, results / "aggregate" / "benchmark_validation")
+        go_path = aggregate_src / "go_no_go.json"
+        if go_path.exists():
+            _write(results / "go_no_go_validation.json", go_path.read_text(encoding="utf-8"))
+            _write(results / "overall_status.json", go_path.read_text(encoding="utf-8"))
+        else:
+            _write(results / "go_no_go_validation.json", json.dumps({"status": "NO_GO_MISSING_GO_NO_GO_FILE"}, indent=2))
+            _write(results / "overall_status.json", json.dumps({"status": "NO_GO_MISSING_GO_NO_GO_FILE"}, indent=2))
+    else:
+        _write(results / "go_no_go_validation.json", json.dumps({"status": "NO_GO_MISSING_FULL_VALIDATION", "reason": "multi_seed_validation_artifacts_absent"}, indent=2))
+        _write(results / "overall_status.json", json.dumps({"status": "NO_GO_MISSING_FULL_VALIDATION"}, indent=2))
+    if runs_src.exists():
+        _copy_runs_lightweight(runs_src, results / "runs")
+    _write(results / "result_summary.md", "V5 package built. Status is taken from RESULTS/go_no_go_validation.json; missing full validation is reported as NO_GO.\n")
     for name_csv in ("final_metrics.csv", "benchmark_comparison.csv", "fidelity_summary.csv", "stability_summary.csv", "bootstrap_intervals.csv", "timing_summary.csv"):
-        _write(results / name_csv, "metric,value\nstatus,PENDING_FULL_VALIDATION\n")
+        _write(results / name_csv, "metric,value\nstatus,NO_GO_UNLESS_VALIDATION_GO\n")
 
     tables_src = ROOT / "artifacts" / "medical" / "article" / "tables"
     figures_src = ROOT / "artifacts" / "medical" / "article" / "figures"
@@ -154,8 +194,8 @@ def build_delivery(out_dir: Path, commit: str | None = None, branch: str | None 
             shutil.copy2(fig, png / fig.name)
 
     _write(staging / "LIMITATIONS" / "known_issues.md", (ROOT / "docs" / "medical" / "KNOWN_LIMITATIONS.md").read_text(encoding="utf-8"))
-    _write(staging / "LIMITATIONS" / "failed_runs.md", "Full V4 validation/test is not executed by package_delivery.py.\n")
-    _write(staging / "LIMITATIONS" / "deviations_from_tz.md", "See DELIVERY_REPORT.md. No PhysioNet raw data included.\n")
+    _write(staging / "LIMITATIONS" / "failed_runs.md", "See RESULTS/go_no_go_validation.json and RESULTS/runs when present. Package creation itself does not tune after validation.\n")
+    _write(staging / "LIMITATIONS" / "deviations_from_tz.md", "No PhysioNet raw data included. If PhysioNet input data are absent, the pipeline must report BLOCKED_DATA_ACCESS.\n")
 
     manifests = staging / "MANIFESTS"
     manifests.mkdir(parents=True, exist_ok=True)

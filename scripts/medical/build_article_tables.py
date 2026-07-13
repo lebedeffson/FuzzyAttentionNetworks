@@ -17,6 +17,25 @@ def main() -> None:
     out = Path("artifacts/medical/article/tables")
     out.mkdir(parents=True, exist_ok=True)
     written = []
+    aggregate_root = Path("artifacts/medical/runs/aggregate/benchmark_validation")
+    metrics_path = aggregate_root / "metrics_by_seed.csv"
+    intervals_path = aggregate_root / "bootstrap_intervals.csv"
+    go_path = aggregate_root / "go_no_go.json"
+    if metrics_path.exists():
+        metrics = pd.read_csv(metrics_path)
+        metrics.to_csv(out / "benchmark_validation_metrics_by_seed.csv", index=False)
+        metrics.to_latex(out / "benchmark_validation_metrics_by_seed.tex", index=False)
+        written.append("benchmark_validation_metrics_by_seed")
+    if intervals_path.exists():
+        intervals = pd.read_csv(intervals_path)
+        intervals.to_csv(out / "benchmark_validation_intervals.csv", index=False)
+        intervals.to_latex(out / "benchmark_validation_intervals.tex", index=False)
+        written.append("benchmark_validation_intervals")
+    if go_path.exists():
+        go = pd.DataFrame([json.loads(go_path.read_text())])
+        go.to_csv(out / "benchmark_validation_go_no_go.csv", index=False)
+        go.to_latex(out / "benchmark_validation_go_no_go.tex", index=False)
+        written.append("benchmark_validation_go_no_go")
     for dataset, ds_cfg in cfg["datasets"].items():
         root = Path(ds_cfg["root"])
         summary_path = root / "evaluation_summary.json"

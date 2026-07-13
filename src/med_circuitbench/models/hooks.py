@@ -12,7 +12,7 @@ import torch
 
 def collect_ffn_activations(model, loader, device: str = "cpu") -> Dict[str, np.ndarray]:
     model.eval()
-    logits, probs, targets, h_layers, a_layers = [], [], None, None
+    logits, probs, targets, h_layers, a_layers = [], [], [], None, None
     with torch.no_grad():
         for batch in loader:
             if isinstance(batch, (list, tuple)):

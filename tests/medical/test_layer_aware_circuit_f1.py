@@ -4,8 +4,7 @@ from src.med_circuitbench.metrics.circuit_f1 import layer_aware_circuit_f1
 
 
 def test_layer_aware_circuit_f1_with_duplicate_feature_ids():
-    t = np.linspace(0, 1, 20)
-    states = np.stack([t, t**2, 1 - t, np.sin(t), np.cos(t)], axis=1)
+    states = np.eye(5, dtype=float)[np.arange(20) % 5]
     node_activations = {
         (0, 0): states[:, 0],
         (1, 0): states[:, 1],

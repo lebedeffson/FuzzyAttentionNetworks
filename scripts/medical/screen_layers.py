@@ -200,7 +200,8 @@ def main() -> None:
         threshold_ratio=float(cfg.get("cls", {}).get("relative_threshold", 0.4)),
         max_layers=int(cfg.get("cls", {}).get("max_layers", 3)),
     )
-    selected_zero_based = [layer - 1 for layer in result.selected_report]
+    selected_zero_based = [int(layer - 1) for layer in result.selected_report]
+    ranking_report = [int(layer) for layer in result.ranking_report]
     out_dir = root / args.dataset / "layers"
     out_dir.mkdir(parents=True, exist_ok=True)
     rows = []
@@ -228,7 +229,7 @@ def main() -> None:
     pd.DataFrame(rows).to_csv(out_dir / "layer_scores.csv", index=False)
     (out_dir / "concept_thresholds.json").write_text(json.dumps(thresholds, indent=2), encoding="utf-8")
     (out_dir / "layer_selection.json").write_text(
-        json.dumps({"ranking_report": result.ranking_report, "selected_layers": selected_zero_based}, indent=2),
+        json.dumps({"ranking_report": ranking_report, "selected_layers": selected_zero_based}, indent=2),
         encoding="utf-8",
     )
     print({"layer_scores": str(out_dir / "layer_scores.csv"), "selected_layers": selected_zero_based})
