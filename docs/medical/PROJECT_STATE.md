@@ -5,18 +5,14 @@ Last updated: 2026-07-14
 ## Active Branch
 
 ```text
-experiment/med-circuitbench-v2-1
+fix/med-circuitbench-v2-2-final
 ```
 
-## Latest Result Commit
+## Current Commit
 
 ```text
-2951dd5a7d2a51e680812ed79749b7bd5116eccb
+d404aabf8d93844e11878263103bbdb5d2ab16bc
 ```
-
-## Current Repository Commit
-
-Recorded by `git rev-parse HEAD` and by `GIT_INFO.txt` in the delivery archive.
 
 ## Final Status
 
@@ -26,27 +22,26 @@ FAN_FOUNDATION_FAIL
 
 ## Key Metrics
 
-- Oracle Temporal FAN-5 mean AUPRC: `0.6456`
-- Predicted Temporal FAN-5 Strict mean AUPRC: `0.6677`
-- Predicted Temporal FAN-4 Strict mean AUPRC: `0.3552`
-- Concept leakage residual AUPRC: `0.3844`
+- Oracle Temporal FAN mean AUPRC: `0.9029`
+- Predicted Temporal FAN Strict mean AUPRC: `0.8321`
 - Planted CircuitF1: `1.0000`
+- Standard SCTC delta AUPRC: `0.0125`
+- Standard SCTC probability MAE: `0.0308`
 
-## Stages Completed
+## Completed Stages
 
-- Temporal concept FAN implementation.
+- Full-run guard.
 - Concept sufficiency audit.
-- Concept leakage diagnostics.
-- Membership and FAN weight diagnostics.
-- Faithfulness diagnostics.
-- Planted control.
-- Standard Transformer SCTC diagnostic.
-- Three-seed aggregate.
+- Concept-mediated FAN diagnostics.
+- Real planted raw activations and interventions.
+- Representation audit.
+- Standard Transformer + SCTC fidelity with replacement forward.
+- Three-seed aggregation and delivery validation.
 
-## Stages Skipped
+## Skipped Stages
 
-- FAN + SCTC is skipped when FAN Foundation Gate fails.
+- FAN + SCTC is `SKIPPED_BY_GATE` if FAN Foundation Gate fails.
 
 ## Next Scientific Step
 
-If FAN Foundation Gate fails, inspect temporal concept leakage, membership saturation, and alpha-mu evidence compression before running FAN+SCTC.
+Use the raw FAN gate table and Standard+SCTC fidelity outputs to decide whether to improve FAN evidence compression or continue with Standard-only SCTC.

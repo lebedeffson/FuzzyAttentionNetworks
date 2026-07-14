@@ -1,0 +1,48 @@
+program:
+  name: med_circuitbench_v2_2_smoke
+dataset:
+  n_samples: 256
+  sequence_length: 42
+  observed_window: 36
+  window: 36
+  prediction_horizon: 6
+  horizon: 6
+  target_threshold: 0.0715
+  infection_prevalence: 0.25
+  infection_impulse_strength: 3.0
+model:
+  input_dim: 27
+  d_model: 32
+  latent_dim: 32
+  layers: 2
+  transformer_layers: 2
+  heads: 4
+  transformer_heads: 4
+  d_ffn: 64
+  transformer_ffn: 64
+  dropout: 0.1
+training:
+  batch_size: 32
+  optimizer: adamw
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  min_epochs: 1
+  max_epochs: 2
+  concept_epochs: 2
+  patience: 1
+  restore_best_checkpoint: true
+seeds: [42]
+fan:
+  lambda_c: 2.0
+  lambda_a: 0.05
+  lambda_s: 0.01
+  memberships: [mixed]
+shortcut:
+  subsets: [full_input]
+sctc:
+  minimum_training_episodes: 32
+  feature_grid: [16, 32, 64]
+  training_epochs: 1
+  top_features: 4
+  random_null: 32
+

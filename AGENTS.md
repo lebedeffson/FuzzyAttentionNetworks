@@ -22,9 +22,9 @@ Do not reinterpret FAN as a replacement for `torch.nn.MultiheadAttention`.
 
 ## Frozen Experiments
 
-Med-CircuitBench V1 is frozen at `ddcf32ae357dfedd91444c5cba18fac1af5d525e` with status `V1_NO_GO`.
-
-Med-CircuitBench V2 foundation result is frozen at `b4bd5661544079db5a9c6d274b24bf05787891be` with status `FAN_FOUNDATION_FAIL`.
+- Med-CircuitBench V1: `ddcf32ae357dfedd91444c5cba18fac1af5d525e`, status `V1_NO_GO`.
+- Med-CircuitBench V2 foundation: `b4bd5661544079db5a9c6d274b24bf05787891be`, status `FAN_FOUNDATION_FAIL`.
+- Med-CircuitBench V2.1: `d404aabf8d93844e11878263103bbdb5d2ab16bc`, status `FAN_FOUNDATION_FAIL`.
 
 Do not overwrite or modify frozen results.
 
@@ -33,14 +33,14 @@ Do not overwrite or modify frozen results.
 Active branch:
 
 ```text
-experiment/med-circuitbench-v2-1
+fix/med-circuitbench-v2-2-final
 ```
 
-V2.1 must use the single-program gated workflow.
+V2.2 must use the single-program gated workflow.
 
 Allowed final statuses:
 
-- `V2_1_GO`
+- `V2_2_GO`
 - `FAN_FOUNDATION_FAIL`
 - `CONCEPT_TARGET_INSUFFICIENT`
 - `SEMANTIC_LEAKAGE_FAIL`
@@ -48,7 +48,7 @@ Allowed final statuses:
 - `STANDARD_SCTC_ONLY`
 - `SCTC_RECOVERY_FAIL`
 - `CLEAN_ONLY_SUCCESS`
-- `V2_1_NO_GO`
+- `V2_2_NO_GO`
 
 ## Scientific Rules
 
@@ -61,22 +61,23 @@ Allowed final statuses:
 - Negative results must be preserved.
 - Do not put PhysioNet data in Git or delivery archives.
 - Documentation-only increments are not accepted as scientific work.
+- Smoke output must not be packaged as final output.
 
 ## Required Commands
 
 Run tests:
 
 ```bash
-python -m pytest tests/medical/v2 -q
+python -m pytest tests/medical/v2_2 tests/medical/v2 -q
 ```
 
-Run V2.1:
+Run V2.2:
 
 ```bash
-python scripts/medical/v2/run_v2_program.py \
-  --config configs/medical/v2/program_v2_1.yaml \
+python scripts/medical/v2_2/run_v2_2_program.py \
+  --config configs/medical/v2_2/full.yaml \
   --seeds 42 43 44 \
   --mode full \
-  --output artifacts/medical/v2_1
+  --output artifacts/medical/v2_2
 ```
 
