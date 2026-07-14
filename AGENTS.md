@@ -109,6 +109,11 @@ Current V3.1 planted adaptive SCTC smoke command:
   --limit-candidates 1
 ```
 
+Smoke output is only a wiring check. It must report `SMOKE_PASS` or
+`SMOKE_FAIL` with `scientific_gate_evaluated=false`; do not report
+`PLANTED_ADAPTIVE_PASS` for limited seeds, limited layers/candidates, one-epoch
+runs, or warm-up top-k runs.
+
 Allowed V3 final statuses:
 
 - `V3_REAL_VALIDATED_NEGATIVE`

@@ -177,9 +177,11 @@ seed: 42
 layers: first layer only
 candidates: first candidate only
 epochs: 1
-status: PLANTED_ADAPTIVE_PASS
-best dead-feature fraction: 0.0
-best delta AUPRC: 0.0000473
+status: SMOKE_PASS
+scientific_gate_evaluated: false
+reason: single seed, first layer only, one epoch, warm-up top-k
 ```
 
 This smoke output is a wiring check only, not a scientific V3.1 result.
+The planted adaptive scientific gate requires full layers, three seeds, final
+top-k metrics, intervention validation, edge recovery, and negative controls.
