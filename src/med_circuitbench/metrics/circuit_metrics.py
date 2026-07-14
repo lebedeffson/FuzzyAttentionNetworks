@@ -16,7 +16,7 @@ def intervention_predictability(chain_strength: np.ndarray, probability_effect: 
     effect = np.asarray(probability_effect, dtype=float)
     pearson = safe_pearson(strength, np.abs(effect))
     if np.std(strength) == 0 or np.std(effect) == 0:
-        spearman = 0.0
+        spearman = float("nan")
     else:
         spearman = float(spearmanr(strength, np.abs(effect)).statistic)
     return {"IP_pearson": pearson, "IP_spearman": spearman}
@@ -24,7 +24,7 @@ def intervention_predictability(chain_strength: np.ndarray, probability_effect: 
 
 def completeness(top_effect: float, all_effect: float) -> float:
     if all_effect < 1e-8:
-        return 0.0
+        return float("nan")
     return float(np.clip(top_effect / (all_effect + 1e-8), 0.0, 1.0))
 
 

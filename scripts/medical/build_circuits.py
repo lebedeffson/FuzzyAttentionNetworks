@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -14,7 +15,7 @@ import torch
 import yaml
 import zarr
 
-from scripts.medical._common import git_commit
+from scripts.medical._common import add_run_context_args, git_commit
 from src.med_circuitbench.metrics import benjamini_hochberg, safe_pearson
 from src.med_circuitbench.metrics.circuit_metrics import cie, completeness, error_coverage_at3, intervention_predictability
 from src.med_circuitbench.models.transformer import ClinicalTransformer, TransformerConfig
@@ -24,6 +25,20 @@ from src.med_circuitbench.sctc.transcoder import SparseClinicalTranscoder
 
 def _load_array(path: Path) -> np.ndarray:
     return np.asarray(zarr.load(str(path)))
+
+
+def _json_clean(value):
+    if isinstance(value, dict):
+        return {k: _json_clean(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_json_clean(v) for v in value]
+    if isinstance(value, np.integer):
+        return int(value)
+    if isinstance(value, np.floating):
+        return None if not np.isfinite(value) else float(value)
+    if isinstance(value, float):
+        return None if not np.isfinite(value) else value
+    return value
 
 
 def _load_transformer(root: Path, dataset: str, device: str) -> ClinicalTransformer:
@@ -40,6 +55,7 @@ def _load_sctc(path: Path, device: str) -> SparseClinicalTranscoder:
     ckpt = torch.load(path, map_location=device)
     model = SparseClinicalTranscoder(d_model=int(ckpt["d_model"]), n_features=int(ckpt["n_features"])).to(device)
     model.load_state_dict(ckpt["model_state"])
+    setattr(model, "input_kind", ckpt.get("input_kind", "h_ffn"))
     model.eval()
     for param in model.parameters():
         param.requires_grad_(False)
@@ -63,7 +79,7 @@ def _forward_with_replacement(
     layer_id: int,
     replacement: np.ndarray,
     device: str,
-) -> tuple[np.ndarray, list[np.ndarray]]:
+) -> tuple[np.ndarray, list[np.ndarray], list[np.ndarray]]:
     with torch.no_grad():
         out = transformer(
             torch.tensor(x, device=device, dtype=torch.float32),
@@ -71,17 +87,17 @@ def _forward_with_replacement(
             return_activations=True,
         )
     h_layers = [h.detach().cpu().numpy() for h in out["h_ffn"]]
-    return out["probability"].detach().cpu().numpy(), h_layers
+    a_layers = [a.detach().cpu().numpy() for a in out["a_ffn"]]
+    return out["probability"].detach().cpu().numpy(), h_layers, a_layers
 
 
-def _pick_windows(z: np.ndarray, feature_id: int, candidates: np.ndarray, n_windows: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _pick_windows(z: np.ndarray, feature_id: int, candidates: np.ndarray, n_windows: int) -> tuple[np.ndarray, np.ndarray]:
     activation = z[:, :, feature_id]
-    strength = activation.max(axis=1)
+    strength = activation.mean(axis=1)
     order = np.argsort(-strength)[: min(n_windows, len(candidates))]
     selected = candidates[order]
-    timesteps = activation[order].argmax(axis=1)
-    values = activation[order, timesteps]
-    return selected, timesteps, values
+    values = activation[order]
+    return selected, values
 
 
 def _intervention_response_selected(
@@ -96,28 +112,155 @@ def _intervention_response_selected(
     mode: str,
     eta: float,
     device: str,
-    timesteps: np.ndarray | None = None,
-    scales: np.ndarray | None = None,
+    source_values: np.ndarray | None = None,
 ) -> tuple[float, np.ndarray, np.ndarray, np.ndarray]:
-    if timesteps is None:
-        timesteps = np.zeros(len(replacement), dtype=int)
-    if scales is None:
-        scales = np.ones(len(replacement), dtype=np.float32)
-    for row, timestep in enumerate(timesteps):
-        if mode == "ablate":
-            replacement[row, timestep] -= scales[row] * direction
-        elif mode == "push":
-            replacement[row, timestep] += eta * direction
-        else:
-            raise ValueError(mode)
-    prob_int, h_layers_int = _forward_with_replacement(transformer, x, source_layer, replacement, device)
+    if source_values is None:
+        source_values = np.ones(replacement.shape[:2], dtype=np.float32)
+    if mode == "ablate":
+        replacement -= source_values[:, :, None] * direction
+    elif mode == "push":
+        replacement += eta * direction
+    else:
+        raise ValueError(mode)
+    prob_int, h_layers_int, a_layers_int = _forward_with_replacement(transformer, x, source_layer, replacement, device)
     z_base = _encode(target_model, h_target_base, device)
-    z_int = _encode(target_model, h_layers_int[target_model.layer_id], device)  # type: ignore[attr-defined]
-    base_signal = z_base[np.arange(len(timesteps)), timesteps, target_feature]
-    int_signal = z_int[np.arange(len(timesteps)), timesteps, target_feature]
+    int_input = a_layers_int[target_model.layer_id] if getattr(target_model, "input_kind", "h_ffn") == "a_ffn" else h_layers_int[target_model.layer_id]  # type: ignore[attr-defined]
+    z_int = _encode(target_model, int_input, device)
+    base_signal = z_base[:, :, target_feature].reshape(-1)
+    int_signal = z_int[:, :, target_feature].reshape(-1)
     scale = float(np.std(z_base[:, :, target_feature]) + 1e-8)
     dr = float(np.mean((int_signal - base_signal) / scale))
     return dr, prob_int, base_signal, int_signal
+
+
+def _random_push_responses(
+    transformer: ClinicalTransformer,
+    target_model: SparseClinicalTranscoder,
+    x: np.ndarray,
+    a_source: np.ndarray,
+    h_target_base: np.ndarray,
+    source_layer: int,
+    target_feature: int,
+    directions: np.ndarray,
+    eta: float,
+    device: str,
+    source_values: np.ndarray,
+    chunk: int = 25,
+) -> list[float]:
+    z_base = _encode(target_model, h_target_base, device)
+    base_signal = z_base[:, :, target_feature].reshape(-1)
+    scale = float(np.std(z_base[:, :, target_feature]) + 1e-8)
+    out: list[float] = []
+    for start in range(0, len(directions), chunk):
+        dirs = directions[start : start + chunk].astype(np.float32)
+        repeated_x = np.concatenate([x] * len(dirs), axis=0)
+        replacement = np.repeat(a_source[None, :, :, :], len(dirs), axis=0)
+        for d_idx, direction in enumerate(dirs):
+            replacement[d_idx] += eta * direction
+        replacement = replacement.reshape(len(dirs) * len(x), *a_source.shape[1:])
+        _, h_layers_int, a_layers_int = _forward_with_replacement(transformer, repeated_x, source_layer, replacement, device)
+        int_input = a_layers_int[target_model.layer_id] if getattr(target_model, "input_kind", "h_ffn") == "a_ffn" else h_layers_int[target_model.layer_id]  # type: ignore[attr-defined]
+        z_int = _encode(target_model, int_input, device).reshape(len(dirs), len(x), int_input.shape[1], -1)
+        for d_idx in range(len(dirs)):
+            int_signal = z_int[d_idx, :, :, target_feature].reshape(-1)
+            out.append(float(np.mean((int_signal - base_signal) / scale)))
+    return out
+
+
+def _forward_chain_intervention(
+    transformer: ClinicalTransformer,
+    models: dict[int, SparseClinicalTranscoder],
+    decoder_directions: dict[int, np.ndarray],
+    x: np.ndarray,
+    nodes: list[tuple[int, int]],
+    mode: str,
+    eta_by_node: dict[tuple[int, int], float],
+    device: str,
+) -> tuple[np.ndarray, np.ndarray, list[np.ndarray], list[np.ndarray]]:
+    nodes_by_layer: dict[int, list[int]] = {}
+    for layer, feature in nodes:
+        nodes_by_layer.setdefault(int(layer), []).append(int(feature))
+    with torch.no_grad():
+        h = transformer.input_proj(torch.tensor(x, device=device, dtype=torch.float32)) + transformer.pos[:, : x.shape[1]]
+        h_layers: list[np.ndarray] = []
+        a_layers_out: list[np.ndarray] = []
+        for layer_id, layer in enumerate(transformer.layers):
+            attn, _ = layer.self_attn(h, h, h, need_weights=False)
+            h_layer = layer.norm1(h + layer.dropout(attn))
+            a_layer = layer.ffn(h_layer)
+            if layer_id in nodes_by_layer:
+                model = models[layer_id]
+                source = a_layer if getattr(model, "input_kind", "h_ffn") == "a_ffn" else h_layer
+                z = model(source)["z"]
+                decoder = torch.tensor(decoder_directions[layer_id], device=device, dtype=torch.float32)
+                for feature in nodes_by_layer[layer_id]:
+                    direction = decoder[feature].view(1, 1, -1)
+                    if mode == "ablate":
+                        a_layer = a_layer - z[:, :, feature : feature + 1] * direction
+                    elif mode == "push":
+                        a_layer = a_layer + float(eta_by_node.get((layer_id, feature), 1.0)) * direction
+                    else:
+                        raise ValueError(mode)
+            h = layer.norm2(h_layer + layer.dropout(a_layer))
+            h_layers.append(h_layer.detach().cpu().numpy())
+            a_layers_out.append(a_layer.detach().cpu().numpy())
+        logit = transformer.head(h.mean(dim=1)).squeeze(-1)
+        prob = torch.sigmoid(logit)
+    return prob.detach().cpu().numpy(), logit.detach().cpu().numpy(), h_layers, a_layers_out
+
+
+def _chain_strength(
+    path: list[tuple[int, int]],
+    z_by_layer: dict[int, np.ndarray],
+    q95_by_node: dict[tuple[int, int], float],
+) -> np.ndarray:
+    values = []
+    for node in path:
+        layer, feature = node
+        denom = float(q95_by_node.get(node, 0.0)) + 1e-8
+        values.append(np.clip(z_by_layer[layer][:, :, feature].mean(axis=1) / denom, 0.0, 1.0))
+    stacked = np.stack(values, axis=0)
+    return np.exp(np.mean(np.log(stacked + 1e-6), axis=0)) - 1e-6
+
+
+def _error_coverage_from_ablate_push(base_prob: np.ndarray, ablate_prob: np.ndarray, push_prob: np.ndarray, y: np.ndarray) -> dict[str, float]:
+    pred = (base_prob >= 0.5).astype(int)
+    fp = (pred == 1) & (y == 0)
+    fn = (pred == 0) & (y == 1)
+    fp_cov = (base_prob - ablate_prob >= 0.05) & fp
+    fn_cov = (push_prob - base_prob >= 0.05) & fn
+    total = int(fp.sum() + fn.sum())
+    return {
+        "ErrorCoverageAt3": float((fp_cov.sum() + fn_cov.sum()) / total) if total else float("nan"),
+        "FP_CoverageAt3": float(fp_cov.sum() / fp.sum()) if fp.sum() else float("nan"),
+        "FN_CoverageAt3": float(fn_cov.sum() / fn.sum()) if fn.sum() else float("nan"),
+    }
+
+
+def _off_target_for_layers(
+    models: dict[int, SparseClinicalTranscoder],
+    base_h: list[np.ndarray],
+    base_a: list[np.ndarray],
+    int_h: list[np.ndarray],
+    int_a: list[np.ndarray],
+    z_std_by_layer: dict[int, np.ndarray],
+    chain_nodes: set[tuple[int, int]],
+    device: str,
+) -> float:
+    values = []
+    for layer, model in models.items():
+        base_input = base_a[layer] if getattr(model, "input_kind", "h_ffn") == "a_ffn" else base_h[layer]
+        int_input = int_a[layer] if getattr(model, "input_kind", "h_ffn") == "a_ffn" else int_h[layer]
+        z_base = _encode(model, base_input, device)
+        z_int = _encode(model, int_input, device)
+        std = z_std_by_layer[layer].reshape(1, 1, -1) + 1e-8
+        mask = np.ones(z_base.shape[-1], dtype=bool)
+        for node_layer, feature in chain_nodes:
+            if node_layer == layer and feature < len(mask):
+                mask[feature] = False
+        if mask.any():
+            values.append(np.abs(z_int[:, :, mask] - z_base[:, :, mask]) / std[:, :, mask])
+    return float(np.mean(np.concatenate([v.reshape(-1) for v in values]))) if values else float("nan")
 
 
 def _bh_accept(rows: list[dict], min_dr: float, fdr_alpha: float, require_consistency: bool) -> list[dict]:
@@ -126,7 +269,7 @@ def _bh_accept(rows: list[dict], min_dr: float, fdr_alpha: float, require_consis
         row["adjusted_p_value"] = float(adj)
         row["accepted"] = bool(
             row["adjusted_p_value"] < fdr_alpha
-            and abs(float(row["DR"])) >= min_dr
+            and abs(float(row.get("DR_ablation", row["DR"]))) >= min_dr
             and (not require_consistency or bool(row["sign_consistent"]))
         )
     return rows
@@ -136,21 +279,24 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--method", default="sctc", choices=["sctc", "sae", "linear_probes", "random_directions", "single_features"])
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    add_run_context_args(parser)
     args = parser.parse_args()
 
     cfg = yaml.safe_load(args.config.read_text())
     seed = int(cfg["dataset"].get("seed", 42))
     rng = np.random.default_rng(seed)
     root = Path(cfg.get("artifacts", {}).get("root", "artifacts/medical"))
-    sctc_dir = root / args.dataset / "sctc"
+    method = args.method
+    sctc_dir = root / args.dataset / method
     activation_dir = root / args.dataset / "activations"
 
     feature_catalog = pd.read_parquet(sctc_dir / "feature_catalog.parquet")
     if "eligible" in feature_catalog.columns:
         feature_catalog = feature_catalog[feature_catalog["eligible"] == True]  # noqa: E712
     layers = sorted(int(x) for x in feature_catalog["layer"].unique().tolist())
-    out = root / args.dataset / "circuits"
+    out = root / args.dataset / f"{method}_circuits"
     out.mkdir(parents=True, exist_ok=True)
     if len(layers) < 2:
         pd.DataFrame(
@@ -162,10 +308,18 @@ def main() -> None:
                 "target_layer",
                 "target_feature",
                 "association",
+                "association_corr",
+                "association_geometry",
                 "DR",
+                "DR_ablate",
+                "DR_ablation",
+                "DR_push",
                 "p_value",
                 "adjusted_p_value",
                 "accepted",
+                "n_windows",
+                "n_random_directions",
+                "runtime_seconds",
             ]
         ).to_parquet(out / "edge_catalog.parquet", index=False)
         pd.DataFrame(columns=["source_layer", "source_feature", "target_layer", "target_feature", "random_id", "DR_random"]).to_parquet(
@@ -174,6 +328,7 @@ def main() -> None:
         (out / "circuit_catalog.json").write_text("[]\n", encoding="utf-8")
         manifest = {
             "dataset": args.dataset,
+            "method": method,
             "commit": git_commit(),
             "seed": seed,
             "status": "NO_GO_LESS_THAN_TWO_SCTC_LAYERS",
@@ -213,8 +368,25 @@ def main() -> None:
     sctc_models = {layer: _load_sctc(sctc_dir / "checkpoints" / f"layer_{layer}.ckpt", args.device) for layer in layers}
     for layer, model in sctc_models.items():
         setattr(model, "layer_id", layer)
-    z_layers = {layer: _encode(model, h_layers[layer, val_idx], args.device) for layer, model in sctc_models.items()}
+    z_layers = {}
+    for layer, model in sctc_models.items():
+        source_tensor = a_layers[layer, val_idx] if getattr(model, "input_kind", "h_ffn") == "a_ffn" else h_layers[layer, val_idx]
+        z_layers[layer] = _encode(model, source_tensor, args.device)
     directions = {layer: _directions(model) for layer, model in sctc_models.items()}
+    train_idx = np.where(split == 0)[0]
+    z_train_layers = {}
+    for layer, model in sctc_models.items():
+        idx = train_idx if len(train_idx) else val_idx
+        source_tensor = a_layers[layer, idx] if getattr(model, "input_kind", "h_ffn") == "a_ffn" else h_layers[layer, idx]
+        z_train_layers[layer] = _encode(model, source_tensor, args.device)
+    z_std_by_layer = {layer: np.std(z.reshape(-1, z.shape[-1]), axis=0) + 1e-8 for layer, z in z_train_layers.items()}
+    q95_by_node: dict[tuple[int, int], float] = {}
+    eta_by_node: dict[tuple[int, int], float] = {}
+    for layer, z in z_train_layers.items():
+        mean_z = z.mean(axis=1)
+        for feature in range(z.shape[-1]):
+            q95_by_node[(layer, feature)] = float(np.quantile(mean_z[:, feature], 0.95))
+            eta_by_node[(layer, feature)] = float(np.std(z[:, :, feature]) + 1e-8)
 
     rows: list[dict] = []
     random_rows: list[dict] = []
@@ -242,16 +414,20 @@ def main() -> None:
                 )
                 candidate_scores.append((max(assoc_corr, assoc_geometry), assoc_corr, assoc_geometry, target_feature))
 
-            selected_idx, timesteps, scales = _pick_windows(z_source, source_feature, val_idx, n_windows)
-            local = np.searchsorted(val_idx, selected_idx)
+            selected_idx, source_values = _pick_windows(z_source, source_feature, val_idx, n_windows)
             eta = float(np.std(z_source[:, :, source_feature]) + 1e-8)
             x_sel = x[selected_idx]
             a_source_sel = a_layers[source_layer, selected_idx]
-            h_target_base = h_layers[target_layer, selected_idx]
+            h_target_base = (
+                a_layers[target_layer, selected_idx]
+                if getattr(sctc_models[target_layer], "input_kind", "h_ffn") == "a_ffn"
+                else h_layers[target_layer, selected_idx]
+            )
             base_prob_sel = base_probability[selected_idx]
             y_sel = target[selected_idx]
 
             for association, assoc_corr, assoc_geometry, target_feature in sorted(candidate_scores, reverse=True)[:candidates_per_feature]:
+                edge_started = time.perf_counter()
                 dr_ablate, prob_ablate, _, _ = _intervention_response_selected(
                     transformer,
                     sctc_models[target_layer],
@@ -264,8 +440,7 @@ def main() -> None:
                     "ablate",
                     eta,
                     args.device,
-                    timesteps,
-                    scales,
+                    source_values,
                 )
                 dr_push, prob_push, _, _ = _intervention_response_selected(
                     transformer,
@@ -279,15 +454,15 @@ def main() -> None:
                     "push",
                     eta,
                     args.device,
-                    timesteps,
-                    scales,
+                    source_values,
                 )
                 dr = float(0.5 * (dr_push - dr_ablate))
                 random_dr = []
-                for random_id in range(n_random):
-                    random_direction = rng.normal(size=source_direction.shape).astype(np.float32)
-                    random_direction *= (np.linalg.norm(source_direction) + 1e-8) / (np.linalg.norm(random_direction) + 1e-8)
-                    rnd_push, _, _, _ = _intervention_response_selected(
+                rejection_reason = ""
+                if abs(dr_ablate) >= min_dr:
+                    random_directions = rng.normal(size=(n_random, source_direction.shape[0])).astype(np.float32)
+                    random_directions *= (np.linalg.norm(source_direction) + 1e-8) / (np.linalg.norm(random_directions, axis=1, keepdims=True) + 1e-8)
+                    random_dr = _random_push_responses(
                         transformer,
                         sctc_models[target_layer],
                         x_sel,
@@ -295,31 +470,32 @@ def main() -> None:
                         h_target_base,
                         source_layer,
                         target_feature,
-                        random_direction,
-                        "push",
+                        random_directions,
                         eta,
                         args.device,
-                        timesteps,
-                        scales,
+                        source_values,
                     )
-                    random_dr.append(rnd_push)
-                    random_rows.append(
-                        {
-                            "source_layer": source_layer,
-                            "source_feature": source_feature,
-                            "target_layer": target_layer,
-                            "target_feature": target_feature,
-                            "random_id": random_id,
-                            "DR_random": float(rnd_push),
-                        }
-                    )
-                p_value = empirical_p_value(dr, random_dr)
+                    for random_id, rnd_push in enumerate(random_dr):
+                        random_rows.append(
+                            {
+                                "source_layer": source_layer,
+                                "source_feature": source_feature,
+                                "target_layer": target_layer,
+                                "target_feature": target_feature,
+                                "random_id": random_id,
+                                "DR_random": float(rnd_push),
+                            }
+                        )
+                    p_value = empirical_p_value(dr_ablate, random_dr)
+                else:
+                    rejection_reason = "below_min_dr_skip_random_null"
+                    p_value = 1.0
                 metrics = cie(base_prob_sel, prob_ablate)
-                ip = intervention_predictability(scales, base_prob_sel - prob_ablate)
+                ip = intervention_predictability(source_values.mean(axis=1), base_prob_sel - prob_ablate)
                 err_cov = error_coverage_at3(base_prob_sel, prob_ablate, y_sel)
                 rows.append(
                     {
-                        "method": "SCTC",
+                        "method": method,
                         "seed": seed,
                         "source_layer": source_layer,
                         "source_feature": source_feature,
@@ -329,6 +505,7 @@ def main() -> None:
                         "association_geometry": float(assoc_geometry),
                         "association": float(association),
                         "DR_ablate": float(dr_ablate),
+                        "DR_ablation": float(dr_ablate),
                         "DR_push": float(dr_push),
                         "DR": dr,
                         "DR_combined": dr,
@@ -336,7 +513,10 @@ def main() -> None:
                         "p_value": float(p_value),
                         "adjusted_p_value": 1.0,
                         "accepted": False,
+                        "rejection_reason": rejection_reason,
                         "n_windows": int(len(selected_idx)),
+                        "n_random_directions": int(len(random_dr)),
+                        "runtime_seconds": float(time.perf_counter() - edge_started),
                         "mean_probability_delta": float(np.mean(base_prob_sel - prob_ablate)),
                         "CIE_abs": metrics["CIE_abs"],
                         "CIE_signed": metrics["CIE_signed"],
@@ -371,15 +551,48 @@ def main() -> None:
     )
     paths = enumerate_layer_increasing_paths(graph, min_edges=int(cfg["circuits"].get("minimum_edges", 2)))
     paths = paths[: int(cfg["circuits"].get("maximum_candidate_paths", 500))]
+    all_nodes = sorted({(int(row["source_layer"]), int(row["source_feature"])) for row in accepted_edges} | {(int(row["target_layer"]), int(row["target_feature"])) for row in accepted_edges})
     circuits = []
     for rank, path in enumerate(paths[: int(cfg["circuits"]["top_k"])], start=1):
+        path = [(int(layer), int(feature)) for layer, feature in path]
+        strength_all = _chain_strength(path, z_layers, q95_by_node)
+        order = np.argsort(-strength_all)[: min(n_windows, len(val_idx))]
+        selected_idx = val_idx[order]
+        chain_strength_selected = strength_all[order]
+        x_sel = x[selected_idx]
+        y_sel = target[selected_idx]
+        base_prob_sel = base_probability[selected_idx]
+        with torch.no_grad():
+            base_out = transformer(torch.tensor(x_sel, device=args.device, dtype=torch.float32), return_activations=True)
+        base_h_layers = [h.detach().cpu().numpy() for h in base_out["h_ffn"]]
+        base_a_layers = [a.detach().cpu().numpy() for a in base_out["a_ffn"]]
+        prob_ablate, logit_ablate, h_ablate, a_ablate = _forward_chain_intervention(
+            transformer, sctc_models, {layer: directions[layer][1] for layer in layers}, x_sel, path, "ablate", eta_by_node, args.device
+        )
+        prob_push, logit_push, _, _ = _forward_chain_intervention(
+            transformer, sctc_models, {layer: directions[layer][1] for layer in layers}, x_sel, path, "push", eta_by_node, args.device
+        )
+        metrics = cie(base_prob_sel, prob_ablate)
+        ip = intervention_predictability(chain_strength_selected, base_prob_sel - prob_ablate)
+        err_cov = _error_coverage_from_ablate_push(base_prob_sel, prob_ablate, prob_push, y_sel)
+        all_prob_ablate, _, _, _ = _forward_chain_intervention(
+            transformer, sctc_models, {layer: directions[layer][1] for layer in layers}, x_sel, all_nodes, "ablate", eta_by_node, args.device
+        )
+        all_effect = float(np.mean(np.abs(all_prob_ablate - base_prob_sel)))
+        ote = _off_target_for_layers(sctc_models, base_h_layers, base_a_layers, h_ablate, a_ablate, z_std_by_layer, set(path), args.device)
+        node_drop_effects = []
+        for node in path:
+            reduced = [p for p in path if p != node]
+            reduced_prob, _, _, _ = _forward_chain_intervention(
+                transformer, sctc_models, {layer: directions[layer][1] for layer in layers}, x_sel, reduced, "ablate", eta_by_node, args.device
+            )
+            node_drop_effects.append(float(np.mean(np.abs(reduced_prob - base_prob_sel))))
+        minimal = bool(all(effect <= 0.9 * metrics["CIE_abs"] for effect in node_drop_effects)) if node_drop_effects else False
         edge_values = [float(graph.edges[path[i], path[i + 1]]["DR"]) for i in range(len(path) - 1)]
-        cie_abs = float(np.mean(np.abs(edge_values))) if edge_values else 0.0
-        ip_val = float(np.mean([abs(v) for v in edge_values])) if edge_values else 0.0
         circuits.append(
             {
-                "circuit_id": f"sctc_{rank}",
-                "method": "SCTC",
+                "circuit_id": f"{method}_{rank}",
+                "method": method,
                 "seed": seed,
                 "rank": rank,
                 "nodes": [{"layer": int(layer), "feature_id": int(feature)} for layer, feature in path],
@@ -391,23 +604,32 @@ def main() -> None:
                     }
                     for i in range(len(edge_values))
                 ],
-                "CIE_abs": cie_abs,
-                "CIE_signed": float(np.mean(edge_values)) if edge_values else 0.0,
-                "IP_pearson": ip_val,
-                "IP_spearman": ip_val,
-                "Completeness": 1.0 if edge_values else 0.0,
-                "OTE": 0.0,
-                "ErrorCoverageAt3": float("nan"),
-                "minimal": bool(cie_abs >= float(cfg["circuits"].get("minimum_cie", 0.10))),
+                "CIE_abs": metrics["CIE_abs"],
+                "CIE_signed": metrics["CIE_signed"],
+                "IP_pearson": ip["IP_pearson"],
+                "IP_spearman": ip["IP_spearman"],
+                "Completeness": completeness(metrics["CIE_abs"], all_effect),
+                "OTE": ote,
+                **err_cov,
+                "minimal": minimal,
                 "stability": 0.0,
+                "n_windows": int(len(selected_idx)),
+                "intervention_method": "sequential_forward_chain_ablation",
+                "base_probability_mean": float(np.mean(base_prob_sel)),
+                "intervened_probability_mean": float(np.mean(prob_ablate)),
+                "base_logit_mean": float(np.mean(np.log(base_prob_sel / (1.0 - base_prob_sel + 1e-8) + 1e-8))),
+                "intervened_logit_mean": float(np.mean(logit_ablate)),
+                "chain_strength_mean": float(np.mean(chain_strength_selected)),
+                "node_drop_cie": node_drop_effects,
             }
         )
 
     edge_rows.to_parquet(out / "edge_catalog.parquet", index=False)
     pd.DataFrame(random_rows).to_parquet(out / "random_intervention_summary.parquet", index=False)
-    (out / "circuit_catalog.json").write_text(json.dumps(circuits, indent=2), encoding="utf-8")
+    (out / "circuit_catalog.json").write_text(json.dumps(_json_clean(circuits), indent=2, allow_nan=False), encoding="utf-8")
     manifest = {
         "dataset": args.dataset,
+        "method": method,
         "commit": git_commit(),
         "seed": seed,
         "status": "PASS" if circuits else "NO_GO_NO_ACCEPTED_CIRCUIT",

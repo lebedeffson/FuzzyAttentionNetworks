@@ -15,17 +15,19 @@ def main() -> None:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--seeds", nargs="+", type=int, required=True)
     parser.add_argument("--split", choices=["validation", "test"], default="validation")
+    parser.add_argument("--mode", choices=["smoke", "full"], default="full")
     parser.add_argument("--data-root")
     args = parser.parse_args()
     cfg = yaml.safe_load(args.config.read_text())
-    data_root = Path(args.data_root or os.environ.get("PHYSIONET2019_ROOT", ""))
+    raw_root = args.data_root or os.environ.get("PHYSIONET2019_ROOT")
     out = Path(cfg.get("artifacts", {}).get("root", "artifacts/medical")) / "physionet2019"
     out.mkdir(parents=True, exist_ok=True)
-    if not str(data_root) or not data_root.exists():
+    if not raw_root or not Path(raw_root).exists():
         report = {
             "status": "BLOCKED_DATA_ACCESS",
             "reason": "PHYSIONET2019_ROOT/--data-root missing",
             "split": args.split,
+            "mode": args.mode,
             "seeds": args.seeds,
             "created_at": datetime.now(timezone.utc).isoformat(),
         }

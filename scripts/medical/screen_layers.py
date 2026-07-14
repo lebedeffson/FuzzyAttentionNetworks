@@ -18,6 +18,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler
 
+from scripts.medical._common import add_run_context_args
 from src.med_circuitbench.models.transformer import ClinicalTransformer, TransformerConfig
 from src.med_circuitbench.sctc.layer_screening import compute_cls, sparsity_score
 
@@ -162,6 +163,7 @@ def main() -> None:
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    add_run_context_args(parser)
     args = parser.parse_args()
     cfg = yaml.safe_load(args.config.read_text())
     root = Path(cfg.get("artifacts", {}).get("root", "artifacts/medical"))

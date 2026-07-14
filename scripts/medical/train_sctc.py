@@ -16,7 +16,7 @@ import yaml
 import zarr
 from torch.utils.data import DataLoader, TensorDataset
 
-from scripts.medical._common import git_commit
+from scripts.medical._common import add_run_context_args, git_commit
 from src.med_circuitbench.metrics.fidelity import probability_fidelity_metrics
 from src.med_circuitbench.models.transformer import ClinicalTransformer, TransformerConfig
 from src.med_circuitbench.sctc.transcoder import SparseClinicalTranscoder, sctc_loss
@@ -148,6 +148,7 @@ def main() -> None:
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--epochs", type=int, default=None)
+    add_run_context_args(parser)
     args = parser.parse_args()
 
     cfg = yaml.safe_load(args.config.read_text())
@@ -254,6 +255,7 @@ def main() -> None:
                 "layer": int(layer_id),
                 "d_model": int(h_layers.shape[-1]),
                 "n_features": n_features,
+                "input_kind": "h_ffn",
                 "selection": best,
             },
             ckpt_dir / f"layer_{layer_id}.ckpt",

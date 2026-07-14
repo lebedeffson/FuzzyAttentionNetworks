@@ -18,6 +18,7 @@ from sklearn.metrics import average_precision_score, precision_recall_fscore_sup
 from torch.utils.data import DataLoader, TensorDataset
 
 from scripts.medical._common import git_commit
+from scripts.medical._common import add_run_context_args
 from src.med_circuitbench.models.transformer import ClinicalTransformer, TransformerConfig
 
 
@@ -89,6 +90,7 @@ def main() -> None:
     parser.add_argument("--dataset", choices=["med_circuitbench", "physionet2019"], required=True)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    add_run_context_args(parser)
     args = parser.parse_args()
 
     cfg = yaml.safe_load(args.config.read_text())

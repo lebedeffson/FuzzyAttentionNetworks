@@ -83,7 +83,7 @@ def layer_aware_circuit_f1(
     for edge in recovered_edges:
         src = (int(edge["source_layer"]), int(edge["source_feature"]))
         dst = (int(edge["target_layer"]), int(edge["target_feature"]))
-        dr = float(edge.get("DR", edge.get("dr", 0.0)))
+        dr = float(edge.get("DR_ablation", edge.get("DR", edge.get("dr", 0.0))))
         src_state = assignment.get(src)
         dst_state = assignment.get(dst)
         status = "FP_unmapped"

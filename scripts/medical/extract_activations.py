@@ -14,6 +14,7 @@ import torch
 import yaml
 from torch.utils.data import DataLoader, TensorDataset
 
+from scripts.medical._common import add_run_context_args
 from src.med_circuitbench.models.hooks import collect_ffn_activations, max_prediction_delta_with_hooks, write_activation_store_zarr
 from src.med_circuitbench.models.transformer import ClinicalTransformer, TransformerConfig
 
@@ -22,6 +23,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", choices=["med_circuitbench", "physionet2019"], required=True)
     parser.add_argument("--config", type=Path, required=True)
+    add_run_context_args(parser)
     args = parser.parse_args()
     cfg = yaml.safe_load(args.config.read_text())
     root = Path(cfg.get("artifacts", {}).get("root", "artifacts/medical"))
@@ -31,13 +33,14 @@ def main() -> None:
     if args.dataset == "med_circuitbench":
         df = pd.read_parquet(root / "benchmark" / "episodes.parquet")
         splits = json.loads((root / "benchmark" / "splits.json").read_text())
-        selected_ids = np.asarray(splits["train"] + splits["validation"], dtype=np.int64)
+        eval_split = args.split or "validation"
+        selected_ids = np.asarray(splits["train"] + splits[eval_split], dtype=np.int64)
         df = df.iloc[selected_ids].copy()
         x = np.stack([np.stack(v).astype(np.float32) for v in df["model_input"]])
         y = df["target"].to_numpy(dtype=np.float32)
         window_ids = df["episode_id"].to_numpy(dtype=np.int64)
         subject_ids = window_ids.copy()
-        split = np.asarray([0] * len(splits["train"]) + [1] * len(splits["validation"]), dtype=np.int8)
+        split = np.asarray([0] * len(splits["train"]) + [1] * len(splits[eval_split]), dtype=np.int8)
     else:
         prep = Path(cfg["dataset"]["prepared_dir"])
         x = np.concatenate([np.load(prep / "train_x.npy"), np.load(prep / "validation_x.npy")]).astype(np.float32)
