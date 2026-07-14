@@ -51,6 +51,21 @@ fan:
   lambda_s: 0.0001
   memberships: [gaussian, bell, sigmoid, mixed]
   max_validation_iterations: 12
+  n_memberships: [3, 5]
+  freeze_alpha_epochs: 5
+  freeze_membership_epochs: 10
+  gradient_clip: 1.0
+  positive_decision_weights: false
+  alpha_mode: no_alpha
+  gamma_init: 0.5
+  gamma_max: 0.9
+  alpha_ablation_modes: [no_alpha, uniform_alpha, softmax_alpha, residual_floor_alpha]
+  deterministic_restarts_per_seed: 3
+  oracle_lrs:
+    decision_head_lr: 0.0003
+    alpha_lr: 0.0001
+    membership_lr: 0.00003
+    temperature_lr: 0.00001
   registered_space:
     concept_scaling: [minmax_train, robust_train]
     membership_family: [gaussian, bell, sigmoid, mixed]

@@ -4,7 +4,16 @@ from .memberships import MembershipLayer
 from .model import ConceptFANModel, ConceptFANConfig, OracleConceptFAN, PredictedConceptFAN
 from .outputs import ConceptFANOutput
 from .projector import ConceptProjector
-from .temporal import TemporalConceptAggregator, TemporalConceptFANModel, TemporalConceptFANOutput
+from .temporal import (
+    AdditiveDecisionHead,
+    MultiSetAdditiveFANOutput,
+    MultiSetAdditiveTemporalConceptFANModel,
+    MultiSetFuzzyAggregator,
+    MultiSetMembershipLayer,
+    TemporalConceptAggregator,
+    TemporalConceptFANModel,
+    TemporalConceptFANOutput,
+)
 
 __all__ = [
     "ConceptFANConfig",
@@ -14,6 +23,10 @@ __all__ = [
     "ConceptProjector",
     "FuzzyConceptAggregator",
     "MembershipLayer",
+    "MultiSetAdditiveFANOutput",
+    "MultiSetAdditiveTemporalConceptFANModel",
+    "MultiSetFuzzyAggregator",
+    "MultiSetMembershipLayer",
     "OracleConceptFAN",
     "PredictedConceptFAN",
     "TemporalConceptAggregator",

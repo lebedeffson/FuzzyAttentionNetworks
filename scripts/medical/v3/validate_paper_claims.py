@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -15,8 +16,9 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
-    print(validate_claims(Path(args.output)))
-    return 0
+    result = validate_claims(Path(args.output))
+    print(json.dumps(result, indent=2))
+    return 0 if result["passed"] else 1
 
 
 if __name__ == "__main__":

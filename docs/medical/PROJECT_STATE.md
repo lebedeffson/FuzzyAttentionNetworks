@@ -8,82 +8,135 @@ Last updated: 2026-07-14
 fix/med-circuitbench-v2-2-final
 ```
 
-## Current Program
+## Current Result
+
+```text
+V3_REAL_MIXED_RESULT_REPLICATION_CONFIRMED
+```
+
+The previous `Med_CircuitBench_V3_REAL_RESEARCH_FINAL.zip` is only an
+intermediate package. The current finalization output is:
+
+```text
+artifacts/medical/v3_real_final
+```
+
+## Final Command
 
 ```bash
-python scripts/medical/v3/run_research_program.py \
+.venv/bin/python scripts/medical/v3/finalize_real_research.py \
   --config configs/medical/v3/full.yaml \
-  --seeds 42 43 44 \
-  --output artifacts/medical/v3 \
-  --continue-until-terminal
+  --source-output artifacts/medical/v3_real \
+  --output artifacts/medical/v3_real_final \
+  --seeds 42 43 44
 ```
 
-## Latest Terminal Result
+## Final Scientific Status
 
 ```text
-V3_FAN_NEGATIVE_SCTC_VALIDATED
+FAN: FAN_VALIDATED
+Planted: PLANTED_VALIDATED_NEGATIVE
+Standard SCTC fidelity: PASS
+Standard graph recovery: NO_VALIDATED_EDGES
+FAN+SCTC: SKIPPED_BY_GATE
+Original held-out: PARTIAL_TEST_CONSUMED
+Frozen replication: COMPLETED_WITH_FROZEN_MODELS
 ```
 
-This result used the corrected neural `TemporalConceptFANModel` path, not the
-earlier Ridge/LogisticRegression surrogate FAN evaluation.
-
-## Delivery
+## Final Delivery
 
 ```text
-artifacts/medical/Med_CircuitBench_V3_FINAL_<date>_<commit>.zip
+ZIP pattern: artifacts/medical/Med_CircuitBench_V3_REAL_FINAL_<date>_<commit>.zip
+ZIP size: recorded in external .sha256 and final report
+SHA256: recorded in external .sha256 and final report
+Delivery validation: PASS
+Paper claims validation: PASS
+Anti-synthetic validation: PASS
+Provenance validation: PASS
 ```
 
-ZIP size:
+## Key Results
+
+FAN validation:
 
 ```text
-recorded in final delivery output
+Predicted FAN-NoAlpha validation AUPRC by seed:
+42: 0.827707
+43: 0.797834
+44: 0.840722
+
+Direct macro R2 by seed:
+42: 0.646900
+43: 0.640321
+44: 0.648308
+
+Macro Pearson by seed:
+42: 0.792612
+43: 0.787773
+44: 0.793594
 ```
+
+Planted neural circuit:
+
+```text
+Node precision: 1.0 / 1.0 / 1.0
+Node recall: 1.0 / 1.0 / 1.0
+CircuitF1: 1.0 / 1.0 / 0.9
+Gate status: PLANTED_VALIDATED_NEGATIVE
+Reason: DEAD_FEATURE_FRACTION_GATE_FAILED
+Minimum dead-feature fraction: 0.742188
+```
+
+Standard Transformer + SCTC:
+
+```text
+Fidelity status: PASS
+Mean delta AUPRC: 0.000297
+Validated candidate edges: 0
+DataGraphAgreementF1: 0.0
+Status: NO_VALIDATED_EDGES
+```
+
+Partial held-out test:
+
+```text
+Status: PARTIAL_TEST_CONSUMED
+Standard Transformer test AUPRC:
+42: 0.819045
+43: 0.822749
+44: 0.819370
+```
+
+Frozen replication:
+
+```text
+Replication generator seed: 20260715
+Episodes: 10000
+FAN pattern: CONFIRMED
+Standard SCTC fidelity pattern: CONFIRMED
+Planted recovery pattern: CONFIRMED
+Planted dictionary gate: NEGATIVE_PATTERN_CONFIRMED
+Selected-edge replication: NO_VALIDATED_EDGES
+```
+
+## Interpretation
+
+Multi-set fuzzy concept encoding with a signed additive decision layer remains
+validated. Standard SCTC preserves model predictions with low fidelity error.
+The planted control recovers nodes and most edges, but the preregistered
+dictionary-utilization gate remains negative. Standard Transformer edge
+discovery did not validate data-graph edges under the frozen protocol.
 
 ## Frozen Prior Results
 
 - V1: `ddcf32ae357dfedd91444c5cba18fac1af5d525e`, status `V1_NO_GO`.
 - V2 foundation: `b4bd5661544079db5a9c6d274b24bf05787891be`, status `FAN_FOUNDATION_FAIL`.
 - V2.1: `d404aabf8d93844e11878263103bbdb5d2ab16bc`, status `FAN_FOUNDATION_FAIL`.
-- V2.2 corrected runner commit: `a142bd7cef7f6eac7e5b24c32bdb21135e442207`.
-
-## Key V3 Metrics
-
-- Primary FAN family selected by validation: `gaussian`.
-- Oracle Temporal FAN mean AUPRC: `0.3658`.
-- Predicted Temporal FAN Strict mean AUPRC: `0.6013`.
-- Predicted Temporal FAN trajectory R2: `0.5303`.
-- Predicted Temporal FAN trajectory Pearson: `0.7019`.
-- FAN gate pass count: `0 / 3`.
-- Planted neural CircuitF1: `1.0000`.
-- Planted gate pass count: `3 / 3`.
-- Standard SCTC delta AUPRC: `0.00096`.
-- Standard SCTC probability MAE: `0.00065`.
-- SCTC grid rows: `9`.
-- Test opened: `false`.
-
-## Completed V3 Stages
-
-- Corrected FAN execution through `TemporalConceptFANModel`.
-- Seed control for V3 program.
-- Full three-seed corrected V2.2 core execution.
-- FAN family comparison.
-- Leakage bootstrap.
-- Faithfulness outputs from frozen FAN decision head.
-- Planted neural circuit and SCTC grid.
-- Standard Transformer + SCTC fidelity.
-- Paper source and PDF generation.
-- Paper claims validation.
-- Delivery validation.
-- Final ZIP packaging with source snapshot.
-
-## Interpretation
-
-The FAN gate remains negative after using the real neural FAN path, while the
-planted neural control and Standard SCTC fidelity pass. The correct terminal
-interpretation is therefore `V3_FAN_NEGATIVE_SCTC_VALIDATED`, not a positive FAN
-result and not an implementation-only failure.
+- Revoked V3 engineering snapshot: `56a160aaa7faefaad4cbaeceff99a23335709f40`, previously reported as `V3_GO`.
 
 ## Next Scientific Step
 
-Use the packaged V3 results and paper draft for article-level interpretation.
-Do not retune thresholds after this terminal validation result.
+Do not tune this package after partial held-out and replication reporting. Any
+next experiment should be explicitly versioned and should focus on improving
+SCTC dictionary utilization and intervention-edge discovery without reusing the
+consumed test for model selection.

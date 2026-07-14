@@ -36,26 +36,64 @@ Active branch:
 fix/med-circuitbench-v2-2-final
 ```
 
-Current executable program:
+Current FAN validation command:
 
 ```bash
-python scripts/medical/v3/run_research_program.py \
+python scripts/medical/v3/run_fan_iteration.py \
   --config configs/medical/v3/full.yaml \
   --seeds 42 43 44 \
-  --output artifacts/medical/v3 \
-  --continue-until-terminal
+  --output artifacts/medical/v3_fan_iterations
 ```
 
-V3 must use the terminal-result workflow and must continue independent stages
-after a negative FAN gate.
+Current exact faithfulness diagnostic command:
+
+```bash
+python scripts/medical/v3/diagnose_fan_faithfulness.py \
+  --config configs/medical/v3/full.yaml \
+  --iteration-dir artifacts/medical/v3_fan_iterations/runs/iteration_01 \
+  --seeds 42 43 44 \
+  --output artifacts/medical/v3_fan_iterations/runs/iteration_01/exact_faithfulness_diagnostics
+```
+
+Current Oracle alpha-ablation command:
+
+```bash
+python scripts/medical/v3/run_oracle_alpha_ablation.py \
+  --config configs/medical/v3/full.yaml \
+  --seeds 42 43 44 \
+  --output artifacts/medical/v3_alpha_ablation
+```
+
+Current Predicted FAN strict validation command:
+
+```bash
+python scripts/medical/v3/run_predicted_fan_strict.py \
+  --config configs/medical/v3/full.yaml \
+  --seeds 42 43 44 \
+  --output artifacts/medical/v3_predicted_fan_strict
+```
+
+Current phase:
+
+```text
+V3 real final delivered
+```
+
+The earlier `V3_GO` package is revoked as a surrogate-heavy engineering
+snapshot. The current finalized real-practice package is under
+`artifacts/medical/v3_real_final` with status
+`V3_REAL_MIXED_RESULT_REPLICATION_CONFIRMED`.
+
+The held-out test was opened once after validation freeze in the V3 real
+research runner. Do not re-open test or change selected FAN/SCTC configurations
+unless a new explicitly versioned experiment is started.
 
 Allowed V3 final statuses:
 
-- `V3_GO`
-- `V3_FAN_VALIDATED_SCTC_NEGATIVE`
-- `V3_FAN_NEGATIVE_SCTC_VALIDATED`
-- `V3_VALIDATED_NEGATIVE`
-- `V3_MIXED_RESULT`
+- `V3_REAL_GO`
+- `V3_REAL_MIXED_RESULT`
+- `V3_REAL_VALIDATED_NEGATIVE`
+- `V3_REAL_FAN_VALIDATED_SCTC_NEGATIVE`
 
 ## Scientific Rules
 
@@ -81,9 +119,9 @@ python -m pytest tests/medical/v3 tests/medical/v2_2 tests/medical/v2 -q
 Run V3:
 
 ```bash
-python scripts/medical/v3/run_research_program.py \
+.venv/bin/python scripts/medical/v3/finalize_real_research.py \
   --config configs/medical/v3/full.yaml \
-  --seeds 42 43 44 \
-  --output artifacts/medical/v3 \
-  --continue-until-terminal
+  --source-output artifacts/medical/v3_real \
+  --output artifacts/medical/v3_real_final \
+  --seeds 42 43 44
 ```
