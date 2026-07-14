@@ -30,19 +30,13 @@ earlier Ridge/LogisticRegression surrogate FAN evaluation.
 ## Delivery
 
 ```text
-artifacts/medical/Med_CircuitBench_V3_FINAL_20260714_08576b4.zip
-```
-
-SHA256:
-
-```text
-d4214dea585e446cef8f4167d71ab451c3dd747c643f16c28a6c71538329b458
+artifacts/medical/Med_CircuitBench_V3_FINAL_<date>_<commit>.zip
 ```
 
 ZIP size:
 
 ```text
-866M
+recorded in final delivery output
 ```
 
 ## Frozen Prior Results
