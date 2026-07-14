@@ -15,6 +15,7 @@ class TemporalConceptFANOutput:
     logit: torch.Tensor
     probability: torch.Tensor
     latent: torch.Tensor
+    latent_sequence: torch.Tensor
     concept_trajectories: torch.Tensor
     temporal_concept_weights: torch.Tensor
     concept_summaries: torch.Tensor
@@ -31,6 +32,7 @@ class TemporalConceptFANOutput:
             "logit": self.logit,
             "probability": self.probability,
             "latent": self.latent,
+            "latent_sequence": self.latent_sequence,
             "concepts": self.concept_summaries,
             "concept_trajectories": self.concept_trajectories,
             "temporal_concept_weights": self.temporal_concept_weights,
@@ -180,6 +182,7 @@ class TemporalConceptFANModel(nn.Module):
             logit=logit,
             probability=torch.sigmoid(logit),
             latent=h.mean(dim=1),
+            latent_sequence=h,
             concept_trajectories=trajectories,
             temporal_concept_weights=temporal_weights,
             concept_summaries=summaries,

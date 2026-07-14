@@ -36,19 +36,26 @@ Active branch:
 fix/med-circuitbench-v2-2-final
 ```
 
-V2.2 must use the single-program gated workflow.
+Current executable program:
 
-Allowed final statuses:
+```bash
+python scripts/medical/v3/run_research_program.py \
+  --config configs/medical/v3/full.yaml \
+  --seeds 42 43 44 \
+  --output artifacts/medical/v3 \
+  --continue-until-terminal
+```
 
-- `V2_2_GO`
-- `FAN_FOUNDATION_FAIL`
-- `CONCEPT_TARGET_INSUFFICIENT`
-- `SEMANTIC_LEAKAGE_FAIL`
-- `PLANTED_CONTROL_FAIL`
-- `STANDARD_SCTC_ONLY`
-- `SCTC_RECOVERY_FAIL`
-- `CLEAN_ONLY_SUCCESS`
-- `V2_2_NO_GO`
+V3 must use the terminal-result workflow and must continue independent stages
+after a negative FAN gate.
+
+Allowed V3 final statuses:
+
+- `V3_GO`
+- `V3_FAN_VALIDATED_SCTC_NEGATIVE`
+- `V3_FAN_NEGATIVE_SCTC_VALIDATED`
+- `V3_VALIDATED_NEGATIVE`
+- `V3_MIXED_RESULT`
 
 ## Scientific Rules
 
@@ -68,16 +75,15 @@ Allowed final statuses:
 Run tests:
 
 ```bash
-python -m pytest tests/medical/v2_2 tests/medical/v2 -q
+python -m pytest tests/medical/v3 tests/medical/v2_2 tests/medical/v2 -q
 ```
 
-Run V2.2:
+Run V3:
 
 ```bash
-python scripts/medical/v2_2/run_v2_2_program.py \
-  --config configs/medical/v2_2/full.yaml \
+python scripts/medical/v3/run_research_program.py \
+  --config configs/medical/v3/full.yaml \
   --seeds 42 43 44 \
-  --mode full \
-  --output artifacts/medical/v2_2
+  --output artifacts/medical/v3 \
+  --continue-until-terminal
 ```
-
