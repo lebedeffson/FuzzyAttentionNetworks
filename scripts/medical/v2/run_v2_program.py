@@ -836,6 +836,10 @@ def copy_sources(output: Path, config_path: Path) -> None:
     protocol = Path("docs/medical/MED_CIRCUITBENCH_V2_CONCEPT_FAN_SCTC_TZ.md")
     if protocol.exists():
         shutil.copy2(protocol, output / "PROTOCOL" / protocol.name)
+    for memory_file in [Path("AGENTS.md"), Path("docs/medical/PROJECT_STATE.md")]:
+        if memory_file.exists():
+            target = output / "PROTOCOL" / memory_file.name
+            shutil.copy2(memory_file, target)
 
 
 def run_checks(output: Path) -> None:
