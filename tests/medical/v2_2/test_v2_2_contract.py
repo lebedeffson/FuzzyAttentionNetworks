@@ -1,19 +1,22 @@
 from __future__ import annotations
 
 import json
+import inspect
 import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
+import torch
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "src"))
 
 from med_circuitbench.v2_2.planted_real import generate_planted
-from scripts.medical.v2_2.run_v2_2_program import full_run_guard, gaussian_membership, fan_evidence
+from fan.concept import TemporalConceptFANModel
+from scripts.medical.v2_2.run_v2_2_program import evaluate_fan, fan_model, full_run_guard
 
 
 def load_full():
@@ -59,20 +62,28 @@ def test_future_concepts_not_used_in_target_definition():
     assert load_full()["dataset"]["prediction_horizon"] == 6
 
 
-def test_gaussian_memberships_are_finite_and_bounded():
-    q = np.linspace(0, 1, 50).reshape(10, 5)
-    mu, params = gaussian_membership(q, q)
-    assert np.isfinite(mu).all()
-    assert ((mu >= 0) & (mu <= 1)).all()
-    assert (params["width"] > 0).all()
+def test_temporal_concept_fan_outputs_are_finite_and_normalized():
+    model = TemporalConceptFANModel(input_dim=27, sequence_length=36, latent_dim=32, n_concepts=5, membership="mixed")
+    out = model(torch.randn(4, 36, 27))
+    assert torch.isfinite(out.probability).all()
+    assert torch.allclose(out.concept_weights.sum(dim=1), torch.ones(4), atol=1e-6)
+    assert torch.allclose(out.temporal_concept_weights.sum(dim=1), torch.ones(4, 5), atol=1e-6)
+    assert out.concept_contributions.shape == (4, 5)
 
 
-def test_fan_weights_sum_to_one():
-    rng = np.random.default_rng(0)
-    q = rng.normal(size=(20, 5))
-    y = (q[:, 0] > 0).astype(int)
-    _, _, alpha, _ = fan_evidence(q, q, y)
-    assert np.allclose(alpha.sum(axis=1), 1.0)
+def test_fan_model_uses_full_config_encoder_dimensions():
+    cfg = load_full()
+    model = fan_model(cfg, n_concepts=5, membership="mixed", oracle=False, temporal_mode="attention")
+    layer = model.encoder.encoder.layers[0]
+    assert len(model.encoder.encoder.layers) == cfg["model"]["layers"]
+    assert layer.linear1.out_features == cfg["model"]["d_ffn"]
+
+
+def test_evaluate_fan_uses_temporal_concept_fan_not_ridge_surrogate():
+    src = inspect.getsource(evaluate_fan)
+    assert "TemporalConceptFANModel" in inspect.getsource(fan_model)
+    assert "Ridge(" not in src
+    assert "LogisticRegression" not in src
 
 
 def test_no_latent_bypass_text_present():

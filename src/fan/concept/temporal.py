@@ -42,19 +42,32 @@ class TemporalConceptFANOutput:
 
 
 class SequenceTemporalEncoder(nn.Module):
-    def __init__(self, input_dim: int, latent_dim: int, sequence_length: int, dropout: float = 0.1):
+    def __init__(
+        self,
+        input_dim: int,
+        latent_dim: int,
+        sequence_length: int,
+        dropout: float = 0.1,
+        num_layers: int = 2,
+        nhead: int | None = None,
+        dim_feedforward: int | None = None,
+    ):
         super().__init__()
+        if nhead is None:
+            nhead = max(1, min(4, latent_dim // 16))
+        if dim_feedforward is None:
+            dim_feedforward = max(64, latent_dim * 2)
         self.input_proj = nn.Linear(input_dim, latent_dim)
         self.pos = nn.Parameter(torch.zeros(1, sequence_length, latent_dim))
         layer = nn.TransformerEncoderLayer(
             d_model=latent_dim,
-            nhead=max(1, min(4, latent_dim // 16)),
-            dim_feedforward=max(64, latent_dim * 2),
+            nhead=int(nhead),
+            dim_feedforward=int(dim_feedforward),
             dropout=dropout,
             batch_first=True,
             activation="gelu",
         )
-        self.encoder = nn.TransformerEncoder(layer, num_layers=2)
+        self.encoder = nn.TransformerEncoder(layer, num_layers=int(num_layers))
         nn.init.normal_(self.pos, std=0.02)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -116,11 +129,22 @@ class TemporalConceptFANModel(nn.Module):
         oracle: bool = False,
         temporal_mode: str = "attention",
         dropout: float = 0.1,
+        encoder_layers: int = 2,
+        encoder_heads: int | None = None,
+        encoder_ffn: int | None = None,
     ):
         super().__init__()
         self.oracle = bool(oracle)
         self.temporal_mode = temporal_mode
-        self.encoder = SequenceTemporalEncoder(input_dim, latent_dim, sequence_length, dropout)
+        self.encoder = SequenceTemporalEncoder(
+            input_dim,
+            latent_dim,
+            sequence_length,
+            dropout,
+            num_layers=encoder_layers,
+            nhead=encoder_heads,
+            dim_feedforward=encoder_ffn,
+        )
         self.projector = TokenConceptProjector(latent_dim, n_concepts)
         self.temporal_aggregator = TemporalConceptAggregator(n_concepts, sequence_length)
         self.membership = MembershipLayer(n_concepts, membership)
@@ -163,4 +187,3 @@ class TemporalConceptFANModel(nn.Module):
             concept_weights=concept_weights,
             concept_contributions=contributions,
         )
-

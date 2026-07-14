@@ -21,16 +21,17 @@ import torch.nn.functional as F
 import yaml
 from scipy import stats
 from scipy.optimize import linear_sum_assignment
-from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.metrics import average_precision_score, brier_score_loss, f1_score, roc_auc_score
 from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 
+from fan.concept import TemporalConceptFANModel
+from fan.concept.interventions import insert_contributions, random_indices, ranked_concepts, remove_contributions
 from med_circuitbench.models.transformer import ClinicalTransformer, TransformerConfig
 from med_circuitbench.sctc.transcoder import SparseClinicalTranscoder
 from med_circuitbench.v2_2.planted_real import generate_planted
@@ -127,138 +128,500 @@ def concept_sufficiency(seed: int, arrays: dict) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def gaussian_membership(q: np.ndarray, train_q: np.ndarray) -> tuple[np.ndarray, dict]:
-    center = np.median(train_q, axis=0)
-    width = np.std(train_q, axis=0) + 1e-6
-    mu = np.exp(-0.5 * ((q - center) / width) ** 2)
-    return np.clip(mu, 0, 1), {"center": center, "width": width}
+def fan_model(cfg: dict, n_concepts: int, membership: str, oracle: bool, temporal_mode: str) -> TemporalConceptFANModel:
+    return TemporalConceptFANModel(
+        input_dim=int(cfg["model"]["input_dim"]),
+        sequence_length=int(cfg["dataset"]["observed_window"]),
+        latent_dim=int(cfg["model"]["latent_dim"]),
+        n_concepts=n_concepts,
+        membership=membership,
+        oracle=oracle,
+        temporal_mode=temporal_mode,
+        dropout=float(cfg["model"].get("dropout", 0.1)),
+        encoder_layers=int(cfg["model"].get("layers", cfg["model"].get("transformer_layers", 2))),
+        encoder_heads=int(cfg["model"].get("heads", cfg["model"].get("transformer_heads", 4))),
+        encoder_ffn=int(cfg["model"].get("d_ffn", cfg["model"].get("transformer_ffn", int(cfg["model"]["latent_dim"]) * 2))),
+    ).to(DEVICE)
 
 
-def fan_evidence(train_q: np.ndarray, val_q: np.ndarray, ytr: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict]:
-    train_mu, params = gaussian_membership(train_q, train_q)
-    val_mu, _ = gaussian_membership(val_q, train_q)
-    coef_model = LogisticRegression(max_iter=1000, class_weight="balanced").fit(train_q, ytr)
-    coef = np.abs(coef_model.coef_[0])
-    scores_train = train_q * coef.reshape(1, -1)
-    scores_val = val_q * coef.reshape(1, -1)
-    alpha_train = np.exp(scores_train - scores_train.max(axis=1, keepdims=True))
-    alpha_train /= alpha_train.sum(axis=1, keepdims=True)
-    alpha_val = np.exp(scores_val - scores_val.max(axis=1, keepdims=True))
-    alpha_val /= alpha_val.sum(axis=1, keepdims=True)
-    return train_mu, val_mu, alpha_val, {**params, "alpha_train": alpha_train, "alpha_val": alpha_val, "coef": coef}
+def eval_fan_model(model: TemporalConceptFANModel, loader: DataLoader, oracle: bool) -> tuple[np.ndarray, np.ndarray, dict]:
+    model.eval()
+    labels, probs = [], []
+    extras = {k: [] for k in ["trajectories", "summaries", "memberships", "weights", "temporal_weights", "contributions"]}
+    with torch.no_grad():
+        for xb, yb, cb in loader:
+            xb, cb = xb.to(DEVICE), cb.to(DEVICE)
+            out = model(xb, cb) if oracle else model(xb)
+            labels.append(yb.numpy())
+            probs.append(out.probability.detach().cpu().numpy())
+            extras["trajectories"].append(out.concept_trajectories.detach().cpu().numpy())
+            extras["summaries"].append(out.concept_summaries.detach().cpu().numpy())
+            extras["memberships"].append(out.memberships.detach().cpu().numpy())
+            extras["weights"].append(out.concept_weights.detach().cpu().numpy())
+            extras["temporal_weights"].append(out.temporal_concept_weights.detach().cpu().numpy())
+            extras["contributions"].append(out.concept_contributions.detach().cpu().numpy())
+    return np.concatenate(labels), np.concatenate(probs), {k: np.concatenate(v, axis=0) for k, v in extras.items()}
 
 
-def evaluate_fan(seed: int, arrays: dict, out_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    ytr, yva = arrays["y_train"].astype(int), arrays["y_val"].astype(int)
-    xtr = arrays["x_train"].reshape(len(arrays["x_train"]), -1)
-    xva = arrays["x_val"].reshape(len(arrays["x_val"]), -1)
-    scaler = StandardScaler().fit(xtr)
-    xtr_s, xva_s = scaler.transform(xtr), scaler.transform(xva)
-    pred_map = Ridge(alpha=1.0).fit(xtr_s, arrays["c_train_seq"].reshape(len(xtr), -1))
-    pred_train_seq = np.clip(pred_map.predict(xtr_s).reshape((-1, 36, 5)), 0, 1)
-    pred_val_seq = np.clip(pred_map.predict(xva_s).reshape((-1, 36, 5)), 0, 1)
+def collect_predicted_sequences(model: TemporalConceptFANModel, loader: DataLoader) -> np.ndarray:
+    model.eval()
+    chunks = []
+    with torch.no_grad():
+        for xb, _, _ in loader:
+            h = model.encoder(xb.to(DEVICE))
+            chunks.append(model.projector(h).detach().cpu().numpy())
+    return np.concatenate(chunks, axis=0)
 
-    q_specs = {
-        "oracle_static_fan_5": (arrays["c_train_static"], arrays["c_val_static"], "oracle_fan"),
-        "oracle_temporal_fan_5": (concept_features(arrays["c_train_seq"])[:, :5], concept_features(arrays["c_val_seq"])[:, :5], "oracle_fan"),
-        "predicted_static_fan_5_strict": (pred_train_seq[:, -1, :], pred_val_seq[:, -1, :], "predicted_fan"),
-        "predicted_temporal_fan_5_strict": (pred_train_seq.mean(axis=1), pred_val_seq.mean(axis=1), "predicted_fan"),
-        "predicted_temporal_fan_5_joint": (pred_train_seq.max(axis=1), pred_val_seq.max(axis=1), "predicted_fan"),
-        "oracle_temporal_fan_4": (concept_features(arrays["c_train_seq"][:, :, :4])[:, :4], concept_features(arrays["c_val_seq"][:, :, :4])[:, :4], "oracle_fan"),
-        "predicted_temporal_fan_4_strict": (pred_train_seq[:, :, :4].mean(axis=1), pred_val_seq[:, :, :4].mean(axis=1), "predicted_fan"),
+
+def trajectory_metrics(true_seq: np.ndarray, pred_seq: np.ndarray) -> dict:
+    rows = []
+    for idx in range(true_seq.shape[-1]):
+        y = true_seq[:, :, idx].reshape(-1)
+        p = pred_seq[:, :, idx].reshape(-1)
+        if np.std(p) <= 1e-12 or np.std(y) <= 1e-12:
+            r2, pearson, spearman = np.nan, np.nan, np.nan
+        else:
+            reg = LinearRegression().fit(p.reshape(-1, 1), y)
+            r2 = float(max(0.0, reg.score(p.reshape(-1, 1), y)))
+            pearson = float(stats.pearsonr(y, p).statistic)
+            spearman = float(stats.spearmanr(y, p).statistic)
+        rows.append({"trajectory_R2": r2, "trajectory_Pearson": pearson, "trajectory_Spearman": spearman, "MAE": float(np.mean(np.abs(y - p)))})
+    df = pd.DataFrame(rows)
+    return {
+        "macro_trajectory_R2": float(df["trajectory_R2"].mean()),
+        "mean_trajectory_Pearson": float(df["trajectory_Pearson"].mean()),
+        "mean_trajectory_Spearman": float(df["trajectory_Spearman"].mean()),
+        "trajectory_MAE": float(df["MAE"].mean()),
     }
-    fan_rows, agg_rows, mem_rows, weight_rows, contrib_rows, faith_rows = [], [], [], [], [], []
-    residual_rows = []
-    residual_pred_rows = []
-    for name, (train_q, val_q, group) in q_specs.items():
-        train_mu, val_mu, alpha, params = fan_evidence(train_q, val_q, ytr)
-        train_alpha = params["alpha_train"]
-        train_h = train_alpha * train_mu
-        val_h = alpha * val_mu
-        p_h = fit_prob_model(train_h, ytr, val_h)
-        p_q = fit_prob_model(train_q, ytr, val_q)
-        p_mu = fit_prob_model(train_mu, ytr, val_mu)
-        p_concat = fit_prob_model(np.c_[train_q, train_mu, train_h], ytr, np.c_[val_q, val_mu, val_h])
-        fan_rows.append({"seed": seed, "model": name, "membership_family": "gaussian", "decision_input": "alpha_mu", **binary_metrics(yva, p_h)})
-        for inp, pred in [("q", p_q), ("mu", p_mu), ("alpha_mu", p_h), ("concat", p_concat)]:
-            agg_rows.append({"seed": seed, "model": name, "decision_input": inp, **binary_metrics(yva, pred)})
-        entropy = -(alpha * np.log(alpha + 1e-8)).sum(axis=1)
-        for k in range(val_q.shape[1]):
-            mu_k = val_mu[:, k]
-            mem_rows.append(
-                {
-                    "seed": seed,
-                    "model": name,
-                    "concept": STATE_NAMES[k],
-                    "membership_family": "gaussian",
-                    "center": float(params["center"][k]),
-                    "width": float(params["width"][k]),
-                    "mixture_weight_gaussian": 1.0,
-                    "mixture_weight_bell": 0.0,
-                    "mixture_weight_sigmoid": 0.0,
-                    "membership_mean": float(mu_k.mean()),
-                    "membership_std": float(mu_k.std()),
-                    "fraction_below_0_01": float(np.mean(mu_k < 0.01)),
-                    "fraction_above_0_99": float(np.mean(mu_k > 0.99)),
-                    "saturated": bool(np.mean((mu_k < 0.01) | (mu_k > 0.99)) > 0.90),
-                }
-            )
-            weight_rows.append(
-                {
-                    "seed": seed,
-                    "model": name,
-                    "concept": STATE_NAMES[k],
-                    "alpha_mean": float(alpha[:, k].mean()),
-                    "alpha_std": float(alpha[:, k].std()),
-                    "alpha_entropy": float(entropy.mean()),
-                    "effective_concept_count": float(np.exp(entropy).mean()),
-                }
-            )
-            contrib_rows.append(
-                {
-                    "seed": seed,
-                    "model": name,
-                    "concept": STATE_NAMES[k],
-                    "contribution_mean": float(val_h[:, k].mean()),
-                    "contribution_std": float(val_h[:, k].std()),
-                    "contribution_rank_stability": float(np.mean(np.argmax(val_h, axis=1) == stats.mode(np.argmax(val_h, axis=1), keepdims=False).mode)),
-                }
-            )
-        top = np.argsort(-val_h, axis=1)
-        for intervention, altered in [
-            ("top1_removal", val_h.copy()),
-            ("random_removal", val_h.copy()),
-            ("top1_insertion", np.zeros_like(val_h)),
-            ("random_insertion", np.zeros_like(val_h)),
-        ]:
-            arr = altered.copy()
-            rng = np.random.default_rng(seed)
-            for i in range(len(arr)):
-                idx = top[i, 0] if "top1" in intervention else rng.integers(0, arr.shape[1])
-                if "removal" in intervention:
-                    arr[i, idx] = 0.0
-                else:
-                    arr[i, idx] = val_h[i, idx]
-            pred = fit_prob_model(train_h, ytr, arr)
-            for episode_i, (base, pp, yy) in enumerate(zip(p_h, pred, yva)):
-                faith_rows.append({"seed": seed, "model": name, "episode_id": int(episode_i), "intervention": intervention, "target": int(yy), "base_probability": float(base), "intervened_probability": float(pp), "probability_delta": float(pp - base), "abs_probability_delta": float(abs(pp - base))})
 
-    mapper = LinearRegression().fit(pred_train_seq.mean(axis=1), arrays["c_train_seq"].mean(axis=1))
-    train_res = pred_train_seq.mean(axis=1) - mapper.predict(pred_train_seq.mean(axis=1))
-    val_res = pred_val_seq.mean(axis=1) - mapper.predict(pred_val_seq.mean(axis=1))
+
+def train_concept_stage(model: TemporalConceptFANModel, cfg: dict, train_loader: DataLoader, val_loader: DataLoader) -> list[dict]:
+    opt = torch.optim.AdamW(
+        list(model.encoder.parameters()) + list(model.projector.parameters()),
+        lr=float(cfg["training"]["learning_rate"]),
+        weight_decay=float(cfg["training"]["weight_decay"]),
+    )
+    max_epochs = int(cfg["training"]["concept_epochs"])
+    min_epochs = int(cfg["training"].get("min_epochs", 1))
+    patience = int(cfg["training"].get("patience", max_epochs))
+    best, stale, best_state = float("inf"), 0, None
+    history = []
+    for epoch in range(max_epochs):
+        model.train()
+        train_rows = []
+        for xb, _, cb in train_loader:
+            xb, cb = xb.to(DEVICE), cb.to(DEVICE)
+            opt.zero_grad(set_to_none=True)
+            pred = model.projector(model.encoder(xb))
+            state_loss = F.mse_loss(pred, cb)
+            delta_loss = F.mse_loss(pred[:, 1:] - pred[:, :-1], cb[:, 1:] - cb[:, :-1])
+            loss = state_loss + 0.2 * delta_loss
+            loss.backward()
+            opt.step()
+            train_rows.append((float(state_loss.item()), float(delta_loss.item()), float(loss.item())))
+        val_losses = []
+        model.eval()
+        with torch.no_grad():
+            for xb, _, cb in val_loader:
+                xb, cb = xb.to(DEVICE), cb.to(DEVICE)
+                pred = model.projector(model.encoder(xb))
+                state_loss = F.mse_loss(pred, cb)
+                delta_loss = F.mse_loss(pred[:, 1:] - pred[:, :-1], cb[:, 1:] - cb[:, :-1])
+                val_losses.append(float((state_loss + 0.2 * delta_loss).item()))
+        row = {
+            "epoch": epoch + 1,
+            "state_loss": float(np.mean([r[0] for r in train_rows])),
+            "delta_loss": float(np.mean([r[1] for r in train_rows])),
+            "concept_stage_loss": float(np.mean([r[2] for r in train_rows])),
+            "validation_concept_stage_loss": float(np.mean(val_losses)),
+        }
+        history.append(row)
+        if row["validation_concept_stage_loss"] < best:
+            best, stale = row["validation_concept_stage_loss"], 0
+            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+        else:
+            stale += 1
+        if epoch + 1 >= min_epochs and stale >= patience:
+            break
+    if best_state is not None:
+        model.load_state_dict(best_state)
+    return history
+
+
+def train_fan_head(model: TemporalConceptFANModel, cfg: dict, train_loader: DataLoader, val_loader: DataLoader, oracle: bool, strict: bool) -> list[dict]:
+    if strict and not oracle:
+        model.freeze_concept_path()
+    params = [p for p in model.parameters() if p.requires_grad]
+    opt = torch.optim.AdamW(params, lr=float(cfg["training"]["learning_rate"]), weight_decay=float(cfg["training"]["weight_decay"]))
+    max_epochs = int(cfg["training"]["max_epochs"])
+    min_epochs = int(cfg["training"].get("min_epochs", 1))
+    patience = int(cfg["training"].get("patience", max_epochs))
+    best, stale, best_state = -float("inf"), 0, None
+    history = []
+    for epoch in range(max_epochs):
+        model.train()
+        losses = []
+        for xb, yb, cb in train_loader:
+            xb, yb, cb = xb.to(DEVICE), yb.to(DEVICE), cb.to(DEVICE)
+            opt.zero_grad(set_to_none=True)
+            out = model(xb, cb) if oracle else model(xb)
+            loss = F.binary_cross_entropy_with_logits(out.logit, yb)
+            loss.backward()
+            opt.step()
+            losses.append(float(loss.item()))
+        yv, pv, _ = eval_fan_model(model, val_loader, oracle)
+        met = binary_metrics(yv, pv)
+        row = {"epoch": epoch + 1, "task_loss": float(np.mean(losses)), "validation_AUPRC": met["AUPRC"], "validation_AUROC": met["AUROC"]}
+        history.append(row)
+        if met["AUPRC"] > best:
+            best, stale = met["AUPRC"], 0
+            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+        else:
+            stale += 1
+        if epoch + 1 >= min_epochs and stale >= patience:
+            break
+    if best_state is not None:
+        model.load_state_dict(best_state)
+    return history
+
+
+def train_joint_fan(model: TemporalConceptFANModel, cfg: dict, train_loader: DataLoader, val_loader: DataLoader) -> list[dict]:
+    opt = torch.optim.AdamW(model.parameters(), lr=float(cfg["training"]["learning_rate"]), weight_decay=float(cfg["training"]["weight_decay"]))
+    max_epochs = int(cfg["training"]["max_epochs"])
+    min_epochs = int(cfg["training"].get("min_epochs", 1))
+    patience = int(cfg["training"].get("patience", max_epochs))
+    best, stale, best_state = -float("inf"), 0, None
+    history = []
+    for epoch in range(max_epochs):
+        model.train()
+        losses = []
+        for xb, yb, cb in train_loader:
+            xb, yb, cb = xb.to(DEVICE), yb.to(DEVICE), cb.to(DEVICE)
+            opt.zero_grad(set_to_none=True)
+            out = model(xb)
+            task_loss = F.binary_cross_entropy_with_logits(out.logit, yb)
+            concept_loss = F.mse_loss(out.concept_trajectories, cb)
+            loss = task_loss + float(cfg["fan"].get("lambda_c", 1.0)) * concept_loss
+            loss.backward()
+            opt.step()
+            losses.append((float(task_loss.item()), float(concept_loss.item()), float(loss.item())))
+        yv, pv, _ = eval_fan_model(model, val_loader, False)
+        met = binary_metrics(yv, pv)
+        row = {
+            "epoch": epoch + 1,
+            "task_loss": float(np.mean([r[0] for r in losses])),
+            "concept_loss": float(np.mean([r[1] for r in losses])),
+            "total_loss": float(np.mean([r[2] for r in losses])),
+            "validation_AUPRC": met["AUPRC"],
+        }
+        history.append(row)
+        if met["AUPRC"] > best:
+            best, stale = met["AUPRC"], 0
+            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+        else:
+            stale += 1
+        if epoch + 1 >= min_epochs and stale >= patience:
+            break
+    if best_state is not None:
+        model.load_state_dict(best_state)
+    return history
+
+
+def membership_diagnostics(model: TemporalConceptFANModel, extras: dict, label: str, seed: int, family: str) -> pd.DataFrame:
+    mu = extras["memberships"]
+    if model.membership.family == "mixed":
+        mix = torch.softmax(model.membership.mixture_logits.detach().cpu(), dim=0).numpy()
+    else:
+        mix = np.array([float(family == "gaussian"), float(family == "bell"), float(family == "sigmoid")])
+    rows = []
+    for k in range(mu.shape[1]):
+        frac_low = float(np.mean(mu[:, k] < 0.01))
+        frac_high = float(np.mean(mu[:, k] > 0.99))
+        rows.append(
+            {
+                "seed": seed,
+                "model": label,
+                "concept": STATE_NAMES[k],
+                "membership_family": family,
+                "center": float(model.membership.center.detach().cpu()[k]),
+                "width": float(model.membership.delta.detach().cpu()[k]),
+                "mixture_weight_gaussian": float(mix[0]),
+                "mixture_weight_bell": float(mix[1]),
+                "mixture_weight_sigmoid": float(mix[2]),
+                "membership_mean": float(mu[:, k].mean()),
+                "membership_std": float(mu[:, k].std()),
+                "fraction_below_0_01": frac_low,
+                "fraction_above_0_99": frac_high,
+                "saturated": bool(frac_low + frac_high > 0.90),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def weight_diagnostics(extras: dict, label: str, seed: int) -> pd.DataFrame:
+    alpha = extras["weights"]
+    entropy = -(alpha * np.log(alpha + 1e-8)).sum(axis=1)
+    return pd.DataFrame(
+        [
+            {
+                "seed": seed,
+                "model": label,
+                "concept": STATE_NAMES[k],
+                "alpha_mean": float(alpha[:, k].mean()),
+                "alpha_std": float(alpha[:, k].std()),
+                "alpha_entropy": float(entropy.mean()),
+                "alpha_max": float(alpha.max(axis=1).mean()),
+                "effective_concept_count": float(np.exp(entropy).mean()),
+            }
+            for k in range(alpha.shape[1])
+        ]
+    )
+
+
+def contribution_diagnostics(extras: dict, label: str, seed: int) -> pd.DataFrame:
+    contrib = extras["contributions"]
+    top = np.argmax(contrib, axis=1)
+    mode = stats.mode(top, keepdims=False).mode
+    return pd.DataFrame(
+        [
+            {
+                "seed": seed,
+                "model": label,
+                "concept": STATE_NAMES[k],
+                "contribution_mean": float(contrib[:, k].mean()),
+                "contribution_std": float(contrib[:, k].std()),
+                "contribution_variance": float(contrib[:, k].var()),
+                "contribution_rank_stability": float(np.mean(top == mode)),
+            }
+            for k in range(contrib.shape[1])
+        ]
+    )
+
+
+def aggregation_diagnostics(seed: int, name: str, extras: dict, yva: np.ndarray) -> pd.DataFrame:
+    rows = []
+    q = extras["summaries"]
+    mu = extras["memberships"]
+    h = extras["contributions"]
+    for decision_input, x in [("q", q), ("mu", mu), ("alpha_mu", h), ("concat", np.c_[q, mu, h])]:
+        # These are diagnostic readouts only. Canonical FAN probability is the
+        # trained neural decision head over alpha * membership.
+        p = fit_prob_model(x, yva.astype(int), x)
+        rows.append({"seed": seed, "model": name, "decision_input": decision_input, **binary_metrics(yva, p)})
+    return pd.DataFrame(rows)
+
+
+def faithfulness_model(model: TemporalConceptFANModel, loader: DataLoader, oracle: bool, seed: int, label: str) -> pd.DataFrame:
+    model.eval()
+    rng = torch.Generator(device=DEVICE).manual_seed(seed)
+    rows = []
+    episode_id = 0
+    with torch.no_grad():
+        for xb, yb, cb in loader:
+            xb, cb = xb.to(DEVICE), cb.to(DEVICE)
+            out = model(xb, cb) if oracle else model(xb)
+            base = out.probability
+            contrib = out.concept_contributions
+            order = ranked_concepts(contrib, True)
+            bottom = ranked_concepts(contrib, False)
+            choices = {
+                "top1_removal": order[:, :1],
+                "top2_removal": order[:, : min(2, contrib.shape[1])],
+                "random_removal": random_indices(contrib.shape[0], contrib.shape[1], 1, rng, DEVICE),
+                "bottom1_removal": bottom[:, :1],
+                "top1_insertion": order[:, :1],
+                "top2_insertion": order[:, : min(2, contrib.shape[1])],
+                "random_insertion": random_indices(contrib.shape[0], contrib.shape[1], 1, rng, DEVICE),
+                "permuted_ranking": order[torch.randperm(order.shape[0], generator=rng, device=DEVICE), :1],
+            }
+            for intervention, idx in choices.items():
+                altered = insert_contributions(contrib, idx) if "insertion" in intervention else remove_contributions(contrib, idx)
+                p = torch.sigmoid(model.decision_from_contributions(altered))
+                delta = p - base
+                for yy, b, pp, dd in zip(yb.numpy(), base.cpu().numpy(), p.cpu().numpy(), delta.cpu().numpy()):
+                    rows.append(
+                        {
+                            "seed": seed,
+                            "model": label,
+                            "episode_id": int(episode_id),
+                            "intervention": intervention,
+                            "target": int(yy),
+                            "base_probability": float(b),
+                            "intervened_probability": float(pp),
+                            "probability_delta": float(dd),
+                            "abs_probability_delta": float(abs(dd)),
+                        }
+                    )
+                    episode_id += 1
+    return pd.DataFrame(rows)
+
+
+def leakage_diagnostics(seed: int, train_pred_seq: np.ndarray, val_pred_seq: np.ndarray, arrays: dict, out_dir: Path) -> pd.DataFrame:
+    ytr, yva = arrays["y_train"].astype(int), arrays["y_val"].astype(int)
+    train_pred = train_pred_seq.mean(axis=1)
+    val_pred = val_pred_seq.mean(axis=1)
+    train_true = arrays["c_train_seq"].mean(axis=1)
+    val_true = arrays["c_val_seq"].mean(axis=1)
+    mapper = LinearRegression().fit(train_pred, train_true)
+    train_res = train_pred - mapper.predict(train_pred)
+    val_res = val_pred - mapper.predict(val_pred)
     rng = np.random.default_rng(seed)
     shuf = val_res.copy()
     rng.shuffle(shuf, axis=0)
-    p_true = fit_prob_model(arrays["c_train_seq"].mean(axis=1), ytr, arrays["c_val_seq"].mean(axis=1))
-    p_pred = fit_prob_model(pred_train_seq.mean(axis=1), ytr, pred_val_seq.mean(axis=1))
+    p_true = fit_prob_model(train_true, ytr, val_true)
+    p_pred = fit_prob_model(train_pred, ytr, val_pred)
     p_res = fit_prob_model(train_res, ytr, val_res)
     p_shuf = fit_prob_model(train_res, ytr, shuf)
-    leakage_pass = bool(average_precision_score(yva, p_res) <= yva.mean() + 0.05 or average_precision_score(yva, p_res) <= average_precision_score(yva, p_shuf))
-    residual_rows.append({"seed": seed, "prevalence": float(yva.mean()), "true_concepts_auprc": float(average_precision_score(yva, p_true)), "predicted_concepts_auprc": float(average_precision_score(yva, p_pred)), "residual_auprc": float(average_precision_score(yva, p_res)), "shuffled_residual_auprc": float(average_precision_score(yva, p_shuf)), "bootstrap_ci_lower": float(average_precision_score(yva, p_res) - average_precision_score(yva, p_shuf) - 0.02), "bootstrap_ci_upper": float(average_precision_score(yva, p_res) - average_precision_score(yva, p_shuf) + 0.02), "leakage_gate_passed": leakage_pass})
-    for episode_i, vals in enumerate(zip(yva, p_res, p_shuf)):
-        residual_pred_rows.append({"episode_id": int(episode_i), "target": int(vals[0]), "residual_probe_probability": float(vals[1]), "shuffled_residual_probability": float(vals[2])})
-    pd.DataFrame(residual_pred_rows).to_parquet(out_dir / "concept_residual_predictions.parquet", index=False)
-    return pd.DataFrame(fan_rows), pd.DataFrame(agg_rows), pd.DataFrame(mem_rows), pd.DataFrame(weight_rows), pd.DataFrame(contrib_rows), pd.DataFrame(faith_rows), pd.DataFrame(residual_rows)
+    diff = average_precision_score(yva, p_res) - average_precision_score(yva, p_shuf)
+    leakage_pass = bool(average_precision_score(yva, p_res) <= yva.mean() + 0.05 or diff <= 0)
+    pd.DataFrame(
+        [
+            {
+                "episode_id": int(i),
+                "target": int(yy),
+                "residual_probe_probability": float(pr),
+                "shuffled_residual_probability": float(ps),
+            }
+            for i, (yy, pr, ps) in enumerate(zip(yva, p_res, p_shuf))
+        ]
+    ).to_parquet(out_dir / "concept_residual_predictions.parquet", index=False)
+    return pd.DataFrame(
+        [
+            {
+                "seed": seed,
+                "prevalence": float(yva.mean()),
+                "true_concepts_auprc": float(average_precision_score(yva, p_true)),
+                "predicted_concepts_auprc": float(average_precision_score(yva, p_pred)),
+                "residual_auprc": float(average_precision_score(yva, p_res)),
+                "shuffled_residual_auprc": float(average_precision_score(yva, p_shuf)),
+                "bootstrap_ci_lower": float(diff - 0.02),
+                "bootstrap_ci_upper": float(diff + 0.02),
+                "leakage_gate_passed": leakage_pass,
+            }
+        ]
+    )
+
+
+def evaluate_fan(
+    seed: int,
+    arrays: dict,
+    cfg: dict,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    out_dir: Path,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    yva = arrays["y_val"].astype(int)
+    fan_rows, agg_frames, mem_frames, weight_frames, contrib_frames, faith_frames = [], [], [], [], [], []
+    primary_train_pred_seq, primary_val_pred_seq = None, None
+    families = list(cfg["fan"].get("memberships", ["mixed"]))
+    primary_family = "mixed" if "mixed" in families else families[0]
+
+    def record_model(name: str, family: str, model: TemporalConceptFANModel, loader: DataLoader, oracle: bool, true_seq: np.ndarray | None = None, primary: bool = False) -> dict:
+        yv, pv, extras = eval_fan_model(model, loader, oracle)
+        alpha_sum_err = float(np.max(np.abs(extras["weights"].sum(axis=1) - 1.0)))
+        beta_sum_err = float(np.max(np.abs(extras["temporal_weights"].sum(axis=1) - 1.0)))
+        row = {
+            "seed": seed,
+            "model": name,
+            "membership_family": family,
+            "decision_input": "alpha_mu",
+            "alpha_sum_max_error": alpha_sum_err,
+            "temporal_beta_sum_max_error": beta_sum_err,
+            **binary_metrics(yv, pv),
+        }
+        if true_seq is not None and not oracle:
+            row.update(trajectory_metrics(true_seq, extras["trajectories"]))
+        elif true_seq is not None:
+            row.update({"macro_trajectory_R2": 1.0, "mean_trajectory_Pearson": 1.0, "mean_trajectory_Spearman": 1.0, "trajectory_MAE": 0.0})
+        fan_rows.append(row)
+        agg_frames.append(aggregation_diagnostics(seed, name, extras, yv))
+        mem_frames.append(membership_diagnostics(model, extras, name, seed, family))
+        weight_frames.append(weight_diagnostics(extras, name, seed))
+        contrib_frames.append(contribution_diagnostics(extras, name, seed))
+        if primary:
+            faith_frames.append(faithfulness_model(model, loader, oracle, seed, name))
+        return extras
+
+    for n_concepts in [5, 4]:
+        train_n = TensorDataset(
+            torch.from_numpy(arrays["x_train"]),
+            torch.from_numpy(arrays["y_train"]),
+            torch.from_numpy(arrays["c_train_seq"][:, :, :n_concepts]),
+        )
+        val_n = TensorDataset(
+            torch.from_numpy(arrays["x_val"]),
+            torch.from_numpy(arrays["y_val"]),
+            torch.from_numpy(arrays["c_val_seq"][:, :, :n_concepts]),
+        )
+        train_n_loader = DataLoader(train_n, batch_size=int(cfg["training"]["batch_size"]), shuffle=True)
+        val_n_loader = DataLoader(val_n, batch_size=int(cfg["training"]["batch_size"]), shuffle=False)
+        family_list = families if n_concepts == 5 else [primary_family]
+
+        for temporal_mode, temporal_label in [("static", "static"), ("attention", "temporal")]:
+            for family in family_list:
+                oracle = fan_model(cfg, n_concepts, family, True, temporal_mode)
+                hist = train_fan_head(oracle, cfg, train_n_loader, val_n_loader, oracle=True, strict=False)
+                model_name = f"oracle_{temporal_label}_fan_{n_concepts}" if family == primary_family else f"oracle_{temporal_label}_fan_{n_concepts}_{family}"
+                pd.DataFrame(hist).to_csv(out_dir / f"{model_name}_task_training.csv", index=False)
+                record_model(
+                    model_name,
+                    family,
+                    oracle,
+                    val_n_loader,
+                    oracle=True,
+                    true_seq=arrays["c_val_seq"][:, :, :n_concepts],
+                    primary=(model_name == "oracle_temporal_fan_5"),
+                )
+                torch.save(oracle.state_dict(), out_dir.parent / ("oracle_fan" if oracle.oracle else "predicted_fan") / f"{model_name}.pt")
+
+        concept_template = fan_model(cfg, n_concepts, primary_family, False, "attention")
+        concept_hist = train_concept_stage(concept_template, cfg, train_n_loader, val_n_loader)
+        concept_state = {k: v.detach().cpu().clone() for k, v in concept_template.state_dict().items() if k.startswith("encoder.") or k.startswith("projector.")}
+        pd.DataFrame(concept_hist).to_csv(out_dir / f"predicted_temporal_fan_{n_concepts}_concept_training.csv", index=False)
+
+        for temporal_mode, temporal_label in [("static", "static"), ("attention", "temporal")]:
+            for family in family_list:
+                strict = fan_model(cfg, n_concepts, family, False, temporal_mode)
+                strict_state = strict.state_dict()
+                strict_state.update({k: v.clone() for k, v in concept_state.items() if k in strict_state})
+                strict.load_state_dict(strict_state)
+                strict.freeze_concept_path()
+                hist = train_fan_head(strict, cfg, train_n_loader, val_n_loader, oracle=False, strict=True)
+                model_name = f"predicted_{temporal_label}_fan_{n_concepts}_strict" if family == primary_family else f"predicted_{temporal_label}_fan_{n_concepts}_strict_{family}"
+                pd.DataFrame(hist).to_csv(out_dir / f"{model_name}_task_training.csv", index=False)
+                extras = record_model(
+                    model_name,
+                    family,
+                    strict,
+                    val_n_loader,
+                    oracle=False,
+                    true_seq=arrays["c_val_seq"][:, :, :n_concepts],
+                    primary=(model_name == "predicted_temporal_fan_5_strict"),
+                )
+                torch.save(strict.state_dict(), out_dir.parent / "predicted_fan" / f"{model_name}.pt")
+                if model_name == "predicted_temporal_fan_5_strict":
+                    primary_train_pred_seq = collect_predicted_sequences(strict, train_n_loader)
+                    primary_val_pred_seq = extras["trajectories"]
+
+        if n_concepts == 5:
+            joint = fan_model(cfg, n_concepts, primary_family, False, "attention")
+            hist = train_joint_fan(joint, cfg, train_n_loader, val_n_loader)
+            pd.DataFrame(hist).to_csv(out_dir / "predicted_temporal_fan_5_joint_task_training.csv", index=False)
+            record_model("predicted_temporal_fan_5_joint", primary_family, joint, val_n_loader, oracle=False, true_seq=arrays["c_val_seq"], primary=False)
+            torch.save(joint.state_dict(), out_dir.parent / "predicted_fan" / "predicted_temporal_fan_5_joint.pt")
+
+    if primary_train_pred_seq is None or primary_val_pred_seq is None:
+        raise RuntimeError("Primary predicted TemporalConceptFANModel did not run")
+    leak = leakage_diagnostics(seed, primary_train_pred_seq, primary_val_pred_seq, arrays, out_dir)
+    return (
+        pd.DataFrame(fan_rows),
+        pd.concat(agg_frames, ignore_index=True),
+        pd.concat(mem_frames, ignore_index=True),
+        pd.concat(weight_frames, ignore_index=True),
+        pd.concat(contrib_frames, ignore_index=True),
+        pd.concat(faith_frames, ignore_index=True),
+        leak,
+    )
 
 
 def representation_audit(seed: int, model: ClinicalTransformer, loader: DataLoader, arrays: dict, out_dir: Path) -> pd.DataFrame:
@@ -377,9 +740,11 @@ def gate_table(seed: int, fan: pd.DataFrame, suff: pd.DataFrame, leak: pd.DataFr
     oracle = fan[fan["model"] == "oracle_temporal_fan_5"].iloc[0]
     pred = fan[fan["model"] == "predicted_temporal_fan_5_strict"].iloc[0]
     leak_row = leak.iloc[0]
-    alpha_err = 0.0
-    temporal_beta_err = 0.0
-    saturated_count = int(mem.groupby("concept")["saturated"].max().sum())
+    alpha_err = float(pred.get("alpha_sum_max_error", np.nan))
+    temporal_beta_err = float(pred.get("temporal_beta_sum_max_error", np.nan))
+    primary_mem = mem[mem["model"] == "predicted_temporal_fan_5_strict"]
+    primary_weight = weight[weight["model"] == "predicted_temporal_fan_5_strict"]
+    saturated_count = int(primary_mem.groupby("concept")["saturated"].max().sum())
     pf = faith[faith["model"] == "predicted_temporal_fan_5_strict"]
     def diff_low(a: str, b: str) -> float:
         aa = pf[pf["intervention"] == a]["abs_probability_delta"].to_numpy()
@@ -395,9 +760,9 @@ def gate_table(seed: int, fan: pd.DataFrame, suff: pd.DataFrame, leak: pd.DataFr
         ("macro_trajectory_R2", float(pred["macro_trajectory_R2"]), 0.50, float(pred["macro_trajectory_R2"]) >= 0.50, "fan_results.csv", "macro_trajectory_R2"),
         ("mean_trajectory_Pearson", float(pred["mean_trajectory_Pearson"]), 0.65, float(pred["mean_trajectory_Pearson"]) >= 0.65, "fan_results.csv", "mean_trajectory_Pearson"),
         ("concept_leakage", float(leak_row["residual_AUPRC"]), float(leak_row["prevalence"] + 0.05), bool(leak_row["leakage_gate_passed"]), "concept_leakage_metrics.csv", "residual_AUPRC"),
-        ("alpha_finite", 1.0, 1.0, bool(np.isfinite(weight["alpha_mean"]).all()), "fan_weight_diagnostics.csv", "alpha_mean"),
+        ("alpha_finite", 1.0, 1.0, bool(np.isfinite(primary_weight["alpha_mean"]).all()), "fan_weight_diagnostics.csv", "alpha_mean"),
         ("alpha_sum", alpha_err, 1e-6, alpha_err <= 1e-6, "fan_weight_diagnostics.csv", "alpha"),
-        ("temporal_weights_finite", 1.0, 1.0, True, "fan_results.csv", "temporal weights"),
+        ("temporal_weights_finite", 1.0, 1.0, bool(np.isfinite(temporal_beta_err)), "fan_results.csv", "temporal weights"),
         ("temporal_beta_sum", temporal_beta_err, 1e-6, temporal_beta_err <= 1e-6, "fan_results.csv", "temporal weights"),
         ("membership_saturation", saturated_count, 2.0, saturated_count <= 2, "membership_diagnostics.csv", "saturated"),
         ("removal_vs_random", removal_low, 0.0, removal_low > 0, "faithfulness_results.csv", "abs_probability_delta"),
@@ -428,21 +793,7 @@ def run_seed(seed: int, cfg: dict, output: Path) -> dict:
         train_loader, val_loader, arrays = make_sequence_loaders(split, subset_cols("full_input"), int(cfg["training"]["batch_size"]), 5)
         suff = concept_sufficiency(seed, arrays)
         suff.to_csv(run_dir / "metrics" / "concept_sufficiency.csv", index=False)
-        fan, agg, mem, weight, contrib, faith, leak = evaluate_fan(seed, arrays, run_dir / "metrics")
-        traj_true = arrays["c_val_seq"].mean(axis=1)
-        for idx, row in fan.iterrows():
-            if "predicted" in row["model"]:
-                pred_q = arrays["c_val_seq"].mean(axis=1) + np.random.default_rng(seed + idx).normal(0, 0.03, size=traj_true.shape)
-                metrics = []
-                for k in range(5):
-                    y = traj_true[:, k]
-                    p = pred_q[:, k]
-                    metrics.append((max(0.0, LinearRegression().fit(p.reshape(-1, 1), y).score(p.reshape(-1, 1), y)), stats.pearsonr(y, p).statistic))
-                fan.loc[idx, "macro_trajectory_R2"] = float(np.mean([m[0] for m in metrics]))
-                fan.loc[idx, "mean_trajectory_Pearson"] = float(np.mean([m[1] for m in metrics]))
-            else:
-                fan.loc[idx, "macro_trajectory_R2"] = 1.0
-                fan.loc[idx, "mean_trajectory_Pearson"] = 1.0
+        fan, agg, mem, weight, contrib, faith, leak = evaluate_fan(seed, arrays, cfg, train_loader, val_loader, run_dir / "metrics")
         fan.to_csv(run_dir / "metrics" / "fan_results.csv", index=False)
         agg.to_csv(run_dir / "metrics" / "fan_aggregation_diagnostics.csv", index=False)
         mem.to_csv(run_dir / "metrics" / "membership_diagnostics.csv", index=False)
