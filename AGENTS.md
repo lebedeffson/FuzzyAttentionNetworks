@@ -114,6 +114,23 @@ Smoke output is only a wiring check. It must report `SMOKE_PASS` or
 `PLANTED_ADAPTIVE_PASS` for limited seeds, limited layers/candidates, one-epoch
 runs, or warm-up top-k runs.
 
+Current V3.1 planted adaptive SCTC full Stage A command:
+
+```bash
+.venv/bin/python scripts/medical/v3_1/run_planted_adaptive_sctc.py \
+  --config configs/medical/v3/full.yaml \
+  --method-config configs/medical/v3_1/method_improvements.yaml \
+  --seeds 42 43 44 \
+  --output artifacts/medical/v3_1/planted_adaptive_sctc \
+  --full \
+  --run-interventions \
+  --run-negative-controls
+```
+
+The first full Stage A run is a validated negative:
+`PLANTED_ADAPTIVE_NEGATIVE`. Fidelity and dictionary utilization improve, but
+strict node/edge recovery and negative-control gates do not pass.
+
 Allowed V3 final statuses:
 
 - `V3_REAL_VALIDATED_NEGATIVE`

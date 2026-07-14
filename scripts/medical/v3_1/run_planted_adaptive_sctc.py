@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -28,7 +30,7 @@ from scripts.medical.v3.run_research_program import DEVICE, prepare_arrays, sctc
 CORRELATION_THRESHOLD = 0.80
 COSINE_THRESHOLD = 0.50
 NODE_EFFECT_THRESHOLD = 1e-4
-TOPK_TOLERANCE = 0.25
+TOPK_TOLERANCE = 0.10
 
 
 def binary_metrics(y: np.ndarray, p: np.ndarray) -> dict:
@@ -130,10 +132,7 @@ def registered_candidate_capacities(rank_capacity: int, method_cfg: dict) -> lis
 
 
 def target_top_k_for_capacity(n_features: int, method_cfg: dict) -> int:
-    registered = {int(item["n_features"]): int(item["top_k"]) for item in method_cfg["adaptive_sctc"]["planted_grid"]}
-    if int(n_features) in registered:
-        return registered[int(n_features)]
-    if n_features <= 32:
+    if n_features <= 24:
         return 8
     if n_features <= 48:
         return 12
@@ -212,7 +211,7 @@ def node_matching(model: PlantedCircuitModel, transcoder, activation: np.ndarray
             elif cosine < COSINE_THRESHOLD:
                 match_type = "REJECTED_LOW_DIRECTION_COSINE"
             else:
-                match_type = "CORRELATION_MATCH_ONLY" if node_col == best_col else "REJECTED_NONPRIMARY_NODE"
+                match_type = "REJECTED_WRONG_LAYER" if node_col != best_col else "REJECTED_LOW_CORRELATION"
             rows.append(
                 {
                     "seed": seed,
@@ -248,7 +247,6 @@ def intervention_validate_matches(
         return matches, pd.DataFrame()
     if not run_interventions:
         matches = matches.copy()
-        matches["match_type"] = np.where(matches["match_type"].eq("PRIMARY_HUNGARIAN_MATCH"), "CORRELATION_MATCH_ONLY", matches["match_type"])
         return matches, pd.DataFrame()
 
     rng = np.random.default_rng(seed + 7100 + layer)
@@ -268,6 +266,7 @@ def intervention_validate_matches(
     primary = matches[matches["match_type"].eq("PRIMARY_HUNGARIAN_MATCH")].copy()
     p_values = []
     effects = []
+    push_effects = []
     null_q99s = []
     for _, row in primary.iterrows():
         feature_id = int(row["feature_id"])
@@ -325,6 +324,11 @@ def intervention_validate_matches(
             nulls_np = np.asarray(target_nulls[target])
             target_effect = float((after[..., target_idx] - base_nodes[..., target_idx]).mean().detach().cpu().item())
             target_push = float((pushed_nodes[..., target_idx] - base_nodes[..., target_idx]).mean().detach().cpu().item())
+            base_profile = base_nodes[..., target_idx].detach().cpu().numpy().mean(axis=0)
+            effect_profile = (after[..., target_idx] - base_nodes[..., target_idx]).detach().cpu().numpy().mean(axis=0)
+            temporal_profile_correlation = 0.0
+            if np.std(base_profile) > 0 and np.std(effect_profile) > 0:
+                temporal_profile_correlation = float(stats.pearsonr(base_profile, effect_profile).statistic)
             target_q99 = float(np.quantile(np.abs(nulls_np), 0.99))
             target_p = float((1 + np.sum(np.abs(nulls_np) >= abs(target_effect))) / (len(nulls_np) + 1))
             evidence_rows.append(
@@ -338,6 +342,7 @@ def intervention_validate_matches(
                     "sample_id": -1,
                     "effect": target_effect,
                     "push_effect": target_push,
+                    "temporal_profile_correlation": temporal_profile_correlation,
                     "logit_effect": float((after_forward.logit - base_logit).mean().detach().cpu().item()),
                     "probability_effect": float((after_forward.probability - base_probability).mean().detach().cpu().item()),
                     "null_q99": target_q99,
@@ -347,6 +352,7 @@ def intervention_validate_matches(
                 }
             )
         effects.append(node_effect)
+        push_effects.append(node_push_effect)
         null_q99s.append(q99)
         p_values.append(p_value)
     q_values = bh_q_values(np.asarray(p_values))
@@ -360,9 +366,11 @@ def intervention_validate_matches(
             and q_values[idx] <= 0.05
             and abs(effects[idx]) > null_q99s[idx]
             and abs(effects[idx]) > NODE_EFFECT_THRESHOLD
+            and np.sign(push_effects[idx]) == -np.sign(effects[idx])
         )
         row = row.copy()
         row["intervention_effect"] = effects[idx]
+        row["push_effect"] = push_effects[idx]
         row["null_q99"] = null_q99s[idx]
         row["p_value"] = p_values[idx]
         row["q_value"] = float(q_values[idx])
@@ -370,8 +378,10 @@ def intervention_validate_matches(
         if not accepted:
             if cosine < COSINE_THRESHOLD:
                 row["match_type"] = "REJECTED_LOW_DIRECTION_COSINE"
+            elif abs(effects[idx]) <= null_q99s[idx] or q_values[idx] > 0.05:
+                row["match_type"] = "REJECTED_NULL_SIGNIFICANCE"
             else:
-                row["match_type"] = "REJECTED_INTERVENTION"
+                row["match_type"] = "REJECTED_ABLATION"
         updated.append(row)
 
     non_primary = matches[~matches["match_type"].eq("PRIMARY_HUNGARIAN_MATCH")].copy()
@@ -477,9 +487,12 @@ def edge_recovery_metrics(interventions: pd.DataFrame, accepted_nodes: pd.DataFr
     precision = tp / max(1, tp + fp)
     recall = tp / max(1, tp + fn)
     f1 = 2 * precision * recall / max(precision + recall, 1e-8)
-    controls = true_feature_rows[
-        true_feature_rows.apply(lambda r: (str(r["source_node"]), str(r["target_node"])) not in true_edges and str(r["source_node"]) != str(r["target_node"]), axis=1)
+    explicit_controls = interventions[interventions["evidence_type"].isin(["wrong_layer_node_label", "permuted_node_label"])]
+    all_true_feature_rows = interventions[interventions["evidence_type"].eq("true_feature_intervention")].copy()
+    non_edge_controls = all_true_feature_rows[
+        all_true_feature_rows.apply(lambda r: (str(r["source_node"]), str(r["target_node"])) not in true_edges and str(r["source_node"]) != str(r["target_node"]), axis=1)
     ]
+    controls = pd.concat([explicit_controls, non_edge_controls], ignore_index=True)
     fpr = float(controls["accepted"].fillna(False).mean()) if len(controls) else float("nan")
     return {
         "accepted_true_edges": int(tp),
@@ -542,6 +555,130 @@ def full_gate_status(result: pd.DataFrame, full: bool, run_interventions: bool, 
     }
 
 
+def candidate_diagnosis(row: pd.Series) -> dict:
+    reasons = []
+    actions = []
+    if not bool(row.get("final_top_k_invariant_pass", False)):
+        reasons.append("INVALID_TOPK_IMPLEMENTATION")
+        actions.append("fix top-k masking before interpreting candidate")
+    if float(row.get("final_dead_feature_fraction", 1.0)) >= 0.50:
+        reasons.append("TOO_MANY_DEAD_FEATURES")
+        actions.append("try smaller capacity and inspect resampling count")
+    if float(row.get("final_L0_per_token", 0.0)) > 32:
+        reasons.append("TOO_DENSE")
+        actions.append("reduce top_k without changing capacity simultaneously")
+    if not bool(row.get("fidelity_gate_pass", False)):
+        reasons.append("FIDELITY_FAILURE")
+        actions.append("inspect behavior loss and reconstruction scaler")
+    if float(row.get("redundant_matches", 0.0)) > float(row.get("unique_recovered_nodes", 0.0)):
+        reasons.append("NODE_SPLITTING")
+        actions.append("prefer smaller capacity or add redundancy penalty in a future registered experiment")
+    if float(row.get("accepted_feature_matches", 0.0)) == 0 and float(row.get("redundant_matches", 0.0)) > 0:
+        reasons.append("HIGH_CORRELATION_LOW_COSINE")
+        actions.append("treat features as proxies unless directional/intervention gates pass")
+    if float(row.get("node_recall", 0.0)) >= 0.8 and float(row.get("edge_recall", 0.0)) < 0.8:
+        reasons.append("EDGE_RECOVERY_FAILURE")
+        actions.append("check source and target node recovery before edge threshold changes")
+    fpr = row.get("negative_control_fpr", np.nan)
+    if np.isfinite(fpr) and float(fpr) > 0.05:
+        reasons.append("HIGH_NEGATIVE_CONTROL_FPR")
+        actions.append("tighten matching/significance and inspect matched-null construction")
+    if not reasons:
+        reasons.append("NO_REGISTERED_FAILURE")
+        actions.append("candidate satisfies currently measured gates")
+    return {
+        "seed": int(row["seed"]),
+        "layer": int(row["layer"]),
+        "n_features": int(row["n_features"]),
+        "top_k": int(row["top_k"]),
+        "diagnoses": reasons,
+        "registered_actions": actions,
+    }
+
+
+def _parse_candidate_path(path: Path) -> dict:
+    m = re.search(r"seed_(\d+)/layer(\d+)_(\d+)_adaptive", str(path))
+    if not m:
+        return {}
+    return {"seed": int(m.group(1)), "layer": int(m.group(2)), "n_features": int(m.group(3))}
+
+
+def aggregate_stage_outputs(output: Path, result: pd.DataFrame) -> None:
+    result.to_csv(output / "planted_adaptive_metrics.csv", index=False)
+
+    diagnosis_dir = output / "planted_adaptive_diagnoses"
+    diagnosis_dir.mkdir(parents=True, exist_ok=True)
+    for _, row in result.iterrows():
+        diag = candidate_diagnosis(row)
+        (diagnosis_dir / f"seed{diag['seed']}_layer{diag['layer']}_cap{diag['n_features']}.json").write_text(
+            json.dumps(diag, indent=2),
+            encoding="utf-8",
+        )
+
+    aggregates: dict[str, list[pd.DataFrame]] = {
+        "training": [],
+        "feature_activity": [],
+        "node_matching": [],
+        "interventions": [],
+    }
+    for path in sorted(output.glob("seed_*/layer*_adaptive_training.csv")):
+        meta = _parse_candidate_path(path)
+        df = pd.read_csv(path)
+        for key, value in meta.items():
+            df[key] = value
+        aggregates["training"].append(df)
+    for name, pattern in [
+        ("feature_activity", "seed_*/layer*_adaptive_feature_activity.parquet"),
+        ("node_matching", "seed_*/layer*_adaptive_node_matching.parquet"),
+        ("interventions", "seed_*/layer*_adaptive_interventions.parquet"),
+    ]:
+        for path in sorted(output.glob(pattern)):
+            df = pd.read_parquet(path)
+            aggregates[name].append(df)
+
+    if aggregates["training"]:
+        pd.concat(aggregates["training"], ignore_index=True).to_parquet(output / "planted_adaptive_training.parquet", index=False)
+    if aggregates["feature_activity"]:
+        pd.concat(aggregates["feature_activity"], ignore_index=True).to_parquet(output / "planted_adaptive_feature_activity.parquet", index=False)
+    if aggregates["node_matching"]:
+        pd.concat(aggregates["node_matching"], ignore_index=True).to_parquet(output / "planted_adaptive_node_matching.parquet", index=False)
+    if aggregates["interventions"]:
+        inter = pd.concat(aggregates["interventions"], ignore_index=True)
+    else:
+        inter = pd.DataFrame()
+    if not inter.empty:
+        true_edges = {(source, target) for source, target, _ in EDGES}
+        true_feature = inter["evidence_type"].eq("true_feature_intervention")
+        same_node = inter["source_node"].astype(str).eq(inter["target_node"].astype(str))
+        edge_like = true_feature & ~same_node
+        random_null = inter["evidence_type"].eq("matched_random_ablation")
+        negative = inter["evidence_type"].isin(["wrong_layer_node_label", "permuted_node_label"]) | (
+            edge_like
+            & ~inter.apply(lambda r: (str(r["source_node"]), str(r["target_node"])) in true_edges, axis=1)
+        )
+        inter[true_feature & same_node].to_parquet(output / "planted_adaptive_node_interventions.parquet", index=False)
+        inter[edge_like].to_parquet(output / "planted_adaptive_edge_interventions.parquet", index=False)
+        inter[random_null].to_parquet(output / "planted_adaptive_random_null.parquet", index=False)
+        inter[negative].to_parquet(output / "planted_adaptive_negative_controls.parquet", index=False)
+    else:
+        for name in [
+            "planted_adaptive_node_interventions.parquet",
+            "planted_adaptive_edge_interventions.parquet",
+            "planted_adaptive_random_null.parquet",
+            "planted_adaptive_negative_controls.parquet",
+        ]:
+            pd.DataFrame().to_parquet(output / name, index=False)
+
+    selected_dir = output / "selected_checkpoints"
+    selected_dir.mkdir(exist_ok=True)
+    sort_cols = ["fidelity_gate_pass", "sparsity_gate_pass", "CircuitF1", "sign_agreement", "negative_control_fpr", "n_features"]
+    for seed, group in result.groupby("seed"):
+        best = group.sort_values(sort_cols, ascending=[False, False, False, False, True, True]).iloc[0]
+        src = Path(str(best["checkpoint"]))
+        if src.exists():
+            shutil.copy2(src, selected_dir / f"seed{int(seed)}_layer{int(best['layer'])}_cap{int(best['n_features'])}.pt")
+
+
 def run_seed(
     seed: int,
     cfg: dict,
@@ -590,6 +727,7 @@ def run_seed(
                 n_features=n_features,
                 target_top_k=target_top_k,
                 epochs=int(max_epochs or method_cfg["adaptive_sctc"]["epochs"]["max"]),
+                min_epochs=1 if max_epochs is not None else int(method_cfg["adaptive_sctc"]["epochs"]["min"]),
                 patience=int(method_cfg["adaptive_sctc"]["epochs"]["early_stopping_patience"]),
                 resample_every_steps=int(method_cfg["adaptive_sctc"]["dead_feature_resampling"]["every_steps"]),
             )
@@ -624,6 +762,19 @@ def run_seed(
                 target_top_k,
                 float(method_cfg["adaptive_sctc"]["dead_feature_resampling"]["frequency_threshold"]),
             )
+            with torch.no_grad():
+                z_final = transcoder(torch.from_numpy(val_act).float().to(DEVICE))["z"].detach().cpu()
+            feature_frequency = (z_final > 0).float().mean(dim=(0, 1)).numpy()
+            pd.DataFrame(
+                {
+                    "seed": seed,
+                    "layer": layer,
+                    "n_features": n_features,
+                    "top_k": target_top_k,
+                    "feature_id": np.arange(transcoder.n_features),
+                    "activation_frequency": feature_frequency,
+                }
+            ).to_parquet(seed_dir / f"layer{layer}_{n_features}_adaptive_feature_activity.parquet", index=False)
             matches = node_matching(model, transcoder, val_act, val_nodes, layer, seed)
             matches, intervention_evidence = intervention_validate_matches(
                 matches,
@@ -711,6 +862,7 @@ def main(argv: list[str] | None = None) -> int:
     ]
     result = pd.concat(frames, ignore_index=True)
     result.to_csv(output / "planted_adaptive_sctc_grid.csv", index=False)
+    aggregate_stage_outputs(output, result)
     if smoke_limited:
         reason = "single seed, limited layers/candidates/epochs, or warm-up top-k smoke; scientific planted gate not evaluated"
     else:

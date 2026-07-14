@@ -38,7 +38,9 @@ adaptive_sctc:
     max: 40
     early_stopping_patience: 6
   planted_grid:
-    - {n_features: 32, top_k: 8}
+    - {n_features: 16, top_k: 8}
+    - {n_features: 24, top_k: 8}
+    - {n_features: 32, top_k: 12}
     - {n_features: 48, top_k: 12}
     - {n_features: 64, top_k: 16}
     - {n_features: 96, top_k: 16}

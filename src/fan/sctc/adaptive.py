@@ -179,6 +179,7 @@ class AdaptiveSCTCTrainConfig:
     n_features: int
     target_top_k: int
     epochs: int = 30
+    min_epochs: int = 20
     batch_size: int = 128
     learning_rate: float = 1e-3
     lambda_l1: float = 1e-5
@@ -257,11 +258,12 @@ def train_adaptive_sctc(
                 "resampled_features": resampled,
             }
         )
-        if epoch_loss < best_loss:
+        eligible_for_best = epoch >= cfg.min_epochs
+        if eligible_for_best and epoch_loss < best_loss:
             best_loss = epoch_loss
             best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
             stale = 0
-        else:
+        elif eligible_for_best:
             stale += 1
             if stale >= cfg.patience:
                 break

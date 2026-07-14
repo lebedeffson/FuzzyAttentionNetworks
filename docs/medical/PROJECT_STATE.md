@@ -185,3 +185,26 @@ reason: single seed, first layer only, one epoch, warm-up top-k
 This smoke output is a wiring check only, not a scientific V3.1 result.
 The planted adaptive scientific gate requires full layers, three seeds, final
 top-k metrics, intervention validation, edge recovery, and negative controls.
+
+Full V3.1 Stage A planted adaptive SCTC was run after smoke semantics were
+fixed:
+
+```text
+output: artifacts/medical/v3_1/planted_adaptive_sctc
+status: PLANTED_ADAPTIVE_NEGATIVE
+scientific_gate_evaluated: true
+seed_pass_count: 0
+```
+
+Key Stage A result:
+
+```text
+Fidelity gate: PASS for all evaluated candidates
+Best final dead-feature fraction: 0.0
+Sparsity gate: PASS for selected candidates
+Node/edge recovery gate: FAIL
+Negative-control FPR: high for non-edge controls
+Interpretation: adaptive SCTC improved utilization/fidelity but did not recover
+the planted mechanism under strict Hungarian + intervention + negative-control
+criteria.
+```

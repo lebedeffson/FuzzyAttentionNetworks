@@ -18,10 +18,12 @@ from fan.concept.stability import (
     ordered_centers_penalty,
 )
 from fan.sctc.adaptive import (
+    AdaptiveSCTCTrainConfig,
     AdaptiveSparseTranscoder,
     TopKAnnealingSchedule,
     effective_rank,
     layer_specific_capacity,
+    train_adaptive_sctc,
 )
 from scripts.medical.v3_1.run_planted_adaptive_sctc import (
     final_activation_stats,
@@ -128,7 +130,7 @@ def test_final_activation_stats_uses_final_target_topk():
     model.set_active_top_k(16)
     stats = final_activation_stats(model, x.numpy(), target_top_k=4, dead_threshold=1e-5)
     assert stats["final_active_top_k"] == 4
-    assert stats["final_L0_per_token"] <= 4.25
+    assert stats["final_L0_per_token"] <= 4.1
     assert "effective_active_feature_count" in stats
 
 
@@ -157,3 +159,19 @@ def test_intervention_validation_emits_true_and_negative_control_rows():
     assert {"true_feature_intervention", "matched_random_ablation", "wrong_layer_node_label", "permuted_node_label"}.issubset(
         set(evidence["evidence_type"])
     )
+
+
+def test_adaptive_training_respects_min_epochs_before_early_stopping():
+    x = torch.randn(12, 3, 6)
+
+    def behavior_forward(repl: torch.Tensor) -> torch.Tensor:
+        return repl.mean(dim=(1, 2))
+
+    _, log = train_adaptive_sctc(
+        x,
+        torch.zeros(12),
+        behavior_forward,
+        AdaptiveSCTCTrainConfig(n_features=8, target_top_k=4, epochs=5, min_epochs=3, patience=1),
+        torch.device("cpu"),
+    )
+    assert len(log) >= 3
