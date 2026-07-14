@@ -8,11 +8,15 @@ Last updated: 2026-07-14
 fix/med-circuitbench-v2-2-final
 ```
 
-## Current Commit
+## Latest Result Commit
 
 ```text
-d404aabf8d93844e11878263103bbdb5d2ab16bc
+473bd7059131e5275b73a5e95025ab4994e03fb6
 ```
+
+## Delivery Commit
+
+Recorded by `git rev-parse HEAD`, `GIT_INFO.txt`, and the delivery manifest at packaging time.
 
 ## Final Status
 
@@ -22,11 +26,11 @@ FAN_FOUNDATION_FAIL
 
 ## Key Metrics
 
-- Oracle Temporal FAN mean AUPRC: `0.9029`
-- Predicted Temporal FAN Strict mean AUPRC: `0.8321`
+- Oracle Temporal FAN mean AUPRC: `0.8369`
+- Predicted Temporal FAN Strict mean AUPRC: `0.8190`
 - Planted CircuitF1: `1.0000`
-- Standard SCTC delta AUPRC: `0.0125`
-- Standard SCTC probability MAE: `0.0308`
+- Standard SCTC delta AUPRC: `0.0005`
+- Standard SCTC probability MAE: `0.0002`
 
 ## Completed Stages
 
