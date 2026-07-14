@@ -1,6 +1,6 @@
 # Current Project State
 
-Last updated: 2026-07-14
+Last updated: 2026-07-15
 
 ## Active Branch
 
@@ -141,7 +141,45 @@ Standard Transformer edge discovery finds limited validated intervention edges.
 
 ## Next Scientific Step
 
-Do not tune this package after partial held-out and replication reporting. Any
-next experiment should be explicitly versioned and should focus on improving
-SCTC dictionary utilization and intervention-edge discovery without reusing the
-consumed test for model selection.
+Do not tune the V3 final package after partial held-out and replication
+reporting.
+
+The next experiment is explicitly versioned as V3.1 and must not reuse the
+consumed V3 held-out test for selection.
+
+V3.1 implementation started:
+
+```text
+configs/medical/v3_1/method_improvements.yaml
+src/fan/sctc/adaptive.py
+src/fan/concept/stability.py
+scripts/medical/v3_1/run_planted_adaptive_sctc.py
+tests/medical/v3/test_v3_1_method_improvements.py
+```
+
+Initial implemented methods:
+
+```text
+FAN contribution consistency loss
+FAN fuzzy-basis stability penalties
+Adaptive SCTC train-activation normalization
+Adaptive SCTC reconstruction bias
+Top-k annealing
+Dead-feature residual resampling
+Layer-specific capacity by effective rank
+Planted adaptive SCTC runner
+```
+
+Smoke check:
+
+```text
+seed: 42
+layers: first layer only
+candidates: first candidate only
+epochs: 1
+status: PLANTED_ADAPTIVE_PASS
+best dead-feature fraction: 0.0
+best delta AUPRC: 0.0000473
+```
+
+This smoke output is a wiring check only, not a scientific V3.1 result.

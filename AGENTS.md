@@ -76,7 +76,7 @@ python scripts/medical/v3/run_predicted_fan_strict.py \
 Current phase:
 
 ```text
-V3 real final corrected finalizer
+V3.1 method-improvement exploration
 ```
 
 The earlier `V3_GO` package is revoked as a surrogate-heavy engineering
@@ -89,6 +89,25 @@ positive FAN/SCTC interpretation.
 The held-out test was opened once after validation freeze in the V3 real
 research runner. Do not re-open test or change selected FAN/SCTC configurations
 unless a new explicitly versioned experiment is started.
+
+V3.1 is an explicitly versioned method-improvement experiment. It must not
+rewrite V3 final results or use the consumed V3 held-out test for selection.
+Primary V3.1 work targets FAN contribution stability, adaptive SCTC dictionary
+utilization, temporal/active-window intervention search, and concept-aligned
+model arms.
+
+Current V3.1 planted adaptive SCTC smoke command:
+
+```bash
+.venv/bin/python scripts/medical/v3_1/run_planted_adaptive_sctc.py \
+  --config configs/medical/v3/full.yaml \
+  --method-config configs/medical/v3_1/method_improvements.yaml \
+  --seeds 42 \
+  --output artifacts/medical/v3_1_smoke/planted_adaptive_sctc \
+  --max-epochs 1 \
+  --limit-layers 1 \
+  --limit-candidates 1
+```
 
 Allowed V3 final statuses:
 

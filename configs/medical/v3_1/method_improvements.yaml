@@ -1,0 +1,96 @@
+program:
+  name: med_circuitbench_v3_1_method_improvements
+  parent_commit: 6bf24eb4e73d22c2e40ed0df7965306babc1645f
+  parent_status: V3_REAL_MIXED_RESULT_REPLICATION_CONFIRMED
+  test_policy: no_reuse_of_consumed_v3_test_for_selection
+
+seeds: [42, 43, 44]
+
+fan_stable:
+  baseline: FAN-NoAlpha
+  model_name: FAN-NoAlpha-Stable
+  lambda_stability: [0.01, 0.03, 0.10]
+  view:
+    noise_std: 0.01
+    mask_probability: 0.05
+  basis_regularization:
+    center_anchor: true
+    ordered_centers: true
+    minimum_width: 0.001
+  gate:
+    max_auprc_drop_vs_noalpha: 0.01
+    mean_contribution_spearman_min: 0.50
+    faithfulness_required: true
+
+adaptive_sctc:
+  activation_normalization: train_mean_std
+  reconstruction_bias: true
+  topk_annealing:
+    no_topk_epochs: 3
+    initial_top_k: 32
+    anneal_until_epoch: 10
+  dead_feature_resampling:
+    enabled: true
+    every_steps: 500
+    frequency_threshold: 1.0e-5
+  epochs:
+    min: 20
+    max: 40
+    early_stopping_patience: 6
+  planted_grid:
+    - {n_features: 32, top_k: 8}
+    - {n_features: 48, top_k: 12}
+    - {n_features: 64, top_k: 16}
+    - {n_features: 96, top_k: 16}
+  layer_specific_capacity:
+    enabled: true
+    effective_rank_multiplier: [4.0, 6.0, 8.0]
+    min_features: 16
+    max_features: 96
+  gate:
+    dead_feature_fraction_max: 0.50
+    circuit_f1_min: 0.90
+    delta_auprc_max: 0.01
+    probability_mae_max: 0.02
+
+standard_edge_discovery:
+  active_window_primary: true
+  active_quantile: 0.80
+  temporal_lags: [0, 1, 3, 6]
+  effects:
+    - target_sctc_activation
+    - target_concept_probe
+    - downstream_residual_direction
+    - final_logit
+    - final_probability
+  capture_points:
+    primary: [residual_pre, mlp_output, residual_post]
+  location_score:
+    concept_r2_weight: 0.5
+    patching_effect_weight: 0.3
+    cross_seed_stability_weight: 0.2
+  nulls:
+    screening: 1000
+    final: 10000
+
+concept_aligned_transformer:
+  enabled: true
+  model_name: Layerwise Concept-Aligned Transformer
+  supervision:
+    layer_0: [I]
+    layer_1: [R]
+    layer_2: [V]
+    layer_3: [O, S]
+  lambda_layer: [0.01, 0.03, 0.10]
+  gate:
+    max_auprc_drop_vs_standard: 0.01
+    require_concept_r2_improvement: true
+    require_feature_stability_improvement: true
+    require_edge_recovery_improvement: true
+
+concept_aligned_sctc:
+  enabled: true
+  primary_claim: semi_supervised_not_discovery_from_scratch
+  lambda_concept: [0.01, 0.03, 0.10]
+  matching: hungarian_abs_correlation
+  compare_to: unsupervised_adaptive_sctc

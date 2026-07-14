@@ -4,6 +4,7 @@ from .memberships import MembershipLayer
 from .model import ConceptFANModel, ConceptFANConfig, OracleConceptFAN, PredictedConceptFAN
 from .outputs import ConceptFANOutput
 from .projector import ConceptProjector
+from .stability import contribution_consistency_loss, fan_stability_regularizer
 from .temporal import (
     AdditiveDecisionHead,
     MultiSetAdditiveFANOutput,
@@ -33,4 +34,6 @@ __all__ = [
     "TemporalConceptFANModel",
     "TemporalConceptFANOutput",
     "concept_fan_loss",
+    "contribution_consistency_loss",
+    "fan_stability_regularizer",
 ]
