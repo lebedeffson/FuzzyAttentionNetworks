@@ -48,7 +48,8 @@ def main() -> int:
             "no_forbidden_strings": not any(token in text for token in FORBIDDEN),
             "three_seeds_present": all(any(f"RUNS/seed_{seed}/" in n for n in names) for seed in [42, 43, 44]),
             "required_files_present": all(any(n.endswith(req) for n in names) for req in required),
-            "project_memory_present": "PROJECT_STATE.md" in text and "Project Instructions" in text,
+            "project_memory_present": any(n.endswith("AGENTS.md") for n in names)
+            and any(n.endswith("PROJECT_MEMORY/PROJECT_STATE.md") for n in names),
             "skipped_by_gate_has_reason": ("SKIPPED_BY_GATE" not in text) or ("reason" in text),
             "circuitf1_planted_only": "DataGraphAgreementF1" in text,
         }
@@ -58,4 +59,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

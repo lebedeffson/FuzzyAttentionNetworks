@@ -8,11 +8,15 @@ Last updated: 2026-07-14
 experiment/med-circuitbench-v2-1
 ```
 
-## Final Commit
+## Latest Result Commit
 
 ```text
-b4bd5661544079db5a9c6d274b24bf05787891be
+2951dd5a7d2a51e680812ed79749b7bd5116eccb
 ```
+
+## Current Repository Commit
+
+Recorded by `git rev-parse HEAD` and by `GIT_INFO.txt` in the delivery archive.
 
 ## Final Status
 
@@ -22,10 +26,10 @@ FAN_FOUNDATION_FAIL
 
 ## Key Metrics
 
-- Oracle Temporal FAN-5 mean AUPRC: `0.9138`
-- Predicted Temporal FAN-5 Strict mean AUPRC: `0.3151`
-- Predicted Temporal FAN-4 Strict mean AUPRC: `0.1572`
-- Concept leakage residual AUPRC: `0.1569`
+- Oracle Temporal FAN-5 mean AUPRC: `0.6456`
+- Predicted Temporal FAN-5 Strict mean AUPRC: `0.6677`
+- Predicted Temporal FAN-4 Strict mean AUPRC: `0.3552`
+- Concept leakage residual AUPRC: `0.3844`
 - Planted CircuitF1: `1.0000`
 
 ## Stages Completed
