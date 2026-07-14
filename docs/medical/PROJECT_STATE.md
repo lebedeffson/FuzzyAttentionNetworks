@@ -34,10 +34,11 @@ artifacts/medical/v3_real_final
 ## Final Scientific Status
 
 ```text
-FAN: FAN_VALIDATED
+FAN predictive path: VALIDATED
+FAN full gate: FAN_VALIDATED_NEGATIVE
 Planted: PLANTED_VALIDATED_NEGATIVE
 Standard SCTC fidelity: PASS
-Standard graph recovery: NO_VALIDATED_EDGES
+Standard graph recovery: LIMITED_VALIDATED_EDGES
 FAN+SCTC: SKIPPED_BY_GATE
 Original held-out: PARTIAL_TEST_CONSUMED
 Frozen replication: COMPLETED_WITH_FROZEN_MODELS
@@ -66,14 +67,17 @@ Predicted FAN-NoAlpha validation AUPRC by seed:
 44: 0.840722
 
 Direct macro R2 by seed:
-42: 0.646900
-43: 0.640321
-44: 0.648308
+42: 0.646562
+43: 0.640029
+44: 0.647805
 
 Macro Pearson by seed:
 42: 0.792612
 43: 0.787773
 44: 0.793594
+
+FAN gate reason:
+cross-seed signed-contribution stability failed on the common reference set.
 ```
 
 Planted neural circuit:
@@ -92,9 +96,9 @@ Standard Transformer + SCTC:
 ```text
 Fidelity status: PASS
 Mean delta AUPRC: 0.000297
-Validated candidate edges: 0
-DataGraphAgreementF1: 0.0
-Status: NO_VALIDATED_EDGES
+Validated candidate edges: limited
+DataGraphAgreementF1: 0.333333
+Status: VALIDATED_EDGES_FOUND
 ```
 
 Partial held-out test:
@@ -112,20 +116,21 @@ Frozen replication:
 ```text
 Replication generator seed: 20260715
 Episodes: 10000
-FAN pattern: CONFIRMED
+FAN predictive pattern: CONFIRMED
 Standard SCTC fidelity pattern: CONFIRMED
 Planted recovery pattern: CONFIRMED
 Planted dictionary gate: NEGATIVE_PATTERN_CONFIRMED
-Selected-edge replication: NO_VALIDATED_EDGES
+Selected-edge replication: EVALUATED_SELECTED_EDGES
 ```
 
 ## Interpretation
 
-Multi-set fuzzy concept encoding with a signed additive decision layer remains
-validated. Standard SCTC preserves model predictions with low fidelity error.
-The planted control recovers nodes and most edges, but the preregistered
-dictionary-utilization gate remains negative. Standard Transformer edge
-discovery did not validate data-graph edges under the frozen protocol.
+Multi-set fuzzy concept encoding with a signed additive decision layer preserves
+predictive performance, but the full FAN gate remains negative because
+cross-seed signed-contribution stability fails. Standard SCTC preserves model
+predictions with low fidelity error. The planted control recovers nodes and most
+edges, but the preregistered dictionary-utilization gate remains negative.
+Standard Transformer edge discovery finds limited validated intervention edges.
 
 ## Frozen Prior Results
 

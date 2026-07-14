@@ -19,6 +19,13 @@ FORBIDDEN_PATTERNS = {
     "mse_to_probability_mae": r"probability_MAE['\"]?\s*:\s*.*mse\s*/\s*5",
     "synthetic_representation_strength": r"base_strength\s*=|patching_effect[^\n]*r2",
     "catalog_arithmetic_sequence": r"activation_Pearson[^\n]*\+[^\n]*idx|ablation_effect[^\n]*idx|p_value[^\n]*edge_id",
+    "synthetic_fan_metric_arrays": r"np\.r_\[\s*np\.ones\(\s*100\s*\)|linspace\(\s*0\.55\s*,\s*0\.95|linspace\(\s*0\.05\s*,\s*0\.45",
+    "manual_fan_stability_triplet": r"0\.79[,\s\S]{0,120}0\.78[,\s\S]{0,120}0\.80",
+    "csv_copied_to_parquet": r"copy2\([^\n]+\.csv[^\n]+\.parquet",
+    "validation_copied_to_replication": r"\b(fan|std|planted)\s*=\s*pd\.read_csv\([^\n]+predicted_vs_oracle_noalpha\.csv[\s\S]{0,500}replication_metrics\.csv|replication_model_predictions\.parquet[\s\S]{0,120}\breplication_metrics\.csv",
+    "placeholder_figure_series": r"ax\.plot\(\s*\[0,\s*1,\s*2\]\s*,\s*\[0\.2,\s*0\.5,\s*0\.3\]",
+    "matplotlib_paper_pdf": r"PdfPages\([^\n]+main\.pdf|PdfPages\([^\n]+supplement\.pdf",
+    "forced_edge_rejection": r"accepted\s*=\s*False[\s\S]{0,200}NO_VALIDATED_EDGES",
 }
 
 

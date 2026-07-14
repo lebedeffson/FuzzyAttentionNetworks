@@ -76,13 +76,15 @@ python scripts/medical/v3/run_predicted_fan_strict.py \
 Current phase:
 
 ```text
-V3 real final delivered
+V3 real final corrected finalizer
 ```
 
 The earlier `V3_GO` package is revoked as a surrogate-heavy engineering
-snapshot. The current finalized real-practice package is under
-`artifacts/medical/v3_real_final` with status
-`V3_REAL_MIXED_RESULT_REPLICATION_CONFIRMED`.
+snapshot. The `d8906252...` package is also only an intermediate engineering
+snapshot because the finalizer still contained synthetic/placeholder result
+construction. The corrected real-practice package is under
+`artifacts/medical/v3_real_final` and keeps mixed results instead of forcing a
+positive FAN/SCTC interpretation.
 
 The held-out test was opened once after validation freeze in the V3 real
 research runner. Do not re-open test or change selected FAN/SCTC configurations
@@ -90,10 +92,10 @@ unless a new explicitly versioned experiment is started.
 
 Allowed V3 final statuses:
 
-- `V3_REAL_GO`
-- `V3_REAL_MIXED_RESULT`
 - `V3_REAL_VALIDATED_NEGATIVE`
 - `V3_REAL_FAN_VALIDATED_SCTC_NEGATIVE`
+- `V3_REAL_MIXED_RESULT_REPLICATION_CONFIRMED`
+- `V3_REAL_MIXED_RESULT_REPLICATION_NOT_CONFIRMED`
 
 ## Scientific Rules
 

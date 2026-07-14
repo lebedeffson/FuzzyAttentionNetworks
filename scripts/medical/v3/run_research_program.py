@@ -185,6 +185,8 @@ def validate_claims(output: Path) -> dict:
                 actual = float(df[column].mean())
             elif claim.get("aggregation") == "max":
                 actual = float(df[column].max())
+            elif claim.get("aggregation") == "min":
+                actual = float(df[column].min())
             elif claim.get("aggregation") == "identity":
                 actual = df[column].iloc[0]
             else:
