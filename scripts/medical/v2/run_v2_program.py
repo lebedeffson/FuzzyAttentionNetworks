@@ -32,6 +32,7 @@ from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
 
 ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "src"))
 
 from fan.concept import ConceptFANConfig, ConceptFANLossConfig, OracleConceptFAN, PredictedConceptFAN, concept_fan_loss
@@ -912,6 +913,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--force-stage")
     args = parser.parse_args(argv)
     config_path = Path(args.config)
+    if "v2_1" in config_path.name:
+        from scripts.medical.v2.run_v2_1_program import main as v2_1_main
+
+        forwarded = ["--config", args.config, "--seeds", *[str(s) for s in args.seeds], "--mode", args.mode, "--output", args.output]
+        if args.resume:
+            forwarded.append("--resume")
+        if args.dry_run:
+            forwarded.append("--dry-run")
+        if args.force_stage:
+            forwarded.extend(["--force-stage", args.force_stage])
+        return v2_1_main(forwarded)
     output = Path(args.output)
     cfg = load_config(config_path)
     meta = preflight(config_path, output, args)
