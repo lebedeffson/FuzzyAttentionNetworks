@@ -225,3 +225,20 @@ with the first milestone:
 reproduce concept-mediated FAN on Med-CircuitBench using true hidden states as concept targets
 ```
 
+After the staged V2 refinement, this first milestone is formalized as:
+
+```text
+V2_PILOT_FOUNDATIONS
+```
+
+The pilot must stop before full SCTC chain search and produce only:
+
+```text
+canonical concept-mediated FAN implementation
+Oracle FAN and Predicted FAN on Clean Med-CircuitBench
+planted internal circuit control
+shortcut audit for benchmark modes
+pilot GO/NO-GO
+```
+
+Full representation audit, SCTC, and FAN+SCTC comparison are allowed only after this pilot passes.

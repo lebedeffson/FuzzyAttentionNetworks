@@ -1,226 +1,179 @@
-# Technical Assignment Draft V2: Concept-Mediated FAN + SCTC
+# Technical Assignment V2: Gated Concept-Mediated FAN + SCTC Program
 
-Status: architectural draft after V1 `NO_GO`.
+Status: staged V2 plan after V1 `NO_GO` and concept-mediated FAN audit.
 
-V1 commit remains frozen:
+Frozen V1 commit:
 
 ```text
 ddcf32ae357dfedd91444c5cba18fac1af5d525e
 ```
 
-New work must start from a new branch:
+New work must start from:
 
 ```text
 experiment/med-circuitbench-v2
 ```
 
-V1 artifacts and thresholds must not be overwritten.
+Do not overwrite V1 artifacts, thresholds, or conclusions.
 
-## 1. Correct Scientific Line
+## 1. Core Decision
 
-The repository contains a developing Fuzzy Attention Network line. The current normative FAN architecture for this project is the concept-mediated FAN described in the current article:
+The current repository does not yet implement the current article's concept-mediated FAN. Therefore V2 must not start with another SCTC run.
+
+The correct development line is:
 
 ```text
-temporal encoder
--> latent representation
--> concept alignment layer
--> fuzzy membership functions
--> FAN weighting of concepts
--> decision
+early fuzzy attention
+-> concept-mediated FAN
+-> FAN + mechanistic circuit discovery
 ```
 
-V2 is not a fuzzy-self-attention replacement study. V2 is a comparison between:
+The immediate practical goal is:
 
 ```text
-explicit concept organization through FAN
-vs
-post-hoc mechanistic circuit discovery through SCTC
+implement and validate concept-mediated FAN as a standalone model
+before launching full SCTC or FAN+SCTC experiments
 ```
 
-Main research question:
+The final V2 experiment may compare explicit FAN concepts with post-hoc SCTC concepts, but only after two positive controls pass:
 
 ```text
-Can automatically discovered sparse mechanistic features and circuits approach, recover, or extend the explicit clinical concept structure built into concept-mediated FAN?
+Control A: explicit FAN concepts are faithful
+Control B: planted internal circuit is recoverable
 ```
 
-## 2. Required Models
+## 2. Repository Organization
 
-### 2.1 Standard Transformer
+Old code is not deleted. It must be logically separated from the current concept-mediated architecture.
 
-Purpose: black-box temporal baseline.
+Target structure:
 
 ```text
-temporal transformer
--> pooling
--> prediction
+src/fan/
+├── legacy/
+│   ├── fuzzy_attention.py
+│   ├── advanced_fan_model.py
+│   └── universal_fan_model.py
+├── concept/
+│   ├── memberships.py
+│   ├── concept_projector.py
+│   ├── fuzzy_concept_aggregator.py
+│   ├── losses.py
+│   └── model.py
+└── common/
+    ├── outputs.py
+    └── diagnostics.py
 ```
 
-Pooling variants:
+The old public README must not be rewritten as if concept-mediated FAN already has results. First implement code, tests, and pilot evidence. Then update claims.
+
+Required tags:
 
 ```text
-mean
-last
-learnable CLS token
-learned attention pooling
+fan-legacy-baseline
+med-circuitbench-v1-no-go
 ```
 
-### 2.2 Concept Bottleneck Model
+## 3. Concept-Mediated FAN Model
 
-Purpose: isolate the effect of an explicit concept layer without fuzzy aggregation.
-
-```text
-encoder
--> concept projection
--> classifier over concepts
-```
-
-Outputs:
+Implement one canonical model:
 
 ```text
-logit
-probability
-concepts
-latent
-```
-
-Loss:
-
-```text
-L_task + lambda_c L_concept
-```
-
-### 2.3 Concept-Mediated FAN
-
-Purpose: canonical current FAN architecture.
-
-```text
-encoder
--> concept projection c
--> memberships mu(c)
--> relevance scores s
--> softmax weights alpha
+TemporalEncoder
+-> latent z
+-> ConceptProjector
+-> concepts c
+-> MembershipLayer
+-> memberships mu
+-> FuzzyConceptAggregator
+-> weights alpha
 -> contributions alpha * mu
--> decision head
+-> DecisionHead
 ```
 
-Outputs:
+The model must return a structured output:
 
-```text
-logit
-probability
-latent
-concepts
-memberships
-concept_weights
-concept_contributions
+```python
+{
+    "logit": ...,
+    "probability": ...,
+    "latent": ...,
+    "concepts": ...,
+    "memberships": ...,
+    "concept_weights": ...,
+    "concept_contributions": ...,
+}
 ```
 
-Loss:
+The direct path:
 
 ```text
-L_total =
-L_task
-+ lambda_c L_concept
-+ lambda_a L_align
-+ lambda_s L_sparse
+latent -> decision
 ```
 
-Required membership families:
+is forbidden in the canonical FAN. The final decision must be produced from concept evidence:
 
 ```text
-gaussian
+alpha * mu
+```
+
+Otherwise the concept layer is decorative and the model is not the article architecture.
+
+## 4. Membership Functions
+
+Implement:
+
+```text
+Gaussian
 bell
 sigmoid
 mixed
 ```
 
-Required interpretability tests:
+Width must be positive:
 
 ```text
-concept removal
-concept insertion
-top-k concept retention
-concept calibration
-contribution stability between seed
+delta_k = softplus(rho_k) + epsilon
 ```
 
-### 2.4 Transformer + SCTC
-
-Purpose: post-hoc mechanistic circuit discovery on a black-box temporal transformer.
+Mixed membership:
 
 ```text
-standard transformer internals
--> SCTC
--> sparse features
--> interventions
--> circuits
+mu_k =
+omega_G * mu_G_k
++ omega_B * mu_B_k
++ omega_S * mu_S_k
+
+omega = softmax(u)
 ```
 
-### 2.5 FAN + SCTC
+Log membership parameters and mixture weights for every run.
 
-Purpose: compare discovered SCTC features against explicitly supervised FAN concepts.
+## 5. Loss Function
+
+The FAN loss is:
 
 ```text
-FAN encoder internals
--> SCTC
--> discovered features
--> matching with I,R,V,O,S and FAN concept contributions
+L =
+L_task
++ lambda_c * L_concept
++ lambda_a * L_align
++ lambda_s * L_sparse
 ```
 
-Required comparison:
+Each component must be logged independently:
 
 ```text
-SCTC feature <-> explicit concept activation
-SCTC feature <-> membership value
-SCTC feature <-> concept contribution
-SCTC circuit <-> concept-level FAN decision pathway
+L_task
+L_concept
+L_align
+L_sparse
+L_total
 ```
 
-## 3. Med-CircuitBench Modes
+Saving only `total_loss` is not acceptable.
 
-V2 must support three benchmark modes.
-
-### 3.1 Clean
-
-Purpose: test whether models can learn the intended latent dynamics without shortcuts.
-
-Requirements:
-
-```text
-no informative missingness
-treatment absent or randomized independently of hidden states
-prediction requires latent state dynamics
-```
-
-### 3.2 Clinical-Confounded
-
-Purpose: realistic shortcut/confounding regime.
-
-Requirements:
-
-```text
-informative missingness enabled
-treatment policy depends on hidden states
-observation noise enabled
-```
-
-### 3.3 Planted-Circuit Positive Control
-
-Purpose: distinguish data-generating graph recovery from model-internal circuit recovery.
-
-Requirements:
-
-```text
-known internal nodes
-known layers
-known directions
-known edges
-known signs
-```
-
-If SCTC fails here, the SCTC/intervention method is not validated.
-
-## 4. Concepts
+## 6. Med-CircuitBench Concepts
 
 Med-CircuitBench hidden states are exact concept targets:
 
@@ -232,267 +185,638 @@ O: organ dysfunction
 S: shock risk
 ```
 
-For concept-supervised models:
+Use continuous concept targets by default:
 
 ```text
 c = (I, R, V, O, S)
 ```
 
-Concept targets should be continuous by default. Binary labels may be used only for secondary AUC diagnostics.
+Binary concept labels are allowed only for secondary AUC diagnostics.
 
-## 5. Representation Audit Before SCTC
+## 7. Stage 1: FAN Pilot Before SCTC
 
-Before training SCTC, run representation audit for every trained model:
+Do not train SCTC in Stage 1.
 
-```text
-model:
-  standard transformer
-  concept bottleneck
-  concept-mediated FAN
+The first pilot must validate concept-mediated FAN on Med-CircuitBench Clean.
 
-extraction point:
-  residual_pre
-  attention_output
-  residual_mid / h_ffn
-  mlp_output / a_ffn
-  residual_post
+### 7.1 FAN Variants
 
-pooling:
-  token-level
-  mean
-  last
-  CLS
-  attention pooling
-
-state:
-  I
-  R
-  V
-  O
-  S
-```
-
-Required output:
+Run four variants:
 
 ```text
-representation_audit.parquet
+Oracle FAN-5
+Predicted FAN-5
+Oracle FAN-4 without S
+Predicted FAN-4 without S
 ```
 
-Required metrics:
+Definitions:
 
 ```text
-linear R2 for continuous state value
-Pearson correlation
-Spearman correlation
-AUC after pre-registered binarization
-time lag of maximum decodability
-patching/intervention effect
+Oracle FAN:
+  receives true concepts directly and tests only membership, fuzzy aggregation, and decision head.
+
+Predicted FAN:
+  encoder predicts concepts; FAN aggregates predicted concepts.
+
+FAN-5:
+  concepts = I, R, V, O, S.
+
+FAN-4:
+  concepts = I, R, V, O.
 ```
 
-This audit decides where SCTC should be trained.
-
-## 6. SCTC Training Changes
-
-V2 must not train SCTC on 128 windows.
-
-Required options:
+Reason for FAN-4:
 
 ```text
-max_training_windows: all
-minimum_training_episodes: 2000
-n_features: [128, 256, 512]
-early_stopping: enabled
-decoder_norm_control: enabled
-separate_sctc_validation: enabled
+S is already close to shock risk and may almost directly encode the target.
 ```
 
-Sampling must be stratified by:
+If FAN-5 works but FAN-4 collapses, that is a scientific result: the model mostly uses current shock-risk state rather than reconstructing the causal clinical history.
+
+### 7.2 Stage 1 Gates
+
+Stage 2 may start only if all are true:
+
+```text
+Oracle FAN learns and beats random baseline.
+Concept weights are finite and sum to one.
+Concept contributions are finite and reproducible.
+Top-concept removal has stronger effect than random concept removal.
+Top-concept insertion has stronger effect than random insertion.
+Predicted FAN reaches at least 90% of Oracle FAN AUPRC.
+Predicted concepts have measurable decodability and calibration.
+```
+
+No absolute administrative `AUPRC > 0.85` gate is used here. The main comparison is against Oracle FAN.
+
+### 7.3 Stage 1 Required Outputs
+
+```text
+fan_model_metrics.csv
+fan_loss_components.csv
+concept_metrics.csv
+concept_calibration.csv
+concept_contributions.parquet
+removal_insertion_results.csv
+membership_parameters.json
+fan_stage1_go_no_go.json
+```
+
+## 8. Stage 2: Reproduce Article Mechanism on Med-CircuitBench
+
+Full SWaT/FD001 reproduction is not required before Med-CircuitBench, but the mechanism must be reproduced.
+
+Required comparisons:
+
+```text
+CBM without fuzzy aggregation
+FAN Gaussian
+FAN bell
+FAN sigmoid
+FAN mixed
+FAN without L_concept
+FAN without L_sparse
+Classifier over concepts without FAN
+```
+
+Required faithfulness tests:
+
+```text
+removal top-1
+removal top-2
+insertion top-1
+insertion top-2
+random concept removal
+random concept insertion
+```
+
+Gate:
+
+```text
+dominant FAN concept removal must affect prediction more than random concept removal
+dominant FAN concept insertion must retain/recover prediction better than random insertion
+```
+
+The exact article numbers are not required because this is a different dataset. The mechanism must be qualitatively validated.
+
+## 9. Stage 3: Benchmark Modes
+
+Implement three Med-CircuitBench regimes.
+
+### 9.1 Clean
+
+```text
+no informative missingness
+no state-dependent treatment
+treatment absent or randomized independently of hidden states
+fixed measurement graph
+```
+
+Purpose: test the intended latent dynamics without shortcut channels.
+
+### 9.2 Clinical-Confounded
+
+```text
+informative missingness
+state-dependent treatment
+masks
+delta-time
+observation noise
+```
+
+Purpose: measure shortcut and confounding effects.
+
+### 9.3 Planted Internal Circuit
+
+This is not merely a data generator with known causal graph. It must include a model with a known internal computational graph:
+
+```text
+input
+-> planted I node
+-> planted R node
+-> planted V node
+-> planted O/S nodes
+-> output
+```
+
+Requirements:
+
+```text
+nodes pinned to specific layers
+orthogonal directions
+known edge signs
+known edge strengths
+no residual bypass
+no hidden direct connections
+```
+
+This model is the positive control for SCTC recovery of model-internal circuits.
+
+## 10. Stage 4: Shortcut Audit
+
+For each benchmark regime, train/evaluate input-subset models:
+
+```text
+observations only
+masks only
+delta-time only
+treatments only
+observations + masks
+observations + treatments
+full input
+```
+
+Main output:
+
+| Regime | Input subset | AUPRC | Fraction of Full |
+| --- | --- | ---: | ---: |
+| Clean | observations | fact | fact |
+| Clean | masks | fact | fact |
+| Confounded | masks | fact | fact |
+| Confounded | treatments | fact | fact |
+
+Shortcut criterion:
+
+```text
+AUPRC_subset >= 0.8 * AUPRC_full
+```
+
+This threshold is frozen before the audit.
+
+## 11. Stage 5: Representation Audit
+
+Do not train SCTC across every possible combination.
+
+For these trained models:
+
+```text
+Standard Transformer
+CBM
+Predicted FAN
+```
+
+save:
+
+```text
+residual_pre
+attention_output
+residual_mid
+mlp_output
+residual_post
+```
+
+For every layer and state, report:
+
+```text
+R2
+Pearson
+Spearman
+AUROC
+AUPRC
+best temporal lag
+```
+
+Pooling variants:
+
+```text
+token-level
+mean
+last
+CLS
+learned attention pooling
+```
+
+SCTC is then allowed only on:
+
+```text
+two best capture points
+two best pooling schemes
+no more than four layers
+```
+
+The representation audit decides where SCTC is trained.
+
+## 12. Stage 6: Pooling Audit
+
+Pooling variants are separate trained models, not post-hoc switches:
+
+```text
+mean
+last
+CLS
+learned attention pooling
+```
+
+Rules:
+
+```text
+CLS requires a trainable token before encoder blocks.
+attention pooling requires a trainable query.
+last is an ablation only.
+mean remains the baseline.
+```
+
+Pooling is selected by validation before SCTC.
+
+## 13. Stage 7: SCTC Training
+
+V1-style training on 128 episodes is forbidden.
+
+Main mode:
+
+```text
+all training episodes
+```
+
+Minimum allowed mode:
+
+```text
+2000 stratified episodes
+```
+
+Stratify by:
 
 ```text
 target class
 infection onset time
-hidden state levels
-treatment exposure
-severity / shock score
+S quartile
+treatment pattern
+missingness quartile
 ```
 
-Report:
+Compare:
+
+```text
+128 features
+256 features
+512 features
+```
+
+But first run this comparison on the planted internal circuit model. The chosen feature count is then frozen and transferred to Standard Transformer and FAN.
+
+### 13.1 Decoder Normalization
+
+Decoder columns must have unit norm:
+
+```text
+||d_j||_2 = 1
+```
+
+Without this, `lambda_1` has no stable meaning because scale can move between encoder and decoder.
+
+### 13.2 Activity Control
+
+Log:
 
 ```text
 L0 per token
 dead feature fraction
-support distribution
-fidelity AUROC/AUPRC/probability error
+support quantiles
+fidelity
 explained variance
-state correlation matrix
-concept contribution correlation matrix for FAN runs
+state correlation
 ```
 
-## 7. Matched Intervention Nulls
-
-The V1 issue must be fixed:
+Target activity range:
 
 ```text
-true edge: activation-scaled ablation
-random null: constant push
+8-32 active features per token
 ```
 
-V2 requires matched nulls:
+The final range must be confirmed by planted-circuit control, not chosen for aesthetics.
+
+## 14. Stage 8: Oracle Diagnostics Before Chain Search
+
+For each true state:
 
 ```text
-ablation edge -> ablation random null
-push edge -> push random null
+1. find most correlated SCTC feature
+2. find strongest linear direction
+3. run ablation
+4. run push
+5. check downstream state
+6. compare with true edge
+```
+
+Diagnostic outcomes:
+
+```text
+ORACLE_FAIL
+ORACLE_PASS_SCTC_FAIL
+SCTC_PASS_CLEAN_ONLY
+SCTC_PASS
+```
+
+Meaning:
+
+```text
+ORACLE_FAIL:
+  model or intervention is wrong.
+
+ORACLE_PASS_SCTC_FAIL:
+  sparse features fail despite an available direction.
+
+SCTC_PASS_CLEAN_ONLY:
+  confounding disrupts recovery.
+
+SCTC_PASS:
+  method is ready for full comparison.
+```
+
+## 15. Stage 9: Matched Intervention Nulls
+
+For true ablation:
+
+```text
+a_int = a - z_i * d_i
+```
+
+For random ablation:
+
+```text
+c_t = <a_t, d_rand>
+a_int = a - c_t * d_rand
+```
+
+Therefore the random null removes the actual projection onto the random direction. It must not be a constant random push.
+
+Push has a separate matched push-null with the same scale.
+
+Requirements:
+
+```text
 same windows
-same coefficient scale
+same coefficient definition
 same direction norm
 same downstream target
 same forward path
 ```
 
-Random directions:
+## 16. Stage 10: Threshold Calibration
+
+Do not set `DR = 0.05` because `0.10` failed in V1.
+
+Compute thresholds from controls:
 
 ```text
-1000 for screening
-10000 for final candidate family or sequential permutation test
+tau_DR = Q_0.99(|DR_negative|)
+tau_CIE = Q_0.99(CIE_negative)
 ```
 
-Thresholds for DR/CIE/IP must be pre-registered from:
+Final threshold:
 
 ```text
-random null distribution
-positive controls
-power analysis
-minimum stable measurable effect
+tau = max(tau_null, tau_practical)
 ```
 
-Do not lower thresholds after viewing validation results.
+The negative set and practical minimum must be defined before validation results are viewed.
 
-## 8. Positive Controls
+## 17. Stage 11: Two-Step Significance Test
 
-### Control A: Explicit FAN Concepts
-
-Known:
+For all candidates:
 
 ```text
-concept activations
-membership values
-concept weights
-concept contributions
+1000 random interventions
 ```
 
-Tests:
+For candidates that pass screening:
 
 ```text
-concept removal/insertion faithfulness
+10000 random interventions
+```
+
+The hypothesis family is fixed in advance by layer pair.
+
+## 18. Main V2 Tables
+
+The final V2 should answer four questions, not compare everything with everything.
+
+### Table A: Does Concept-Mediated FAN Work?
+
+Models:
+
+```text
+Standard Transformer
+CBM
+Concept FAN
+Oracle Concept FAN
+```
+
+Metrics:
+
+```text
+AUPRC
+concept R2
 concept calibration
-top-k concept sufficiency
-concept contribution stability
+removal effect
+insertion effect
+contribution stability
 ```
 
-### Control B: Planted Internal Circuit
+### Table B: Where Are the Concepts?
 
-Known:
+Index:
 
 ```text
-internal nodes
-layers
-directions
-edges
-signs
+model x layer x capture point x pooling
 ```
 
-Tests:
+Metrics:
 
 ```text
-SCTC node recovery
-SCTC edge recovery
+R2
+Pearson
+best lag
+patching effect
+```
+
+### Table C: Does SCTC Work?
+
+Rows:
+
+```text
+planted circuit
+standard clean
+FAN clean
+standard confounded
+FAN confounded
+```
+
+Metrics:
+
+```text
+node recovery
 CircuitF1
-sign agreement
-intervention effect
+CIE
+IP
+stability
 ```
 
-## 9. Required Outputs
+### Table D: Explicit Concepts vs Discovered Features
 
-Per run:
+Rows:
 
 ```text
-model_metrics.csv
-concept_metrics.csv
-representation_audit.parquet
-concept_contributions.parquet
-sctc_feature_catalog.parquet
-edge_catalog.parquet
-circuit_catalog.json
-intervention_effects.parquet
-go_no_go.json
+explicit concept
+best SCTC feature
+activation correlation
+intervention agreement
+contribution correlation
+seed stability
 ```
 
-Aggregate:
+## 19. Outcomes
+
+### Best Outcome
 
 ```text
-standard_vs_cbm_vs_fan.csv
-explicit_fan_vs_sctc.csv
-representation_audit_summary.csv
-concept_alignment_summary.csv
-circuit_recovery_summary.csv
-shortcut_ablation_summary.csv
+FAN is correctly implemented.
+Explicit concepts are predicted well.
+FAN faithfulness is confirmed.
+Planted circuit is recovered.
+SCTC recovers part of concepts and edges.
+FAN+SCTC is more stable than Standard+SCTC.
 ```
 
-Figures:
+Interpretation:
 
 ```text
-concept pathway diagram
-concept contribution heatmaps
-representation audit heatmap
-FAN concept removal/insertion curves
-SCTC feature-to-concept matching graph
-planted circuit recovery graph
-clean vs clinical-confounded shortcut comparison
+explicit concept organization improves mechanistic recoverability
 ```
 
-## 10. GO/NO-GO Logic
-
-V2 should not use only AUPRC > 0.85 as the main gate.
-
-Required gates:
+### Middle Outcome
 
 ```text
-FAN concept prediction R2/correlation passes pre-registered threshold
-FAN removal/insertion faithfulness passes explicit concept control
-standard/CBM/FAN predictive performance is reported against oracle baselines
-planted-circuit SCTC recovery passes minimum CircuitF1
-SCTC fidelity passes model-behavior preservation
-matched-null intervention p-values are valid
-FAN+SCTC matching to explicit concepts exceeds random/SAE baselines
+FAN works.
+Planted circuit is recovered.
+SCTC does not recover freely trained transformer circuits.
 ```
 
-If the explicit FAN works but SCTC fails:
+Interpretation:
 
 ```text
-result = explicit concepts are recoverable when supervised, but not recovered post-hoc by current SCTC
+SCTC can recover known internal circuits, but free temporal models do not have to organize computation according to the data graph.
 ```
 
-If planted circuit fails:
+### Negative Outcome
 
 ```text
-result = SCTC/intervention pipeline not validated for mechanistic recovery
+FAN works.
+Planted circuit is not recovered.
 ```
 
-If planted circuit passes but trained transformer/FAN internal circuits do not match the data graph:
+Interpretation:
 
 ```text
-result = data-generating graph is not necessarily the learned computational graph
+problem is in SCTC or intervention pipeline, not in Med-CircuitBench.
 ```
 
-## 11. Non-Goals
+### Hard Stop Outcome
 
-Do not implement in V2:
+```text
+Oracle FAN fails removal/insertion.
+```
+
+Interpretation:
+
+```text
+FAN implementation is wrong or not faithful; full experiment must not start.
+```
+
+## 20. Immediate Deliverable: V2_PILOT_FOUNDATIONS
+
+Do not run full V2 yet.
+
+The next code stage must produce only:
+
+```text
+1. canonical concept-mediated FAN implementation
+2. Oracle FAN and Predicted FAN on Clean Med-CircuitBench
+3. planted internal circuit model and description
+4. shortcut audit for Clean, Clinical-confounded, and Planted regimes
+```
+
+Pilot archive name:
+
+```text
+V2_PILOT_FOUNDATIONS
+```
+
+Required contents:
+
+```text
+FAN unit tests
+FAN loss tests
+Oracle FAN metrics
+Predicted FAN metrics
+removal/insertion results
+planted circuit description
+shortcut audit
+resolved configs
+three seeds
+GO/NO-GO for pilot gates
+```
+
+Only if this pilot passes should a final implementation assignment be written for:
+
+```text
+representation audit
+SCTC
+full FAN + SCTC comparison
+final V2 package
+```
+
+## 21. Non-Goals
+
+Do not implement in the pilot:
 
 ```text
 LLM annotation
 VAE counterfactuals
 clinical treatment recommendation
 new web UI
+full SCTC chain search
 unregistered threshold lowering
 claims of biological causality
 ```
@@ -507,4 +831,3 @@ serve as residual-stream replacement
 ```
 
 The V2 FAN target is concept-mediated FAN.
-
