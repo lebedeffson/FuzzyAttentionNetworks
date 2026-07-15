@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from mimic_aki.access import verify_mimic_access  # noqa: E402
 from mimic_aki.cohort import demo_cohort_summary  # noqa: E402
+from mimic_aki.demo_baseline import build_demo_window_feature_table, metrics_to_jsonable, run_demo_logistic_baseline  # noqa: E402
 from mimic_aki.features import demo_creatinine_events  # noqa: E402
 from mimic_aki.io import MimicSource  # noqa: E402
 from mimic_aki.kdigo import creatinine_kdigo_events  # noqa: E402
@@ -61,9 +62,15 @@ def main(argv: list[str] | None = None) -> int:
             labels = creatinine_kdigo_events(creat)
             event_times = creat.rename(columns={"charttime": "charttime"})[["stay_id", "charttime"]]
             windows = incident_aki_windows(event_times, labels)
+            feature_table = build_demo_window_feature_table(source, creat, windows)
+            predictions, baseline_metrics, baseline_summary = run_demo_logistic_baseline(feature_table)
             flow.to_csv(output / "cohort_flow.csv", index=False)
             labels.to_parquet(output / "aki_labels_demo.parquet", index=False)
             windows.to_parquet(output / "aki_windows_demo.parquet", index=False)
+            feature_table.to_parquet(output / "demo_feature_table.parquet", index=False)
+            predictions.to_parquet(output / "demo_baseline_predictions.parquet", index=False)
+            baseline_metrics.to_csv(output / "demo_baseline_metrics.csv", index=False)
+            (output / "demo_baseline_summary.json").write_text(json.dumps(metrics_to_jsonable(baseline_summary), indent=2), encoding="utf-8")
             cohort.drop(columns=["subject_id"], errors="ignore").head(100).to_parquet(output / "cohort_demo_deidentified_preview.parquet", index=False)
             rows = [
                 {"stage": STAGES[0], "status": "OK_DEMO", "reason": "MIMIC-IV demo zip detected"},
@@ -71,8 +78,9 @@ def main(argv: list[str] | None = None) -> int:
                 {"stage": STAGES[2], "status": "COMPLETED_DEMO", "reason": f"{len(labels)} creatinine KDIGO events"},
                 {"stage": STAGES[3], "status": "COMPLETED_DEMO", "reason": f"{len(windows)} incident windows"},
                 {"stage": STAGES[4], "status": "COMPLETED_DEMO", "reason": "cohort_flow and demo manifests written"},
+                {"stage": STAGES[5], "status": "COMPLETED_DEMO_BASELINE", "reason": f"{len(feature_table)} feature rows, {baseline_summary['model']}"},
             ]
-            for stage in STAGES[5:]:
+            for stage in STAGES[6:]:
                 rows.append({"stage": stage, "status": "SKIPPED_BY_GATE", "reason": "DEMO_DEBUG_ONLY_FULL_TRAINING_REQUIRES_FULL_MIMIC"})
             final = {
                 "program": "MIMIC_AKI_FAN_SAE",
@@ -86,7 +94,9 @@ def main(argv: list[str] | None = None) -> int:
                     "creatinine_rows": int(len(creat)),
                     "aki_label_rows": int(len(labels)),
                     "window_rows": int(len(windows)),
+                    "feature_rows": int(len(feature_table)),
                 },
+                "demo_baseline": metrics_to_jsonable(baseline_summary),
             }
             (output / "program_status.json").write_text(json.dumps(final, indent=2), encoding="utf-8")
             print(json.dumps(final, indent=2))

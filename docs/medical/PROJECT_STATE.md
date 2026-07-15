@@ -16,8 +16,9 @@ New program: MIMIC_AKI_FAN_SAE
 ```
 
 MIMIC-AKI is a new real-data research program. It must not rewrite V3.1
-results. MIMIC-IV data must not be committed or packaged. If `MIMIC_IV_ROOT`
-is absent or incomplete, the only valid runtime status is:
+results. MIMIC-IV data must not be committed or packaged. If full
+`MIMIC_IV_ROOT` is absent or incomplete, the valid full-program runtime status
+is:
 
 ```text
 BLOCKED_DATA_ACCESS
@@ -26,6 +27,10 @@ BLOCKED_DATA_ACCESS
 The codebase must still provide parsers, configs, synthetic-fixture tests,
 model code, SAE primitives, CLI scripts, and a gated research runner before
 reporting the access block.
+
+If a local MIMIC-IV Demo zip is present, the runner may execute only the
+real-format debug path and must report demo-specific statuses rather than full
+validation statuses.
 
 MIMIC-IV Demo support:
 
@@ -37,6 +42,9 @@ cohort_rows: 140
 creatinine_rows: 1905
 aki_label_rows: 84
 window_rows: 841
+feature_rows: 754
+demo_baseline: logistic_regression_balanced
+demo_validation_auprc: 0.04136643555915895
 ```
 
 The demo is used only for real-format pipeline debugging. Full training,
