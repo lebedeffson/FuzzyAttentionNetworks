@@ -1,0 +1,11 @@
+data: configs/mimic_aki/data.yaml
+models: configs/mimic_aki/models.yaml
+concepts: configs/mimic_aki/concepts.yaml
+sae: configs/mimic_aki/sae.yaml
+steering: configs/mimic_aki/steering.yaml
+output: artifacts/mimic_aki/final
+terminal_statuses:
+  - BLOCKED_DATA_ACCESS
+  - MIMIC_AKI_VALIDATED
+  - MIMIC_AKI_VALIDATED_NEGATIVE
+  - ORACLE_EVALUATOR_REGRESSION

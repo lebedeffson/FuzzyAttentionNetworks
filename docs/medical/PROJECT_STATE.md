@@ -5,8 +5,27 @@ Last updated: 2026-07-15
 ## Active Branch
 
 ```text
-fix/med-circuitbench-v2-2-final
+experiment/mimic-aki-fan-sae
 ```
+
+## Current Program
+
+```text
+Med-CircuitBench V3.1: FROZEN_RESEARCH_COMPLETE
+New program: MIMIC_AKI_FAN_SAE
+```
+
+MIMIC-AKI is a new real-data research program. It must not rewrite V3.1
+results. MIMIC-IV data must not be committed or packaged. If `MIMIC_IV_ROOT`
+is absent or incomplete, the only valid runtime status is:
+
+```text
+BLOCKED_DATA_ACCESS
+```
+
+The codebase must still provide parsers, configs, synthetic-fixture tests,
+model code, SAE primitives, CLI scripts, and a gated research runner before
+reporting the access block.
 
 ## Current Result
 
