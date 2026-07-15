@@ -247,6 +247,42 @@ faithfulness on all three seeds, but cross-seed contribution Spearman remained
 below gate. Production FAN remains the original `FAN-NoAlpha`; contribution
 instability is a documented limitation.
 
+Old Q1 oracle-concept surrogate ablation command:
+
+```bash
+.venv/bin/python scripts/medical/v3_1/run_q1_oracle_concept_surrogate_ablation.py \
+  --config configs/medical/v3/full.yaml \
+  --output artifacts/medical/q1_empirical_extension \
+  --runs 30 \
+  --n-samples 6000 \
+  --package \
+  --zip-output-dir artifacts/medical
+```
+
+This contour is not a scientific Q1 gate. It is retained only as an
+`ORACLE_CONCEPT_SURROGATE_ABLATION` because it uses generator states as
+features and shallow surrogate estimators.
+
+Current Q1 neural empirical extension command:
+
+```bash
+.venv/bin/python scripts/medical/v3_1/run_q1_neural_empirical_extension.py \
+  --config configs/medical/v3/full.yaml \
+  --output artifacts/medical/q1_neural_empirical_extension \
+  --runs 30 \
+  --n-samples 6000 \
+  --epochs 2 \
+  --package \
+  --zip-output-dir artifacts/medical
+```
+
+The only allowed completed Q1 status is
+`Q1_EMPIRICAL_EXTENSION_NEURAL_VALIDATED`. It requires 30 real checkpointed
+PyTorch fits for each arm, raw `[B,36,27]` model inputs, checkpoint SHA
+independence, model-loading verification, episode-level local contributions,
+frozen interventions, held-out leakage audit, raw-input perturbations, and a
+clean committed Git state for the final archive.
+
 Allowed V3 final statuses:
 
 - `V3_REAL_VALIDATED_NEGATIVE`

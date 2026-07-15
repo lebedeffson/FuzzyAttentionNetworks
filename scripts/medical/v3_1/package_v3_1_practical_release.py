@@ -92,13 +92,14 @@ def repair_fan_bundle_metrics(release: Path) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fan-stable-output", default="artifacts/medical/v3_1/fan_noalpha_stable")
+    parser.add_argument("--q1-output", default="artifacts/medical/q1_neural_empirical_extension")
     parser.add_argument("--release-root", default="artifacts/medical/v3_1_practical_release")
     parser.add_argument("--zip-output-dir", default="artifacts/medical")
     args = parser.parse_args(argv)
     release = Path(args.release_root)
     if release.exists():
         shutil.rmtree(release)
-    for sub in ["SOURCE", "CONFIGS", "TESTS", "RESULTS", "BUNDLES", "MANIFESTS", "LIMITATIONS", "TABLES"]:
+    for sub in ["SOURCE", "CONFIGS", "TESTS", "RESULTS", "BUNDLES", "MANIFESTS", "LIMITATIONS", "TABLES", "FIGURES", "REPORTS"]:
         (release / sub).mkdir(parents=True, exist_ok=True)
     copytree_filtered(ROOT / "src" / "fan", release / "SOURCE" / "src" / "fan")
     copytree_filtered(ROOT / "src" / "med_circuitbench", release / "SOURCE" / "src" / "med_circuitbench")
@@ -145,6 +146,25 @@ def main(argv: list[str] | None = None) -> int:
         if (fan_out / "bundles").exists():
             copytree_filtered(fan_out / "bundles", release / "BUNDLES")
             repair_fan_bundle_metrics(release)
+    q1_out = ROOT / args.q1_output
+    q1_status = "NOT_INCLUDED"
+    if q1_out.exists():
+        copytree_filtered(q1_out, release / "Q1_NEURAL_EMPIRICAL_EXTENSION")
+        manifest_path = q1_out / "MANIFESTS" / "q1_neural_manifest.json"
+        if manifest_path.exists():
+            q1_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            q1_status = str(q1_manifest.get("status", "UNKNOWN"))
+            shutil.copy2(manifest_path, release / "MANIFESTS" / "q1_neural_manifest.json")
+        verifier_path = q1_out / "MANIFESTS" / "q1_neural_verification.json"
+        if verifier_path.exists():
+            shutil.copy2(verifier_path, release / "MANIFESTS" / "q1_neural_verification.json")
+        for table in (q1_out / "TABLES").glob("q1_neural_*.csv"):
+            shutil.copy2(table, release / "TABLES" / table.name)
+        for figure in (q1_out / "FIGURES").glob("q1_neural_*.png"):
+            shutil.copy2(figure, release / "FIGURES" / figure.name)
+        for report in (q1_out / "REPORTS").glob("*"):
+            if report.is_file():
+                shutil.copy2(report, release / "REPORTS" / report.name)
     for src, dst in [
         (ROOT / "AGENTS.md", release / "MANIFESTS" / "AGENTS.md"),
         (ROOT / "AGENTS.md", release / "AGENTS.md"),
@@ -156,10 +176,11 @@ def main(argv: list[str] | None = None) -> int:
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     status = subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True)
     manifest = {
-        "status": "SCIENTIFIC_RESEARCH_COMPLETE",
+        "status": "Q1_EMPIRICAL_EXTENSION_NEURAL_VALIDATED" if q1_status == "Q1_EMPIRICAL_EXTENSION_NEURAL_VALIDATED" else "SCIENTIFIC_RESEARCH_COMPLETE",
         "code_commit": commit,
         "git_status_clean": status.strip() == "",
         "standalone_release": "VALIDATED_BY_UNPACKED_TESTS_REQUIRED",
+        "q1_neural_empirical_extension_status": q1_status,
         "production_fan": "FAN-NoAlpha",
         "fan_stable_result": "FAN_NOALPHA_BASELINE_RETAINED",
         "sctc_line_status": [
@@ -178,6 +199,7 @@ def main(argv: list[str] | None = None) -> int:
                 "FAN stable replacement,FAIL,FAN_NOALPHA_BASELINE_RETAINED",
                 "SCTC semantic specificity,FAIL,decoder-coupled and concept-control diagnostics",
                 "Oracle causal evaluator,PASS,repaired evaluator C0 artifacts",
+                f"Q1 neural empirical extension,{q1_status},Q1_NEURAL_EMPIRICAL_EXTENSION and TABLES/q1_neural_*.csv",
             ]
         )
         + "\n",
@@ -191,6 +213,8 @@ def main(argv: list[str] | None = None) -> int:
                 "This package contains practical code, configs, tests, results, and frozen bundles.",
                 "Papers are intentionally not included in this practical release.",
                 "",
+                f"Q1 neural empirical extension status: `{q1_status}`.",
+                "",
                 "SCTC development is closed as a mixed/negative research line:",
                 "- sparse behavioral fidelity is validated;",
                 "- mechanistic recovery is not semantically specific;",
@@ -202,7 +226,8 @@ def main(argv: list[str] | None = None) -> int:
     zip_dir = Path(args.zip_output_dir)
     zip_dir.mkdir(parents=True, exist_ok=True)
     short = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, text=True).strip()
-    zip_path = zip_dir / f"Med_CircuitBench_V3_1_RESEARCH_COMPLETE_{short}.zip"
+    suffix = short if status.strip() == "" else f"{short}_worktree"
+    zip_path = zip_dir / f"Med_CircuitBench_V3_1_RESEARCH_COMPLETE_{suffix}.zip"
     if zip_path.exists():
         zip_path.unlink()
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
