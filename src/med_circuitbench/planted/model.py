@@ -76,7 +76,13 @@ class PlantedCircuitModel(torch.nn.Module):
             return {"O": activation @ self.directions[3], "S": activation @ self.directions[4]}
         raise ValueError(f"unknown planted layer {layer}")
 
-    def downstream_from_layer(self, layer: int, activation: torch.Tensor) -> PlantedForward:
+    def reconstruct_full_state_from_layer(self, layer: int, activation: torch.Tensor) -> PlantedForward:
+        """Reconstruct a full compatible state from one layer activation.
+
+        This is appropriate for reconstruction/behavior-fidelity checks. It is
+        not a causal intervention operator because it back-solves upstream
+        nodes from downstream layers.
+        """
         recovered = self.recover_layer_nodes(layer, activation)
         if layer == 0:
             nodes = self.compute_nodes_from_i(recovered["I"])
@@ -105,6 +111,9 @@ class PlantedCircuitModel(torch.nn.Module):
         else:
             raise ValueError(f"unknown planted layer {layer}")
         return self.forward_from_nodes(nodes)
+
+    def downstream_from_layer(self, layer: int, activation: torch.Tensor) -> PlantedForward:
+        return self.reconstruct_full_state_from_layer(layer, activation)
 
     def ablate_source_node(self, true_states: torch.Tensor, source: str) -> PlantedForward:
         nodes = self.forward(true_states).nodes.clone()

@@ -49,6 +49,12 @@ from scripts.medical.v3_1.run_planted_adaptive_sctc import (
 )
 from scripts.medical.v3_1.audit_concept_aligned_negative_result import build_validity_gate
 from med_circuitbench.planted.model import PlantedCircuitModel
+from med_circuitbench.planted.interventions import (
+    STATE_INDEX,
+    direct_edge_counterfactual,
+    do_node_intervention,
+    total_effect_counterfactual,
+)
 
 
 def test_adaptive_sctc_normalizes_and_reconstructs_raw_shape():
@@ -310,3 +316,35 @@ def test_negative_result_validity_gate_blocks_when_oracle_fails(tmp_path):
     )
     assert gate["status"] == "EVALUATION_PROTOCOL_INVALID"
     assert gate["scientific_gate"]["oracle_evaluator"] == "FAIL"
+
+
+def test_planted_do_intervention_preserves_nondescendants():
+    planted = PlantedCircuitModel(seed=7, d_model=16)
+    states = torch.rand(8, 4, 5)
+    nodes = planted(states).nodes
+    do_r = do_node_intervention(nodes, "R", torch.zeros_like(nodes[..., STATE_INDEX["R"]])).nodes
+    do_v = do_node_intervention(nodes, "V", torch.zeros_like(nodes[..., STATE_INDEX["V"]])).nodes
+    do_o = do_node_intervention(nodes, "O", torch.zeros_like(nodes[..., STATE_INDEX["O"]])).nodes
+    assert torch.allclose(do_r[..., STATE_INDEX["I"]], nodes[..., STATE_INDEX["I"]])
+    assert torch.allclose(do_v[..., STATE_INDEX["I"]], nodes[..., STATE_INDEX["I"]])
+    assert torch.allclose(do_v[..., STATE_INDEX["R"]], nodes[..., STATE_INDEX["R"]])
+    assert torch.allclose(do_o[..., STATE_INDEX["I"]], nodes[..., STATE_INDEX["I"]])
+    assert torch.allclose(do_o[..., STATE_INDEX["R"]], nodes[..., STATE_INDEX["R"]])
+    assert torch.allclose(do_o[..., STATE_INDEX["V"]], nodes[..., STATE_INDEX["V"]])
+    assert torch.mean((do_o[..., STATE_INDEX["S"]] - nodes[..., STATE_INDEX["S"]]).abs()).item() > 0
+
+
+def test_direct_edge_counterfactual_separates_direct_and_total_effects():
+    planted = PlantedCircuitModel(seed=8, d_model=16)
+    states = torch.rand(8, 4, 5)
+    nodes = planted(states).nodes
+    zero_v = torch.zeros_like(nodes[..., STATE_INDEX["V"]])
+    direct_v_s = direct_edge_counterfactual(nodes, "V", "S", zero_v).nodes
+    direct_v_o = direct_edge_counterfactual(nodes, "V", "O", zero_v).nodes
+    total_v = total_effect_counterfactual(nodes, "V", zero_v).nodes
+    assert torch.mean((direct_v_s[..., STATE_INDEX["S"]] - nodes[..., STATE_INDEX["S"]]).abs()).item() > 0
+    assert torch.allclose(direct_v_s[..., STATE_INDEX["O"]], nodes[..., STATE_INDEX["O"]])
+    assert torch.mean((direct_v_o[..., STATE_INDEX["O"]] - nodes[..., STATE_INDEX["O"]]).abs()).item() > 0
+    assert torch.mean((total_v[..., STATE_INDEX["O"]] - nodes[..., STATE_INDEX["O"]]).abs()).item() > 0
+    assert torch.allclose(total_v[..., STATE_INDEX["I"]], nodes[..., STATE_INDEX["I"]])
+    assert torch.allclose(total_v[..., STATE_INDEX["R"]], nodes[..., STATE_INDEX["R"]])

@@ -182,6 +182,34 @@ oracle planted directions do not pass the strict edge evaluator. Treat the
 concept-aligned mechanistic negative result as provisional until the edge/null
 protocol is repaired and the oracle sanity test passes.
 
+Current V3.1 repaired planted causal evaluator command:
+
+```bash
+.venv/bin/python scripts/medical/v3_1/repair_planted_causal_evaluator.py \
+  --config configs/medical/v3/full.yaml \
+  --seeds 42 43 44 \
+  --output artifacts/medical/v3_1/repaired_causal_evaluator
+```
+
+The repaired evaluator separates direct effects from total reachability and
+uses paired bootstrap direct/non-edge controls instead of random directions in
+the low-rank planted activation space. Oracle sanity now passes:
+`ORACLE_CAUSAL_EVALUATOR_PASS`.
+
+Current V3.1 frozen concept-aligned re-evaluation command:
+
+```bash
+.venv/bin/python scripts/medical/v3_1/reevaluate_concept_aligned_with_repaired_evaluator.py \
+  --config configs/medical/v3/full.yaml \
+  --run-dir artifacts/medical/v3_1/concept_aligned_interventional_sctc \
+  --output artifacts/medical/v3_1/concept_aligned_interventional_sctc/repaired_recovery
+```
+
+Using the repaired evaluator, existing concept-aligned checkpoints still do not
+support a positive mechanistic claim because controls match or exceed the
+correct-concepts arm. Status:
+`CAUSAL_BASIS_NOT_RECOVERED_WITH_WEAK_ALIGNMENT`.
+
 Allowed V3 final statuses:
 
 - `V3_REAL_VALIDATED_NEGATIVE`

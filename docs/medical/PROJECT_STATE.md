@@ -282,3 +282,47 @@ directions fail the current edge/null evaluator because transitive/non-edge
 effects are accepted as false edges. The next required work is evaluator/null
 protocol repair, not another model or lambda search.
 ```
+
+C0 repaired the planted causal evaluator:
+
+```text
+output: artifacts/medical/v3_1/repaired_causal_evaluator
+status: ORACLE_CAUSAL_EVALUATOR_PASS
+seed_pass_count: 3
+ORACLE_DIRECT_EDGE_F1: 1.0
+ORACLE_TOTAL_EFFECT_F1: 1.0
+ORACLE_DIRECT_NEGATIVE_CONTROL_FPR: 0.0
+ORACLE_TOTAL_NEGATIVE_CONTROL_FPR: 0.0
+O_TO_S_ACCEPTED: true
+NO_REVERSE_CAUSAL_EFFECTS: true
+directional_null_status: NOT_APPLICABLE_LOW_RANK
+```
+
+The repaired evaluator uses Pearl-style `do` semantics for node interventions,
+separates direct edge recovery from total-effect reachability, and avoids
+full-dimensional random-direction nulls as the primary null for the low-rank
+planted activations.
+
+C1 then re-evaluated the existing Concept-Aligned Interventional SCTC
+checkpoints without retraining:
+
+```text
+output: artifacts/medical/v3_1/concept_aligned_interventional_sctc/repaired_recovery
+status: CAUSAL_BASIS_NOT_RECOVERED_WITH_WEAK_ALIGNMENT
+model_selection_performed: false
+correct_mean_direct_F1: 0.879630
+control_best_direct_F1: 1.0
+correct_mean_total_F1: 0.879630
+control_best_total_F1: 1.0
+```
+
+Current interpretation after C0/C1:
+
+```text
+The evaluator defect is repaired for the planted oracle. Existing
+concept-aligned checkpoints show strong repaired direct/total recovery in some
+seeds, but controls match or exceed the correct-concepts arm. Therefore the
+current weak-alignment configuration does not support a positive mechanistic
+claim. A final decoder-coupled concept SCTC is allowed only as the single C2
+methodological repair described in the project plan.
+```
