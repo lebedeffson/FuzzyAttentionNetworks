@@ -27,6 +27,22 @@ The codebase must still provide parsers, configs, synthetic-fixture tests,
 model code, SAE primitives, CLI scripts, and a gated research runner before
 reporting the access block.
 
+MIMIC-IV Demo support:
+
+```text
+local file: mimic-iv-clinical-database-demo-2.2.zip
+mode: zip reader, no extraction required
+status: DEMO_PIPELINE_COMPLETE
+cohort_rows: 140
+creatinine_rows: 1905
+aki_label_rows: 84
+window_rows: 841
+```
+
+The demo is used only for real-format pipeline debugging. Full training,
+selection, SAE, steering, and frozen test remain gated until full MIMIC-IV
+access is available.
+
 ## Current Result
 
 ```text

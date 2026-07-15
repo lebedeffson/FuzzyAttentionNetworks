@@ -18,12 +18,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output")
     args = parser.parse_args(argv)
     status = verify_mimic_access(args.root)
-    payload = {"status": status.status, "root": status.root, "missing_files": status.missing_files}
+    payload = {"status": status.status, "root": status.root, "dataset_kind": status.dataset_kind, "missing_files": status.missing_files}
     if args.output:
         Path(args.output).parent.mkdir(parents=True, exist_ok=True)
         Path(args.output).write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(json.dumps(payload, indent=2))
-    return 0 if status.status == "OK" else 2
+    return 0 if status.status in {"OK", "OK_DEMO"} else 2
 
 
 if __name__ == "__main__":

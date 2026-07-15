@@ -3,17 +3,36 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import torch
+import zipfile
+import gzip
+import io
 
 from fan.sae import TopKSAE, dictionary_health
 from mimic_aki.access import verify_mimic_access
 from mimic_aki.concepts import compute_window_concepts
+from mimic_aki.io import MimicSource
 from mimic_aki.preprocessing import TrainNormalizer
 
 
 def test_verify_access_blocks_without_root(monkeypatch):
     monkeypatch.delenv("MIMIC_IV_ROOT", raising=False)
+    monkeypatch.delenv("MIMIC_IV_DEMO_ZIP", raising=False)
+    monkeypatch.chdir("/tmp")
     status = verify_mimic_access()
     assert status.status == "BLOCKED_DATA_ACCESS"
+
+
+def test_demo_zip_source_reads_nested_gzip(tmp_path):
+    zip_path = tmp_path / "mimic-iv-clinical-database-demo-test.zip"
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        payload = io.BytesIO()
+        with gzip.GzipFile(fileobj=payload, mode="wb") as gz:
+            gz.write(b"subject_id,anchor_age\n1,65\n")
+        zf.writestr("mimic-iv-clinical-database-demo-test/hosp/patients.csv.gz", payload.getvalue())
+    source = MimicSource.open(zip_path)
+    df = source.read_csv("hosp/patients.csv.gz")
+    assert source.kind == "demo_zip"
+    assert df.iloc[0]["anchor_age"] == 65
 
 
 def test_concept_mask_for_missing_urine():

@@ -74,3 +74,7 @@ temp_results/
 # Streamlit
 .streamlit/
 artifacts/
+
+# Credentialed/clinical data archives must never be committed.
+mimic-iv*.zip
+mimic-iv*/

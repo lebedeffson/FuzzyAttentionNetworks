@@ -12,6 +12,11 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
 from mimic_aki.access import verify_mimic_access  # noqa: E402
+from mimic_aki.cohort import demo_cohort_summary  # noqa: E402
+from mimic_aki.features import demo_creatinine_events  # noqa: E402
+from mimic_aki.io import MimicSource  # noqa: E402
+from mimic_aki.kdigo import creatinine_kdigo_events  # noqa: E402
+from mimic_aki.windows import incident_aki_windows  # noqa: E402
 
 
 STAGES = [
@@ -49,6 +54,43 @@ def main(argv: list[str] | None = None) -> int:
     access = verify_mimic_access()
     rows = [{"stage": STAGES[0], "status": access.status, "reason": "MIMIC_IV_ROOT missing or incomplete" if access.status != "OK" else "OK"}]
     if access.status != "OK":
+        if access.status == "OK_DEMO":
+            source = MimicSource.open(access.root)
+            cohort, flow = demo_cohort_summary(source)
+            creat = demo_creatinine_events(source)
+            labels = creatinine_kdigo_events(creat)
+            event_times = creat.rename(columns={"charttime": "charttime"})[["stay_id", "charttime"]]
+            windows = incident_aki_windows(event_times, labels)
+            flow.to_csv(output / "cohort_flow.csv", index=False)
+            labels.to_parquet(output / "aki_labels_demo.parquet", index=False)
+            windows.to_parquet(output / "aki_windows_demo.parquet", index=False)
+            cohort.drop(columns=["subject_id"], errors="ignore").head(100).to_parquet(output / "cohort_demo_deidentified_preview.parquet", index=False)
+            rows = [
+                {"stage": STAGES[0], "status": "OK_DEMO", "reason": "MIMIC-IV demo zip detected"},
+                {"stage": STAGES[1], "status": "COMPLETED_DEMO", "reason": f"{len(cohort)} ICU stays parsed"},
+                {"stage": STAGES[2], "status": "COMPLETED_DEMO", "reason": f"{len(labels)} creatinine KDIGO events"},
+                {"stage": STAGES[3], "status": "COMPLETED_DEMO", "reason": f"{len(windows)} incident windows"},
+                {"stage": STAGES[4], "status": "COMPLETED_DEMO", "reason": "cohort_flow and demo manifests written"},
+            ]
+            for stage in STAGES[5:]:
+                rows.append({"stage": stage, "status": "SKIPPED_BY_GATE", "reason": "DEMO_DEBUG_ONLY_FULL_TRAINING_REQUIRES_FULL_MIMIC"})
+            final = {
+                "program": "MIMIC_AKI_FAN_SAE",
+                "status": "DEMO_PIPELINE_COMPLETE",
+                "dataset_kind": access.dataset_kind,
+                "root": access.root,
+                "config": cfg,
+                "stage_results": rows,
+                "counts": {
+                    "cohort_rows": int(len(cohort)),
+                    "creatinine_rows": int(len(creat)),
+                    "aki_label_rows": int(len(labels)),
+                    "window_rows": int(len(windows)),
+                },
+            }
+            (output / "program_status.json").write_text(json.dumps(final, indent=2), encoding="utf-8")
+            print(json.dumps(final, indent=2))
+            return 0
         for stage in STAGES[1:]:
             rows.append({"stage": stage, "status": "SKIPPED_BY_GATE", "reason": "BLOCKED_DATA_ACCESS"})
         final = {
