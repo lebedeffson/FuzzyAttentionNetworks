@@ -51,6 +51,22 @@ The demo is used only for real-format pipeline debugging. Full training,
 selection, SAE, steering, and frozen test remain gated until full MIMIC-IV
 access is available.
 
+MIMIC-AKI Demo engineering closure:
+
+```text
+command: .venv/bin/python scripts/mimic_aki/run_demo_engineering.py --config configs/mimic_aki/program_demo.yaml --output artifacts/mimic_aki/final_demo
+status: PRACTICE_CLOSED_MIMIC_DEMO_END_TO_END
+full_mimic_status: BLOCKED_FULL_MIMIC_ACCESS
+first FAN canonical path: src/fan/attention/
+ConceptFAN canonical path: src/fan/concept/temporal.py
+SAE canonical path: src/fan/sae/
+report: artifacts/mimic_aki/final_demo/report/report.html
+```
+
+This status means the engineering mechanics run end to end on MIMIC-IV Demo.
+It does not make clinical performance claims and does not replace full
+MIMIC-IV validation.
+
 ## Current Result
 
 ```text

@@ -284,3 +284,46 @@ Run V3:
   --output artifacts/medical/v3_real_final \
   --seeds 42 43 44
 ```
+
+## MIMIC-AKI Demo Engineering Closure
+
+Canonical branch:
+
+```text
+experiment/mimic-aki-fan-sae
+```
+
+Canonical MIMIC-AKI paths:
+
+```text
+first FAN canonical path: src/fan/attention/
+ConceptFAN canonical path: src/fan/concept/temporal.py
+SAE canonical path: src/fan/sae/
+MIMIC source path: src/mimic_aki/
+```
+
+Demo command:
+
+```bash
+.venv/bin/python scripts/mimic_aki/run_demo_engineering.py \
+  --config configs/mimic_aki/program_demo.yaml \
+  --output artifacts/mimic_aki/final_demo
+```
+
+MIMIC-IV Demo may be used only for engineering validation of ingestion,
+model wiring, SAE mechanics, steering mechanics, bundles, CLI wrappers, and
+reports. It must not be described as clinical or scientific performance
+evidence. Full MIMIC-IV remains an external access requirement for scientific
+validation.
+
+Terminal demo practice status:
+
+```text
+PRACTICE_CLOSED_MIMIC_DEMO_END_TO_END
+```
+
+Full-data scientific status remains:
+
+```text
+BLOCKED_FULL_MIMIC_ACCESS
+```

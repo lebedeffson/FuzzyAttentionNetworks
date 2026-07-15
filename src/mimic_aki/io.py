@@ -14,6 +14,12 @@ class MimicSource:
     kind: str
     zip_prefix: str = ""
 
+    def _safe_rel(self, rel: str) -> str:
+        p = Path(rel)
+        if p.is_absolute() or ".." in p.parts:
+            raise ValueError(f"unsafe MIMIC relative path: {rel}")
+        return rel
+
     @classmethod
     def open(cls, path: str | Path) -> "MimicSource":
         p = Path(path)
@@ -27,6 +33,7 @@ class MimicSource:
         return cls(path=p, kind="directory")
 
     def exists(self, rel: str) -> bool:
+        rel = self._safe_rel(rel)
         if self.kind in {"zip", "demo_zip"}:
             target = f"{self.zip_prefix}/{rel}" if self.zip_prefix else rel
             with zipfile.ZipFile(self.path) as zf:
@@ -34,6 +41,7 @@ class MimicSource:
         return (self.path / rel).exists()
 
     def read_csv(self, rel: str, **kwargs) -> pd.DataFrame:
+        rel = self._safe_rel(rel)
         if self.kind in {"zip", "demo_zip"}:
             target = f"{self.zip_prefix}/{rel}" if self.zip_prefix else rel
             with zipfile.ZipFile(self.path) as zf:

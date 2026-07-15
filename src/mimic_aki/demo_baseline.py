@@ -99,8 +99,11 @@ def _binary_metrics(y_true: np.ndarray, probability: np.ndarray) -> dict[str, fl
 def run_demo_logistic_baseline(feature_table: pd.DataFrame, seed: int = 20260715) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
     if feature_table.empty:
         raise ValueError("feature_table is empty")
-    split = split_subjects(feature_table["subject_id"].unique(), seed=seed)
-    data = feature_table.merge(split, on="subject_id", how="left")
+    if "split" in feature_table.columns:
+        data = feature_table.copy()
+    else:
+        split = split_subjects(feature_table["subject_id"].unique(), seed=seed)
+        data = feature_table.merge(split, on="subject_id", how="left")
     x = data[FEATURE_COLUMNS].astype("float32").to_numpy()
     y = data["label"].astype(int).to_numpy()
     train_mask = data["split"].eq("train").to_numpy()
