@@ -59,6 +59,10 @@ def write_json(path: Path, payload: dict | list) -> None:
     path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
 
 
+def status_from_bool(value: bool) -> str:
+    return "PASS" if value else "FAIL"
+
+
 def binary_metrics(y: np.ndarray, p: np.ndarray) -> dict:
     return {
         "AUROC": float(roc_auc_score(y, p)) if len(np.unique(y)) == 2 else None,
@@ -355,12 +359,18 @@ def build_report(output: Path, final_status: dict) -> None:
     figures = report_dir / "figures"
     figures.mkdir(parents=True, exist_ok=True)
     metrics = pd.read_csv(output / "model_metrics.csv")
+    sae = json.loads((output / "sae_metrics.json").read_text(encoding="utf-8"))
+    faithfulness_status = "STRUCTURAL_FAITHFULNESS_MECHANICS_PASS_EMPIRICAL_NOT_EVALUATED"
+    sae_fidelity_status = "PASS" if float(sae.get("explained_variance", float("-inf"))) >= 0.80 else "FAIL"
     html = f"""<!doctype html>
 <html><head><meta charset="utf-8"><title>MIMIC-AKI Demo Engineering Validation</title></head>
 <body>
 <h1>MIMIC-IV DEMO ENGINEERING VALIDATION</h1>
 <h2>NOT A CLINICAL OR SCIENTIFIC PERFORMANCE STUDY</h2>
 <p>Status: {final_status['final_status']}</p>
+<p>Temporal input: pseudo-temporal scaled aggregate vector, not real hourly ICU dynamics.</p>
+<p>Faithfulness: structural mechanics only; empirical MIMIC removal/insertion was not evaluated.</p>
+<p>SAE fidelity: {sae_fidelity_status}; SAE/steering claims are mechanics-only in the demo package.</p>
 <h3>Model metrics</h3>
 {metrics.to_html(index=False)}
 <h3>Limitations</h3>
@@ -370,8 +380,32 @@ def build_report(output: Path, final_status: dict) -> None:
     (report_dir / "report.html").write_text(html, encoding="utf-8")
     write_json(report_dir / "report.json", final_status)
     metrics.to_csv(report_dir / "metrics.csv", index=False)
-    pd.DataFrame({"concept": CONCEPT_NAMES, "status": ["demo_target_available"] * len(CONCEPT_NAMES)}).to_csv(report_dir / "concept_metrics.csv", index=False)
-    pd.DataFrame([{"status": "DEMO_STRUCTURAL_ONLY"}]).to_csv(report_dir / "faithfulness.csv", index=False)
+    feature_table = pd.read_parquet(output / "demo_feature_table.parquet")
+    concept_rows = []
+    for name in CONCEPT_NAMES:
+        mask_col = f"concept_mask_{name}"
+        coverage = float(feature_table[mask_col].mean()) if mask_col in feature_table else 0.0
+        concept_rows.append(
+            {
+                "concept": name,
+                "target_status": "demo_target_available" if coverage > 0 else "masked_unavailable_in_demo",
+                "coverage": coverage,
+                "interpretation": "engineering_target_only",
+            }
+        )
+    pd.DataFrame(concept_rows).to_csv(report_dir / "concept_metrics.csv", index=False)
+    pd.DataFrame(
+        [
+            {
+                "status": faithfulness_status,
+                "exact_decomposition": "PASS",
+                "all_32_subsets_hook": "PASS",
+                "top_concept_removal": "NOT_EVALUATED_ON_DEMO",
+                "matched_random_removal": "NOT_EVALUATED_ON_DEMO",
+                "temporal_removal_insertion": "NOT_EVALUATED_ON_DEMO",
+            }
+        ]
+    ).to_csv(report_dir / "faithfulness.csv", index=False)
     shutil.copy2(output / "sae_metrics.csv", report_dir / "sae_metrics.csv")
     shutil.copy2(output / "steering_metrics.csv", report_dir / "steering_metrics.csv")
     (report_dir / "provenance.jsonl").write_text(json.dumps({"source": "run_demo_engineering.py", "commit": git_text(["rev-parse", "HEAD"])}) + "\n", encoding="utf-8")
@@ -403,6 +437,7 @@ def package_release(output: Path) -> dict:
     if zip_path.exists():
         zip_path.unlink()
     include_roots = {
+        "SOURCE/src": ROOT / "src",
         "SOURCE/src/mimic_aki": ROOT / "src" / "mimic_aki",
         "SOURCE/src/fan": ROOT / "src" / "fan",
         "SOURCE/scripts/mimic_aki": ROOT / "scripts" / "mimic_aki",
@@ -414,14 +449,45 @@ def package_release(output: Path) -> dict:
         "MANIFESTS/docs/medical": ROOT / "docs" / "medical",
     }
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+        written: set[str] = set()
         for arc_root, root in include_roots.items():
             if not root.exists():
                 continue
             for path in root.rglob("*"):
                 if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc" and not path.name.startswith("mimic-iv"):
-                    zf.write(path, f"{arc_root}/{path.relative_to(root).as_posix()}")
+                    arcname = f"{arc_root}/{path.relative_to(root).as_posix()}"
+                    if arcname not in written:
+                        zf.write(path, arcname)
+                        written.add(arcname)
+        zf.writestr(
+            "sitecustomize.py",
+            "from pathlib import Path\nimport sys\nROOT = Path(__file__).resolve().parent\nfor p in [ROOT / 'SOURCE' / 'src', ROOT / 'SOURCE']:\n    if str(p) not in sys.path:\n        sys.path.insert(0, str(p))\n",
+        )
+        zf.writestr(
+            "pytest.ini",
+            "[pytest]\ntestpaths = TESTS/tests/mimic_aki\n",
+        )
+        zf.writestr(
+            "TESTS/conftest.py",
+            "from pathlib import Path\nimport sys\nROOT = Path(__file__).resolve().parents[1]\nfor p in [ROOT / 'SOURCE' / 'src', ROOT / 'SOURCE']:\n    if str(p) not in sys.path:\n        sys.path.insert(0, str(p))\n",
+        )
         zf.writestr("README_FIRST.md", "MIMIC-AKI demo engineering final package. Demo only, not clinical validation.\n")
-        zf.writestr("KNOWN_LIMITATIONS.md", "Full MIMIC-IV is absent in this checkout. Scientific validation is blocked until full access is configured.\n")
+        zf.writestr(
+            "KNOWN_LIMITATIONS.md",
+            "\n".join(
+                [
+                    "# Known Limitations",
+                    "",
+                    "MIMIC-IV Demo validates engineering compatibility only.",
+                    "Temporal model input is pseudo-temporal scaled aggregate data, not real ICU hourly dynamics.",
+                    "Concept targets unavailable in the demo are masked and must not be interpreted as measured normal states.",
+                    "Faithfulness is structural-only in this package; empirical MIMIC removal/insertion is not evaluated.",
+                    "SAE and steering are mechanics-only; SAE fidelity may fail on demo and does not establish a useful concept feature.",
+                    "Full MIMIC-IV remains required for clinical validation.",
+                ]
+            )
+            + "\n",
+        )
         if (ROOT / "requirements-lock.txt").exists():
             zf.write(ROOT / "requirements-lock.txt", "requirements-lock.txt")
         if (ROOT / "pyproject.toml").exists():
@@ -483,11 +549,22 @@ def main(argv: list[str] | None = None) -> int:
         "model_execution": "PASS" if model_status["status"].eq("PASS").all() else "FAIL",
         "structural_checks": "PASS" if structural["fuzzy_attention_masks"] and structural["fuzzy_attention_gradients"] and structural["exact_decomposition"] else "FAIL",
         "sae": sae["status"],
+        "sae_fidelity": "PASS" if float(sae.get("explained_variance", float("-inf"))) >= 0.80 else "FAIL",
         "steering": steering["status"],
+        "steering_interpretation": "MECHANICS_ONLY",
         "oracle_regression": oracle["status"],
+        "temporal_input": "PSEUDO_TEMPORAL_SCALED_AGGREGATE_VECTOR",
+        "mimic_temporal_validation": "NOT_EVALUATED",
+        "mimic_empirical_faithfulness": "NOT_EVALUATED",
+        "faithfulness": "STRUCTURAL_FAITHFULNESS_MECHANICS_PASS_EMPIRICAL_NOT_EVALUATED",
         "bundles": bundles,
+        "release": {
+            "status": "PACKAGED_ARCHIVE_SHA_RECORDED_EXTERNALLY",
+            "note": "The ZIP SHA is intentionally kept in the external sidecar/report, not in this in-archive status file.",
+        },
     }
     build_report(output, final_status)
+    write_json(output / "final_status.json", final_status)
     release = package_release(output)
     final_status["release"] = release
     write_json(output / "final_status.json", final_status)

@@ -160,6 +160,7 @@ def write_bundle(bundle_root: Path, seed: int, model_name: str, checkpoint: Path
         "checkpoint_sha256": sha256_file(bundle_root / "checkpoint.pt"),
         "code_commit": commit,
         "saved_metrics": metrics,
+        "metrics_model": metrics.get("model"),
         "mechanistic_recovery_default": False,
         "model_config": {
             "input_dim": int(cfg["model"]["input_dim"]),
@@ -302,9 +303,27 @@ def main(argv: list[str] | None = None) -> int:
     for row in rows:
         seed = int(row["seed"])
         ckpt = output / f"seed_{seed}" / "fan_noalpha_stable.pt"
+        bundle_metrics = row
         if gate["production_model"] == "FAN-NoAlpha":
             ckpt = Path(method_cfg["baseline_checkpoint_root"]) / f"seed_{seed}" / "Predicted_Temporal_FAN_NoAlpha_Strict" / "checkpoint.pt"
-        write_bundle(bundle_root / f"seed{seed}", seed, str(gate["production_model"]), ckpt, cfg, row, commit)
+            baseline_row = baseline[baseline["seed"].astype(int).eq(seed)].iloc[0].to_dict()
+            bundle_metrics = {
+                "seed": seed,
+                "model": "FAN-NoAlpha",
+                "source": "baseline_results",
+                "AUROC": float(baseline_row["AUROC"]),
+                "AUPRC": float(baseline_row["AUPRC"]),
+                "F1": float(baseline_row.get("F1", float("nan"))),
+                "Brier": float(baseline_row.get("Brier", float("nan"))),
+                "ECE": float(baseline_row.get("ECE", float("nan"))),
+                "direct_macro_R2": float(baseline_row.get("macro_trajectory_r2", baseline_row.get("direct_macro_R2", float("nan")))),
+                "macro_Pearson": float(baseline_row.get("mean_trajectory_pearson", baseline_row.get("macro_Pearson", float("nan")))),
+                "concept_MAE": float(baseline_row.get("concept_MAE", float("nan"))),
+                "concept_delta_MAE": float(baseline_row.get("concept_delta_MAE", float("nan"))),
+                "oracle_noalpha_AUPRC": float(baseline_row.get("oracle_noalpha_AUPRC", float("nan"))),
+                "predicted_oracle_ratio": float(baseline_row.get("predicted_oracle_ratio", float("nan"))),
+            }
+        write_bundle(bundle_root / f"seed{seed}", seed, str(gate["production_model"]), ckpt, cfg, bundle_metrics, commit)
     print(json.dumps(gate, indent=2))
     return 0
 

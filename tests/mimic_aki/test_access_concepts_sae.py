@@ -98,6 +98,15 @@ def test_concept_mask_for_missing_urine():
     concepts, mask = compute_window_concepts(window, {"baseline_creatinine": 1.0})
     assert concepts.shape == (5,)
     assert mask[1] == 0
+    assert mask[2] == 1
+    assert mask[3] == 0
+    assert mask[4] == 0
+
+
+def test_concept_mask_for_demo_creatinine_only_targets():
+    window = pd.DataFrame({"creatinine": [1.0, 1.2]})
+    _, mask = compute_window_concepts(window, {"baseline_creatinine": 1.0})
+    assert mask.tolist() == [1.0, 0.0, 0.0, 0.0, 0.0]
 
 
 def test_train_normalizer_uses_masks():

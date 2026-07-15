@@ -1,32 +1,46 @@
 # Dual Benchmark Final Status
 
-Status:
+Final status:
 
 ```text
-PRACTICE_CLOSED_DUAL_BENCHMARK_RESEARCH_COMPLETE
+SCIENTIFIC_RESEARCH_COMPLETE
+ENGINEERING_DEMO_COMPLETE
+STANDALONE_RELEASE_VALIDATED
+FULL_CLINICAL_VALIDATION_BLOCKED
 ```
 
-The final practice release has two separate roles.
+## Roles
 
 Med-CircuitBench is the scientific validation block. It contains the registered
-FAN and SCTC results, including the retained FAN-NoAlpha production model and
-the closed mixed or negative SCTC line. The release does not use a fixed AUPRC
-threshold such as 0.85 as a scientific gate. The result is judged by the
-registered experiment structure, oracle checks, faithfulness diagnostics,
-controls, and stability reporting.
+FAN and SCTC results, oracle-calibrated causal evaluation, faithfulness
+diagnostics, controls, replication evidence, and the closed SCTC specificity
+line.
 
 MIMIC-IV Demo is the engineering compatibility block. It verifies real-format
-ingestion, cohort construction, labels, model wiring, SAE mechanics, steering
-mechanics, bundles, CLI wrappers, and reporting. It is not clinical performance
-evidence and does not replace full MIMIC-IV.
+ingestion, cohort and incident AKI window construction, six model paths,
+ConceptFAN structural invariants, fuzzy-attention wiring, SAE mechanics,
+steering mechanics, bundles, CLI wrappers, reports, and release packaging.
 
-Final registered interpretation:
+Full MIMIC-IV is still required for clinical validation. Demo metrics must not
+be used as clinical performance evidence.
+
+## Final Registered Interpretation
 
 ```text
-Med-CircuitBench: scientific validation
-MIMIC-IV Demo: engineering compatibility
-Full MIMIC-IV: external data requirement for future clinical validation
+Med-CircuitBench:
+scientific validation complete
+
+MIMIC-IV Demo:
+engineering compatibility complete
+
+Standalone software release:
+validated from rebuilt nested archives
+
+Full MIMIC-IV:
+blocked external data requirement
 ```
 
-After this release, new hyperparameter experiments are forbidden unless a new
-explicitly versioned project is opened.
+The release does not use an artificial `AUPRC >= 0.85` final gate. Stability is
+reported as a scientific result, not tuned away by additional losses. New
+hyperparameter experiments are forbidden unless a new explicitly versioned
+project is opened.

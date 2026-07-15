@@ -333,7 +333,10 @@ BLOCKED_FULL_MIMIC_ACCESS
 Final dual-benchmark status:
 
 ```text
-PRACTICE_CLOSED_DUAL_BENCHMARK_RESEARCH_COMPLETE
+SCIENTIFIC_RESEARCH_COMPLETE
+ENGINEERING_DEMO_COMPLETE
+STANDALONE_RELEASE_VALIDATED
+FULL_CLINICAL_VALIDATION_BLOCKED
 ```
 
 Med-CircuitBench is the scientific validation block. MIMIC-IV Demo is only the
@@ -342,3 +345,14 @@ clinical or scientific performance evidence. Do not use an artificial
 `AUPRC >= 0.85` gate for the final practice status. Do not run additional
 hyperparameter experiments after the dual release unless the user explicitly
 starts a new versioned project.
+
+Standalone release command:
+
+```bash
+.venv/bin/python scripts/release/build_dual_benchmark_release.py \
+  --output artifacts/release \
+  --rebuild-nested
+```
+
+The release builder must rebuild nested Med-CircuitBench and MIMIC Demo
+archives from current source. Do not aggregate stale nested ZIPs.

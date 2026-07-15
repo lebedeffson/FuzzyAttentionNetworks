@@ -144,6 +144,8 @@ def feature_table_to_tensors(feature_table, feature_columns: list[str], concept_
     values = feature_table[feature_columns].astype("float32").to_numpy()
     concepts = feature_table[concept_columns].astype("float32").to_numpy()
     y = feature_table["label"].astype("float32").to_numpy()
+    # Demo has one aggregate feature row per window. The repeated scaled input
+    # exercises temporal model wiring only; it is not an ICU hourly trajectory.
     seq = np.stack(
         [
             values,
