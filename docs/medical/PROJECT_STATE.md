@@ -361,3 +361,37 @@ specific to correct concepts because permuted/random controls match the
 correct arm. The SCTC method-improvement line is therefore closed as a
 negative/mixed result unless a new explicitly versioned experiment is opened.
 ```
+
+The final allowed FAN stability experiment was then run:
+
+```text
+output: artifacts/medical/v3_1/fan_noalpha_stable
+status: FAN_NOALPHA_BASELINE_RETAINED
+stable_seed_pass_count: 3
+contribution_stability_pass: false
+mean_pairwise_contribution_spearman: 0.066667
+mean_pairwise_contribution_kendall_tau: 0.066667
+mean_top3_jaccard: 0.300000
+production_model: FAN-NoAlpha
+sctc_development_status: TERMINAL_NEGATIVE_CLOSED
+```
+
+FAN-Stable seed-level result:
+
+```text
+seed 42: AUPRC 0.828779, baseline drop -0.001072, direct R2 0.646562, Pearson 0.792612
+seed 43: AUPRC 0.797737, baseline drop 0.000097, direct R2 0.640029, Pearson 0.787773
+seed 44: AUPRC 0.840699, baseline drop 0.000023, direct R2 0.647805, Pearson 0.793594
+```
+
+Final practical status:
+
+```text
+Med-CircuitBench V3.1 Research Complete
+Production FAN: original FAN-NoAlpha
+Adaptive SCTC: sparse behavioral fidelity/audit component
+Repaired causal evaluator: benchmark tool
+Joint/Concept-Aligned/Decoder-Coupled SCTC: archived experimental ablations
+SCTC development: closed
+Papers: not packaged here
+```

@@ -1,0 +1,25 @@
+fan_noalpha_stable:
+  baseline_results: artifacts/medical/v3_real_final/results/fan_validation_metrics.csv
+  baseline_checkpoint_root: artifacts/medical/v3_predicted_fan_strict_direct
+  oracle_results: artifacts/medical/v3_alpha_ablation/no_alpha/oracle_fan_results.csv
+  oracle_manifest: artifacts/medical/v3_alpha_ablation/no_alpha/oracle_manifest.json
+
+  lambda_stability: 0.03
+  lambda_center_anchor: 0.01
+  safety_fallback_lambda_stability: 0.01
+  fallback_if_auprc_drop_gt: 0.01
+
+  max_epochs: 20
+  batch_size: 128
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-4
+  mask_probability: 0.05
+  noise_std: 0.01
+
+  gates:
+    auprc_drop_max: 0.01
+    direct_macro_r2_min: 0.60
+    pearson_min: 0.75
+    contribution_spearman_min: 0.50
+    decomposition_error_max: 1.0e-6
+    median_minimal_subset_max: 3

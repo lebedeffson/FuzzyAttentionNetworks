@@ -231,6 +231,22 @@ direct/total graph scores. Do not add another SCTC lambda/grid after C2; treat
 the C2 arm as closed unless the user explicitly starts a new versioned
 experiment.
 
+Current V3.1 FAN-NoAlpha-Stable command:
+
+```bash
+.venv/bin/python scripts/medical/v3_1/run_fan_noalpha_stable.py \
+  --config configs/medical/v3/full.yaml \
+  --method-config configs/medical/v3_1/fan_noalpha_stable.yaml \
+  --seeds 42 43 44 \
+  --output artifacts/medical/v3_1/fan_noalpha_stable
+```
+
+The single allowed FAN stability run is complete. Status:
+`FAN_NOALPHA_BASELINE_RETAINED`. Stable training preserved AUPRC and
+faithfulness on all three seeds, but cross-seed contribution Spearman remained
+below gate. Production FAN remains the original `FAN-NoAlpha`; contribution
+instability is a documented limitation.
+
 Allowed V3 final statuses:
 
 - `V3_REAL_VALIDATED_NEGATIVE`

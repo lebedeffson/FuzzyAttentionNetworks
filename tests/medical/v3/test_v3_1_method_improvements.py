@@ -6,6 +6,7 @@ from pathlib import Path
 import torch
 import pandas as pd
 import numpy as np
+import json
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "src"))
@@ -46,6 +47,7 @@ from fan.sctc.decoder_coupled import (
     build_decoder_coupled_model,
     decoder_concept_loss,
 )
+from fan.artifacts import AuditConfig, AuditRunner, FANBundle
 from scripts.medical.v3_1.run_planted_adaptive_sctc import (
     final_activation_stats,
     full_gate_status,
@@ -388,3 +390,48 @@ def test_c2_specificity_blocks_equal_control_f1():
     correct_direct_f1 = 1.0
     control_best_direct_f1 = 1.0
     assert not (correct_direct_f1 > control_best_direct_f1)
+
+
+def test_audit_mechanistic_recovery_is_disabled_by_default(tmp_path):
+    manifest = {
+        "bundle_type": "fan",
+        "model_name": "dummy",
+        "seed": 42,
+        "checkpoint": "checkpoint.pt",
+        "saved_metrics": {"AUPRC": 0.8},
+    }
+    (tmp_path / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    bundle = FANBundle.load(tmp_path)
+    report = AuditRunner(AuditConfig()).run(bundle)
+    assert report.metrics["mechanistic_recovery_requested"] is False
+    assert "mechanistic_recovery_disabled_by_default_requires_known_mechanism_benchmark" in report.limitations
+
+
+def test_fan_bundle_manifest_requires_frozen_checkpoint(tmp_path):
+    manifest = {
+        "bundle_type": "fan",
+        "model_name": "dummy",
+        "seed": 42,
+        "checkpoint": "checkpoint.pt",
+        "model_config": {
+            "input_dim": 10,
+            "sequence_length": 4,
+            "latent_dim": 8,
+            "encoder_heads": 1,
+            "encoder_layers": 1,
+            "encoder_ffn": 16,
+        },
+    }
+    (tmp_path / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    bundle = FANBundle.load(tmp_path)
+    assert bundle.checkpoint_path == tmp_path / "checkpoint.pt"
+
+
+def test_c2_failure_status_is_terminal():
+    allowed_terminal = {
+        "DECODER_COUPLED_FIDELITY_FAIL",
+        "DECODER_COUPLED_RECOVERY_NOT_SPECIFIC",
+        "DECODER_COUPLED_RECOVERY_FAIL",
+        "DECODER_COUPLING_IMPLEMENTATION_FAIL",
+    }
+    assert "DECODER_COUPLED_FIDELITY_FAIL" in allowed_terminal
