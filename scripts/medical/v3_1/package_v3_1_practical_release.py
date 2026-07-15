@@ -176,7 +176,7 @@ def main(argv: list[str] | None = None) -> int:
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     status = subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True)
     manifest = {
-        "status": "Q1_EMPIRICAL_EXTENSION_NEURAL_VALIDATED" if q1_status == "Q1_EMPIRICAL_EXTENSION_NEURAL_VALIDATED" else "SCIENTIFIC_RESEARCH_COMPLETE",
+        "status": "SCIENTIFIC_RESEARCH_COMPLETE",
         "code_commit": commit,
         "git_status_clean": status.strip() == "",
         "standalone_release": "VALIDATED_BY_UNPACKED_TESTS_REQUIRED",

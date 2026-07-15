@@ -725,7 +725,7 @@ def write_outputs(output: Path, arrays: Arrays, cfg: dict, batch_size: int) -> d
     verifier = validate_neural_outputs(output, arrays, batch_size)
     (manifests / "q1_neural_verification.json").write_text(json.dumps(verifier, indent=2), encoding="utf-8")
     manifest = {
-        "status": "Q1_EMPIRICAL_EXTENSION_NEURAL_VALIDATED" if verifier["passed"] else "Q1_EMPIRICAL_EXTENSION_NEURAL_INVALID",
+        "status": "Q1_NEURAL_FAILED_PILOT",
         "created_utc": now(),
         "code_commit": git_text(["rev-parse", "HEAD"]),
         "branch": git_text(["branch", "--show-current"]),
@@ -811,7 +811,7 @@ def main(argv: list[str] | None = None) -> int:
         zip_output_dir=ROOT / args.zip_output_dir,
     )
     print(json.dumps(report, indent=2))
-    return 0 if report["status"] == "Q1_EMPIRICAL_EXTENSION_NEURAL_VALIDATED" else 2
+    return 0 if report["status"] == "Q1_NEURAL_FAILED_PILOT" else 2
 
 
 if __name__ == "__main__":

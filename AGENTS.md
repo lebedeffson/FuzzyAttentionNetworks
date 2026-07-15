@@ -263,7 +263,7 @@ This contour is not a scientific Q1 gate. It is retained only as an
 `ORACLE_CONCEPT_SURROGATE_ABLATION` because it uses generator states as
 features and shallow surrogate estimators.
 
-Current Q1 neural empirical extension command:
+Q1 neural pilot command:
 
 ```bash
 .venv/bin/python scripts/medical/v3_1/run_q1_neural_empirical_extension.py \
@@ -276,12 +276,24 @@ Current Q1 neural empirical extension command:
   --zip-output-dir artifacts/medical
 ```
 
-The only allowed completed Q1 status is
-`Q1_EMPIRICAL_EXTENSION_NEURAL_VALIDATED`. It requires 30 real checkpointed
-PyTorch fits for each arm, raw `[B,36,27]` model inputs, checkpoint SHA
-independence, model-loading verification, episode-level local contributions,
-frozen interventions, held-out leakage audit, raw-input perturbations, and a
-clean committed Git state for the final archive.
+The `9715e4b` neural contour is a failed pilot, not a completed Q1 result.
+Status: `Q1_NEURAL_FAILED_PILOT`. It must not be reported as
+`Q1_EMPIRICAL_EXTENSION_NEURAL_VALIDATED`.
+
+Current canonical 3-seed parity command:
+
+```bash
+.venv/bin/python scripts/medical/v3_1/verify_canonical_3_seed_parity.py \
+  --output artifacts/medical/canonical_3_seed_parity \
+  --package \
+  --zip-output-dir artifacts/medical
+```
+
+The next Q1 neural grid is forbidden until this gate reports
+`CANONICAL_3_SEED_PARITY_PASS`. The gate checks the canonical V3 configuration
+(`d=128`, 4 transformer layers, 4 heads, FFN=512, up to 50 epochs), three seeds
+42/43/44, existing canonical ConceptFAN-NoAlpha and plain Transformer
+checkpoints, and AUPRC parity near the established 0.82 level.
 
 Allowed V3 final statuses:
 
