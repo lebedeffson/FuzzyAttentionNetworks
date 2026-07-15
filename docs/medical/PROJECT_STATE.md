@@ -208,3 +208,28 @@ Interpretation: adaptive SCTC improved utilization/fidelity but did not recover
 the planted mechanism under strict Hungarian + intervention + negative-control
 criteria.
 ```
+
+V3.1 Joint Interventional Causal SCTC was added and run as a new method arm:
+
+```text
+output: artifacts/medical/v3_1/joint_causal_sctc
+stages: B0 baseline, B1 compact incoherent, B2 joint transition, B3 interventional causal
+status: UNSUPERVISED_CAUSAL_BASIS_NOT_IDENTIFIABLE
+seed_pass_count: 0
+best_stage: B2_joint_transition
+best_config_id: tr0.01
+best_CircuitF1: 0.0
+```
+
+Key interpretation:
+
+```text
+Fidelity remains strong across B1/B2/B3.
+Whitening and compact rank-based capacities reduce usage but often make
+aggregate L0 too low for the preregistered sparsity gate.
+No B-stage recovers accepted planted nodes or edges under the strict
+intervention/null criteria.
+This supports the negative conclusion that unsupervised reconstruction plus
+sparse transition/intervention objectives are still insufficient to identify
+the planted causal basis in this setup.
+```

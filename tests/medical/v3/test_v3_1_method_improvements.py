@@ -25,6 +25,14 @@ from fan.sctc.adaptive import (
     layer_specific_capacity,
     train_adaptive_sctc,
 )
+from fan.sctc.joint_causal import (
+    CompactCausalTranscoder,
+    JointCausalSCTC,
+    WhiteningTransform,
+    compact_capacity,
+    compact_top_k,
+    decoder_incoherence,
+)
 from scripts.medical.v3_1.run_planted_adaptive_sctc import (
     final_activation_stats,
     full_gate_status,
@@ -175,3 +183,34 @@ def test_adaptive_training_respects_min_epochs_before_early_stopping():
         torch.device("cpu"),
     )
     assert len(log) >= 3
+
+
+def test_joint_causal_whitening_roundtrip_shape_and_rank():
+    x = torch.randn(20, 5, 12)
+    whitening = WhiteningTransform.fit(x, variance=0.995)
+    xw = whitening.whiten(x)
+    xr = whitening.unwhiten(xw)
+    assert xw.shape[-1] <= x.shape[-1]
+    assert xr.shape == x.shape
+    assert torch.mean((xr - x) ** 2).item() < 1.0
+
+
+def test_compact_capacity_and_topk_are_registered():
+    x = torch.randn(20, 4, 10)
+    cap = compact_capacity(x, multiplier=2.0, minimum=4, maximum=32)
+    assert cap in {4, 6, 8, 12, 16, 24, 32}
+    assert compact_top_k(4) == 2
+    assert compact_top_k(12) == 4
+    assert compact_top_k(24) == 6
+    assert compact_top_k(32) == 8
+
+
+def test_joint_causal_forward_outputs_all_layers():
+    xs = [torch.randn(6, 3, 8) for _ in range(4)]
+    transcoders = [CompactCausalTranscoder.from_train_activation(x, n_features=4, top_k=2) for x in xs]
+    model = JointCausalSCTC(transcoders)
+    out = model(xs)
+    assert len(out["z"]) == 4
+    assert len(model.transitions) == 3
+    assert out["reconstructed"][0].shape == xs[0].shape
+    assert decoder_incoherence(transcoders[0]).item() >= 0.0

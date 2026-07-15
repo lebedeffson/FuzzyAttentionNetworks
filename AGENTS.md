@@ -131,6 +131,23 @@ The first full Stage A run is a validated negative:
 `PLANTED_ADAPTIVE_NEGATIVE`. Fidelity and dictionary utilization improve, but
 strict node/edge recovery and negative-control gates do not pass.
 
+Current V3.1 joint causal SCTC command:
+
+```bash
+.venv/bin/python scripts/medical/v3_1/run_joint_causal_sctc.py \
+  --config configs/medical/v3/full.yaml \
+  --method-config configs/medical/v3_1/method_improvements.yaml \
+  --seeds 42 43 44 \
+  --baseline artifacts/medical/v3_1/planted_adaptive_sctc \
+  --output artifacts/medical/v3_1/joint_causal_sctc \
+  --continue-until-terminal
+```
+
+The first full B0-B3 run is also negative:
+`UNSUPERVISED_CAUSAL_BASIS_NOT_IDENTIFIABLE`. Fidelity remains high, but
+compact whitening, incoherence, sparse transitions, and interventional
+consistency still do not recover the planted causal basis under strict gates.
+
 Allowed V3 final statuses:
 
 - `V3_REAL_VALIDATED_NEGATIVE`
