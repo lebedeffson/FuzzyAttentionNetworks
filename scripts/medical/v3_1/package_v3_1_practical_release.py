@@ -201,7 +201,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     zip_dir = Path(args.zip_output_dir)
     zip_dir.mkdir(parents=True, exist_ok=True)
-    short = commit[:8]
+    short = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, text=True).strip()
     zip_path = zip_dir / f"Med_CircuitBench_V3_1_RESEARCH_COMPLETE_{short}.zip"
     if zip_path.exists():
         zip_path.unlink()
