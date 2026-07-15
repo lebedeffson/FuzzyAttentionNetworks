@@ -67,6 +67,16 @@ This status means the engineering mechanics run end to end on MIMIC-IV Demo.
 It does not make clinical performance claims and does not replace full
 MIMIC-IV validation.
 
+Dual benchmark release:
+
+```text
+status: PRACTICE_CLOSED_DUAL_BENCHMARK_RESEARCH_COMPLETE
+Med-CircuitBench role: scientific validation
+MIMIC-IV Demo role: engineering compatibility
+AUPRC 0.85 gate: not used
+new hyperparameter experiments after release: forbidden
+```
+
 ## Current Result
 
 ```text

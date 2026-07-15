@@ -327,3 +327,18 @@ Full-data scientific status remains:
 ```text
 BLOCKED_FULL_MIMIC_ACCESS
 ```
+
+## Dual Benchmark Release
+
+Final dual-benchmark status:
+
+```text
+PRACTICE_CLOSED_DUAL_BENCHMARK_RESEARCH_COMPLETE
+```
+
+Med-CircuitBench is the scientific validation block. MIMIC-IV Demo is only the
+engineering compatibility block. Do not report MIMIC-IV Demo metrics as
+clinical or scientific performance evidence. Do not use an artificial
+`AUPRC >= 0.85` gate for the final practice status. Do not run additional
+hyperparameter experiments after the dual release unless the user explicitly
+starts a new versioned project.
