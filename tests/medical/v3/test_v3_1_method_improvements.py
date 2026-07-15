@@ -33,6 +33,13 @@ from fan.sctc.joint_causal import (
     compact_top_k,
     decoder_incoherence,
 )
+from fan.sctc.concept_aligned import (
+    ConceptAlignedInterventionalSCTC,
+    ConceptAlignedInterventionalTrainConfig,
+    correlation_matrix,
+    sinkhorn,
+    train_concept_aligned_interventional_sctc,
+)
 from scripts.medical.v3_1.run_planted_adaptive_sctc import (
     final_activation_stats,
     full_gate_status,
@@ -214,3 +221,56 @@ def test_joint_causal_forward_outputs_all_layers():
     assert len(model.transitions) == 3
     assert out["reconstructed"][0].shape == xs[0].shape
     assert decoder_incoherence(transcoders[0]).item() >= 0.0
+
+
+def test_sinkhorn_returns_finite_soft_assignment():
+    scores = torch.randn(5, 2)
+    assignment = sinkhorn(scores)
+    assert torch.isfinite(assignment).all()
+    assert assignment.shape == scores.shape
+    assert torch.all(assignment >= 0)
+    assert torch.allclose(assignment.sum(dim=0), torch.ones(2), atol=1e-4)
+
+
+def test_correlation_matrix_shape():
+    features = torch.randn(4, 3, 6)
+    targets = torch.randn(4, 3, 2)
+    corr = correlation_matrix(features, targets)
+    assert corr.shape == (6, 2)
+    assert torch.isfinite(corr).all()
+
+
+def test_concept_aligned_model_emits_layer_readouts():
+    xs = [torch.randn(6, 3, 8) for _ in range(4)]
+    transcoders = [CompactCausalTranscoder.from_train_activation(x, n_features=4, top_k=2) for x in xs]
+    model = ConceptAlignedInterventionalSCTC(transcoders)
+    out = model(xs)
+    preds = model.concept_predictions(out["z"])
+    assert [p.shape[-1] for p in preds] == [1, 1, 1, 2]
+
+
+def test_concept_aligned_training_uses_downstream_callback():
+    xs = [torch.randn(10, 4, 6) for _ in range(4)]
+    concepts = torch.randn(10, 4, 5)
+    calls = {"count": 0}
+
+    def behavior_forward(_layer: int, repl: torch.Tensor) -> torch.Tensor:
+        return repl.mean(dim=(1, 2))
+
+    def downstream_forward(layer: int, repl: torch.Tensor) -> torch.Tensor:
+        calls["count"] += 1
+        return xs[layer + 1][: repl.shape[0]].to(repl.device) + 0.0 * repl.mean()
+
+    model, log = train_concept_aligned_interventional_sctc(
+        xs,
+        concepts,
+        behavior_forward,
+        downstream_forward,
+        torch.zeros(10),
+        ConceptAlignedInterventionalTrainConfig(epochs=1, batch_size=5, lambda_interventional=0.03),
+        torch.device("cpu"),
+        control_seed=123,
+    )
+    assert isinstance(model, ConceptAlignedInterventionalSCTC)
+    assert calls["count"] > 0
+    assert {"concept_loss", "matching_loss", "interventional_loss"}.issubset(log.columns)

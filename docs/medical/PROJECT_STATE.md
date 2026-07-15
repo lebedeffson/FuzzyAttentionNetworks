@@ -233,3 +233,26 @@ This supports the negative conclusion that unsupervised reconstruction plus
 sparse transition/intervention objectives are still insufficient to identify
 the planted causal basis in this setup.
 ```
+
+V3.1 Concept-Aligned Interventional SCTC was added and run as the weakly
+supervised mechanistic arm:
+
+```text
+output: artifacts/medical/v3_1/concept_aligned_interventional_sctc
+controls: correct concepts, permuted concepts, Gaussian random targets
+status: CAUSAL_BASIS_NOT_RECOVERED_WITH_WEAK_ALIGNMENT
+reason: CONCEPT_CONTROLS_NOT_SEPARATED
+seed_pass_count: 0
+correct_mean_CircuitF1: 0.0
+control_best_CircuitF1: 0.0
+```
+
+Key interpretation:
+
+```text
+Weak layer-specific concept alignment preserved reconstruction/prediction
+fidelity, but it did not recover accepted planted nodes or edges under the
+strict intervention/null protocol. Correct concept targets did not separate
+from permuted or random targets, so the weakly supervised mechanistic claim is
+not supported by this run.
+```

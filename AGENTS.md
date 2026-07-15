@@ -148,6 +148,25 @@ The first full B0-B3 run is also negative:
 compact whitening, incoherence, sparse transitions, and interventional
 consistency still do not recover the planted causal basis under strict gates.
 
+Current V3.1 concept-aligned interventional SCTC command:
+
+```bash
+.venv/bin/python scripts/medical/v3_1/run_concept_aligned_interventional_sctc.py \
+  --config configs/medical/v3/full.yaml \
+  --method-config configs/medical/v3_1/method_improvements.yaml \
+  --seeds 42 43 44 \
+  --baseline-adaptive artifacts/medical/v3_1/planted_adaptive_sctc \
+  --baseline-joint artifacts/medical/v3_1/joint_causal_sctc \
+  --output artifacts/medical/v3_1/concept_aligned_interventional_sctc \
+  --continue-until-terminal
+```
+
+The first full weakly supervised run is also negative:
+`CAUSAL_BASIS_NOT_RECOVERED_WITH_WEAK_ALIGNMENT`. Fidelity remains strong and
+dictionary utilization is controlled, but correct concept alignment does not
+separate from permuted/random concept controls and no strict node/edge recovery
+is accepted.
+
 Allowed V3 final statuses:
 
 - `V3_REAL_VALIDATED_NEGATIVE`

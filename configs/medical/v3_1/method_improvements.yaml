@@ -97,6 +97,36 @@ concept_aligned_sctc:
   matching: hungarian_abs_correlation
   compare_to: unsupervised_adaptive_sctc
 
+concept_aligned_interventional_sctc:
+  enabled: true
+  primary_claim: weakly_supervised_mechanistic_module
+  layer_targets:
+    layer_0: [I]
+    layer_1: [R]
+    layer_2: [V]
+    layer_3: [O, S]
+  controls:
+    - correct_concepts
+    - permuted_concepts
+    - random_targets
+  lambda_behavior: 0.10
+  lambda_sparse: 1.0e-5
+  lambda_transition: 0.03
+  lambda_interventional: 0.03
+  lambda_concept: 0.10
+  lambda_matching: 0.03
+  lambda_incoherence: 0.01
+  fallback:
+    only_if_fidelity_fails: true
+    lambda_concept: 0.03
+  training:
+    epochs: 25
+    batch_size: 128
+    learning_rate: 0.001
+  replication:
+    seed: 20260717
+    episodes: 10000
+
 joint_causal_sctc:
   output_name: joint_causal_sctc
   capacity:
