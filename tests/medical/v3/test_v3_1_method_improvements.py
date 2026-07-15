@@ -47,6 +47,7 @@ from scripts.medical.v3_1.run_planted_adaptive_sctc import (
     node_matching,
     node_recovery_metrics,
 )
+from scripts.medical.v3_1.audit_concept_aligned_negative_result import build_validity_gate
 from med_circuitbench.planted.model import PlantedCircuitModel
 
 
@@ -274,3 +275,38 @@ def test_concept_aligned_training_uses_downstream_callback():
     assert isinstance(model, ConceptAlignedInterventionalSCTC)
     assert calls["count"] > 0
     assert {"concept_loss", "matching_loss", "interventional_loss"}.issubset(log.columns)
+
+
+def test_negative_result_validity_gate_blocks_when_oracle_fails(tmp_path):
+    gradients = pd.DataFrame(
+        [
+            {
+                "alignment_reaches_encoder": True,
+                "alignment_reaches_decoder": False,
+            }
+        ]
+    )
+    continuous = pd.DataFrame(
+        [
+            {"stage": "correct_concepts", "concept_R2": 0.9},
+            {"stage": "permuted_concepts", "concept_R2": 0.1},
+        ]
+    )
+    bootstrap = pd.DataFrame(
+        [
+            {
+                "metric": "concept_R2",
+                "ci_lower": 0.1,
+            }
+        ]
+    )
+    gate = build_validity_gate(
+        {"status": "FAIL"},
+        gradients,
+        continuous,
+        bootstrap,
+        {"status": "PASS", "prediction_rows": 30000},
+        tmp_path,
+    )
+    assert gate["status"] == "EVALUATION_PROTOCOL_INVALID"
+    assert gate["scientific_gate"]["oracle_evaluator"] == "FAIL"

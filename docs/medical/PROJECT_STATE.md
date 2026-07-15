@@ -256,3 +256,29 @@ strict intervention/null protocol. Correct concept targets did not separate
 from permuted or random targets, so the weakly supervised mechanistic claim is
 not supported by this run.
 ```
+
+Diagnostic closure was then added to test whether this negative result can be
+interpreted as a valid mechanistic failure:
+
+```text
+output: artifacts/medical/v3_1/concept_aligned_interventional_sctc/diagnostic_closure
+status: EVALUATION_PROTOCOL_INVALID
+reason: ORACLE_PLANTED_DIRECTIONS_FAIL_EVALUATOR
+oracle node precision/recall: 1.0 / 1.0
+oracle edge precision/recall: 0.266667 / 0.8
+oracle negative-control FPR: 0.733333
+alignment gradient to encoder: PASS
+correct concept objective vs controls: PASS
+continuous control separation: PASS
+replication freeze audit: PASS_WITH_FREEZE_RISK
+```
+
+Current interpretation:
+
+```text
+The concept-aligned arm is engineered and evaluated, and it preserves fidelity,
+but the strong causal-basis negative claim is blocked. The oracle planted
+directions fail the current edge/null evaluator because transitive/non-edge
+effects are accepted as false edges. The next required work is evaluator/null
+protocol repair, not another model or lambda search.
+```

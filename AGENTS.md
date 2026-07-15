@@ -167,6 +167,21 @@ dictionary utilization is controlled, but correct concept alignment does not
 separate from permuted/random concept controls and no strict node/edge recovery
 is accepted.
 
+Current V3.1 concept-aligned negative-result diagnostic command:
+
+```bash
+.venv/bin/python scripts/medical/v3_1/audit_concept_aligned_negative_result.py \
+  --config configs/medical/v3/full.yaml \
+  --run-dir artifacts/medical/v3_1/concept_aligned_interventional_sctc \
+  --output artifacts/medical/v3_1/concept_aligned_interventional_sctc/diagnostic_closure \
+  --seeds 42 43 44
+```
+
+The diagnostic closure currently reports `EVALUATION_PROTOCOL_INVALID` because
+oracle planted directions do not pass the strict edge evaluator. Treat the
+concept-aligned mechanistic negative result as provisional until the edge/null
+protocol is repaired and the oracle sanity test passes.
+
 Allowed V3 final statuses:
 
 - `V3_REAL_VALIDATED_NEGATIVE`
