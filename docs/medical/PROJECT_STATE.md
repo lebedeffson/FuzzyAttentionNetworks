@@ -326,3 +326,38 @@ current weak-alignment configuration does not support a positive mechanistic
 claim. A final decoder-coupled concept SCTC is allowed only as the single C2
 methodological repair described in the project plan.
 ```
+
+C2 Decoder-Coupled Concept SCTC was implemented and run as the single final
+mechanistic repair:
+
+```text
+output: artifacts/medical/v3_1/decoder_coupled_concept_sctc
+status: DECODER_COUPLED_FIDELITY_FAIL
+scientific_gate_evaluated: true
+technical_gate_pass: true
+oracle_evaluator_status: ORACLE_CAUSAL_EVALUATOR_PASS
+fidelity_gate_pass: false
+recovery_gate_pass: true
+specificity_gate_pass: false
+correct_mean_direct_F1: 0.783069
+control_best_direct_F1: 0.888889
+```
+
+Correct-concepts seed-level C2 result:
+
+```text
+seed 42: delta_AUPRC 0.000002, probability_MAE 0.000451, direct_F1 0.888889
+seed 43: delta_AUPRC 0.000056, probability_MAE 0.036568, direct_F1 0.571429
+seed 44: delta_AUPRC 0.015455, probability_MAE 0.202461, direct_F1 0.888889
+```
+
+Interpretation after C2:
+
+```text
+Decoder-coupled semantic supervision reaches the tied sparse dictionary and
+frozen probes remain unchanged. However, the C2 arm fails the preregistered
+fidelity gate on two of three seeds, and recovered graph scores are not
+specific to correct concepts because permuted/random controls match the
+correct arm. The SCTC method-improvement line is therefore closed as a
+negative/mixed result unless a new explicitly versioned experiment is opened.
+```

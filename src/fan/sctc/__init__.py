@@ -27,6 +27,14 @@ from .concept_aligned import (
     sinkhorn,
     train_concept_aligned_interventional_sctc,
 )
+from .decoder_coupled import (
+    DecoderCoupledConceptSCTC,
+    DecoderCoupledTrainConfig,
+    TiedWhitenedTranscoder,
+    build_decoder_coupled_model,
+    fit_frozen_probe,
+    train_decoder_coupled_sctc,
+)
 
 __all__ = [
     "AdaptiveSCTCTrainConfig",
@@ -34,11 +42,14 @@ __all__ = [
     "CompactCausalTranscoder",
     "ConceptAlignedInterventionalSCTC",
     "ConceptAlignedInterventionalTrainConfig",
+    "DecoderCoupledConceptSCTC",
+    "DecoderCoupledTrainConfig",
     "JointCausalSCTC",
     "JointCausalTrainConfig",
     "LAYER_CONCEPT_INDICES",
     "SparseTranscoder",
     "SCTCTrainConfig",
+    "TiedWhitenedTranscoder",
     "TopKAnnealingSchedule",
     "WhiteningTransform",
     "compact_capacity",
@@ -48,10 +59,13 @@ __all__ = [
     "effective_rank",
     "feature_catalog",
     "fidelity_metrics",
+    "fit_frozen_probe",
     "layer_specific_capacity",
     "sinkhorn",
+    "build_decoder_coupled_model",
     "train_adaptive_sctc",
     "train_concept_aligned_interventional_sctc",
+    "train_decoder_coupled_sctc",
     "train_joint_causal_sctc",
     "train_sctc",
 ]

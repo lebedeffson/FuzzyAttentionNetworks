@@ -40,6 +40,12 @@ from fan.sctc.concept_aligned import (
     sinkhorn,
     train_concept_aligned_interventional_sctc,
 )
+from fan.sctc.decoder_coupled import (
+    DecoderCoupledTrainConfig,
+    TiedWhitenedTranscoder,
+    build_decoder_coupled_model,
+    decoder_concept_loss,
+)
 from scripts.medical.v3_1.run_planted_adaptive_sctc import (
     final_activation_stats,
     full_gate_status,
@@ -348,3 +354,37 @@ def test_direct_edge_counterfactual_separates_direct_and_total_effects():
     assert torch.mean((total_v[..., STATE_INDEX["O"]] - nodes[..., STATE_INDEX["O"]]).abs()).item() > 0
     assert torch.allclose(total_v[..., STATE_INDEX["I"]], nodes[..., STATE_INDEX["I"]])
     assert torch.allclose(total_v[..., STATE_INDEX["R"]], nodes[..., STATE_INDEX["R"]])
+
+
+def test_encoder_decoder_weights_are_exactly_tied():
+    x = torch.randn(20, 4, 8)
+    model = TiedWhitenedTranscoder.from_train_activation(x, n_features=4, top_k=2)
+    assert model.exact_tying_error().item() == 0.0
+    assert torch.allclose(model.decoder_weight.T, model.encoder_weight)
+
+
+def test_concept_loss_reaches_decoder_coupled_dictionary():
+    xs = [torch.randn(10, 3, 8) for _ in range(4)]
+    concepts = torch.randn(10, 3, 5)
+    model, _, _, _ = build_decoder_coupled_model(xs, concepts, DecoderCoupledTrainConfig(), torch.device("cpu"))
+    out = model(xs)
+    loss = decoder_concept_loss(model, out, concepts)
+    loss.backward()
+    grad_norm = torch.sqrt(sum((t.encoder_weight.grad**2).sum() for t in model.transcoders if t.encoder_weight.grad is not None))
+    assert grad_norm.item() > 1e-10
+
+
+def test_frozen_probe_parameters_do_not_change_after_concept_backward():
+    xs = [torch.randn(10, 3, 8) for _ in range(4)]
+    concepts = torch.randn(10, 3, 5)
+    model, _, _, _ = build_decoder_coupled_model(xs, concepts, DecoderCoupledTrainConfig(), torch.device("cpu"))
+    before = model.probe_hashes()
+    decoder_concept_loss(model, model(xs), concepts).backward()
+    assert model.probe_hashes() == before
+    assert all(not buffer.requires_grad for probe in model.probes for buffer in probe.buffers())
+
+
+def test_c2_specificity_blocks_equal_control_f1():
+    correct_direct_f1 = 1.0
+    control_best_direct_f1 = 1.0
+    assert not (correct_direct_f1 > control_best_direct_f1)

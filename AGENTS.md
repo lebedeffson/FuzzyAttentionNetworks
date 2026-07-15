@@ -210,6 +210,27 @@ support a positive mechanistic claim because controls match or exceed the
 correct-concepts arm. Status:
 `CAUSAL_BASIS_NOT_RECOVERED_WITH_WEAK_ALIGNMENT`.
 
+Current V3.1 decoder-coupled concept SCTC command:
+
+```bash
+.venv/bin/python scripts/medical/v3_1/run_decoder_coupled_concept_sctc.py \
+  --config configs/medical/v3/full.yaml \
+  --method-config configs/medical/v3_1/decoder_coupled_concept_sctc.yaml \
+  --evaluator artifacts/medical/v3_1/repaired_causal_evaluator \
+  --baseline artifacts/medical/v3_1/concept_aligned_interventional_sctc \
+  --seeds 42 43 44 \
+  --output artifacts/medical/v3_1/decoder_coupled_concept_sctc \
+  --full
+```
+
+The single allowed C2 decoder-coupled run is complete. Status:
+`DECODER_COUPLED_FIDELITY_FAIL`. Technical coupling passes and the repaired
+oracle evaluator remains frozen/pass, but behavioral fidelity fails on two of
+three correct-concepts seeds and controls match the correct arm on recovered
+direct/total graph scores. Do not add another SCTC lambda/grid after C2; treat
+the C2 arm as closed unless the user explicitly starts a new versioned
+experiment.
+
 Allowed V3 final statuses:
 
 - `V3_REAL_VALIDATED_NEGATIVE`
