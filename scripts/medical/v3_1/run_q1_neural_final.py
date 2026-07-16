@@ -932,7 +932,7 @@ def perturb_raw(x_norm: np.ndarray, scenario: str, level: float, rng: np.random.
 
 def robustness(output: Path, arrays: Arrays, cfg: dict, batch_size: int) -> pd.DataFrame:
     rows = []
-    shift_cfg = json.loads(json.dumps(cfg))
+    shift_cfg = json.loads(json.dumps(cfg, default=str))
     shift_cfg["dataset"]["infection_impulse_strength"] = float(cfg["dataset"]["infection_impulse_strength"]) * 1.15
     shift_cfg["dataset"]["target_threshold"] = float(cfg["dataset"]["target_threshold"]) * 1.05
     shifted = build_arrays(shift_cfg, 9090)
@@ -1093,16 +1093,19 @@ def package_dir(source: Path, zip_path: Path, root_name: str) -> Path:
     return zip_path
 
 
-def run_final(cfg: dict, output: Path, *, batch_size: int, package: bool, zip_output_dir: Path, skip_sanity: bool = False, grid_run_count: int = 30, dev_skip_analyses: bool = False) -> dict:
+def run_final(cfg: dict, output: Path, *, batch_size: int, package: bool, zip_output_dir: Path, skip_sanity: bool = False, grid_run_count: int = 30, dev_skip_analyses: bool = False, resume_existing_checkpoints: bool = False) -> dict:
     assert_config_contract(cfg)
-    if output.exists():
+    if output.exists() and not resume_existing_checkpoints:
         shutil.rmtree(output)
     for rel in ["CHECKPOINTS", "TABLES", "FIGURES", "MANIFESTS", "REPORTS", "MODEL_CARDS", "ARTICLE_READY"]:
         (output / rel).mkdir(parents=True, exist_ok=True)
     t0 = time.perf_counter()
     timing_probe = json.loads((ROOT / "artifacts" / "medical" / "canonical_3_seed_parity" / "MANIFESTS" / "canonical_3_seed_parity_manifest.json").read_text(encoding="utf-8"))
-    sanity_df = run_sanity_gate(cfg, output, batch_size) if not skip_sanity else pd.DataFrame()
-    if not skip_sanity:
+    existing_model_checkpoints = len(checkpoint_paths(output))
+    fit_metrics_path = output / "TABLES" / "q1_neural_checkpoint_fit_metrics.csv"
+    resume_training_complete = resume_existing_checkpoints and existing_model_checkpoints == 150 and fit_metrics_path.exists()
+    sanity_df = pd.read_csv(output / "TABLES" / "q1_neural_model_arm_sanity_gate.csv") if resume_training_complete and (output / "TABLES" / "q1_neural_model_arm_sanity_gate.csv").exists() else (run_sanity_gate(cfg, output, batch_size) if not skip_sanity else pd.DataFrame())
+    if not skip_sanity and not resume_training_complete:
         sanity_df.to_csv(output / "TABLES" / "q1_neural_model_arm_sanity_gate.csv", index=False)
         sanity_status = sanity_df.attrs.get("status", "MODEL_ARM_SANITY_FAIL")
         if sanity_status != "MODEL_ARM_SANITY_PASS":
@@ -1111,14 +1114,15 @@ def run_final(cfg: dict, output: Path, *, batch_size: int, package: bool, zip_ou
             return manifest
     arrays = build_arrays(cfg, 6262)
     metric_rows = []
-    for meta in grid_runs(grid_run_count):
-        shared_state, shared_history, shared_metrics = train_shared_concept_reference(arrays, cfg, meta, batch_size)
-        shared_dir = output / "CHECKPOINTS" / "shared_concept_path" / f"run_{meta['run_id']:02d}"
-        shared_dir.mkdir(parents=True, exist_ok=True)
-        torch.save({"run": meta, "state_dict": shared_state, "parameter_sha256": state_dict_sha256(shared_state), "epoch_history": shared_history, "concept_metrics": shared_metrics}, shared_dir / "shared_concept_path.pt")
-        for arm in ARMS:
-            metric_rows.append(train_one_arm(arm, arrays, cfg, meta, output, shared_state, shared_history, shared_metrics, batch_size))
-    pd.DataFrame(metric_rows).to_csv(output / "TABLES" / "q1_neural_checkpoint_fit_metrics.csv", index=False)
+    if not resume_training_complete:
+        for meta in grid_runs(grid_run_count):
+            shared_state, shared_history, shared_metrics = train_shared_concept_reference(arrays, cfg, meta, batch_size)
+            shared_dir = output / "CHECKPOINTS" / "shared_concept_path" / f"run_{meta['run_id']:02d}"
+            shared_dir.mkdir(parents=True, exist_ok=True)
+            torch.save({"run": meta, "state_dict": shared_state, "parameter_sha256": state_dict_sha256(shared_state), "epoch_history": shared_history, "concept_metrics": shared_metrics}, shared_dir / "shared_concept_path.pt")
+            for arm in ARMS:
+                metric_rows.append(train_one_arm(arm, arrays, cfg, meta, output, shared_state, shared_history, shared_metrics, batch_size))
+        pd.DataFrame(metric_rows).to_csv(fit_metrics_path, index=False)
     write_model_cards(output)
     if dev_skip_analyses:
         table_counts = {"dev_skip_analyses": True}
@@ -1147,6 +1151,7 @@ def run_final(cfg: dict, output: Path, *, batch_size: int, package: bool, zip_ou
         "arms": ARMS,
         "grid": "10 initialization seeds x 3 data-order seeds",
         "grid_run_count": int(grid_run_count),
+        "resume_existing_checkpoints": bool(resume_training_complete),
         "elapsed_seconds": elapsed,
         "table_counts": table_counts,
         "no_oracle_states_as_primary_input": True,
@@ -1180,9 +1185,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-sanity", action="store_true")
     parser.add_argument("--grid-run-count", type=int, default=30)
     parser.add_argument("--dev-skip-analyses", action="store_true")
+    parser.add_argument("--resume-existing-checkpoints", action="store_true")
     args = parser.parse_args(argv)
     cfg = yaml.safe_load((ROOT / args.config).read_text(encoding="utf-8"))
-    report = run_final(cfg, ROOT / args.output, batch_size=args.batch_size, package=args.package, zip_output_dir=ROOT / args.zip_output_dir, skip_sanity=args.skip_sanity, grid_run_count=args.grid_run_count, dev_skip_analyses=args.dev_skip_analyses)
+    report = run_final(cfg, ROOT / args.output, batch_size=args.batch_size, package=args.package, zip_output_dir=ROOT / args.zip_output_dir, skip_sanity=args.skip_sanity, grid_run_count=args.grid_run_count, dev_skip_analyses=args.dev_skip_analyses, resume_existing_checkpoints=args.resume_existing_checkpoints)
     print(json.dumps(report, indent=2, default=str))
     return 0 if report.get("status") == "Q1_EMPIRICAL_EXTENSION_NEURAL_VALIDATED" else 2
 
