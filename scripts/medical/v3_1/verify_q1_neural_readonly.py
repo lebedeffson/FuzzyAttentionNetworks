@@ -96,6 +96,7 @@ def check_release(release: Path, cfg: dict, output_json: Path | None = None) -> 
     leak_path = release / "TABLES" / "q1_neural_heldout_leakage_audit.csv"
     rob_path = release / "TABLES" / "q1_neural_raw_input_robustness.csv"
     ms_path = release / "TABLES" / "q1_neural_membership_sensitivity.csv"
+    sanity_path = release / "TABLES" / "q1_neural_model_arm_sanity_gate.csv"
     for path in [metrics_path, fit_path, local_path, stability_path, suff_path, leak_path, rob_path, ms_path]:
         add(f"artifact exists {path.name}", path.exists() and path.stat().st_size > 0, str(path))
 
@@ -103,11 +104,17 @@ def check_release(release: Path, cfg: dict, output_json: Path | None = None) -> 
         fit = pd.read_csv(fit_path)
         add("fit metrics contain five arms", set(fit["model_arm"]) == set(ARMS), ",".join(sorted(fit["model_arm"].unique())))
         add("fit metrics contain 30 runs per arm", fit.groupby("model_arm")["run_id"].nunique().eq(30).all(), str(fit.groupby("model_arm")["run_id"].nunique().to_dict()))
-        fan = fit[fit["model_arm"].eq("ConceptFAN-NoAlpha")]
-        plain = fit[fit["model_arm"].eq("PlainTransformer")]
-        add("ConceptFAN min AUPRC >= 0.79", float(fan["calibrated_AUPRC"].min()) >= 0.79, str(float(fan["calibrated_AUPRC"].min()) if not fan.empty else "empty"))
-        add("ConceptFAN mean AUPRC near 0.82", 0.79 <= float(fan["calibrated_AUPRC"].mean()) <= 0.86, str(float(fan["calibrated_AUPRC"].mean()) if not fan.empty else "empty"))
-        add("PlainTransformer mean AUPRC near 0.82", 0.79 <= float(plain["calibrated_AUPRC"].mean()) <= 0.86, str(float(plain["calibrated_AUPRC"].mean()) if not plain.empty else "empty"))
+        add("grid ConceptFAN mean AUPRC near 0.82", 0.79 <= float(fit[fit["model_arm"].eq("ConceptFAN-NoAlpha")]["calibrated_AUPRC"].mean()) <= 0.86, str(float(fit[fit["model_arm"].eq("ConceptFAN-NoAlpha")]["calibrated_AUPRC"].mean())))
+        add("grid PlainTransformer mean AUPRC near 0.82", 0.79 <= float(fit[fit["model_arm"].eq("PlainTransformer")]["calibrated_AUPRC"].mean()) <= 0.86, str(float(fit[fit["model_arm"].eq("PlainTransformer")]["calibrated_AUPRC"].mean())))
+
+    if sanity_path.exists():
+        sanity = pd.read_csv(sanity_path)
+        add("sanity gate contains five arms", set(sanity["model_arm"]) == set(ARMS), ",".join(sorted(sanity["model_arm"].unique())))
+        fan = sanity[sanity["model_arm"].eq("ConceptFAN-NoAlpha")]
+        plain = sanity[sanity["model_arm"].eq("PlainTransformer")]
+        add("sanity ConceptFAN min AUPRC >= 0.79", float(fan["calibrated_AUPRC"].min()) >= 0.79, str(float(fan["calibrated_AUPRC"].min()) if not fan.empty else "empty"))
+        add("sanity ConceptFAN mean AUPRC near 0.82", 0.79 <= float(fan["calibrated_AUPRC"].mean()) <= 0.86, str(float(fan["calibrated_AUPRC"].mean()) if not fan.empty else "empty"))
+        add("sanity PlainTransformer mean AUPRC near 0.82", 0.79 <= float(plain["calibrated_AUPRC"].mean()) <= 0.86, str(float(plain["calibrated_AUPRC"].mean()) if not plain.empty else "empty"))
 
     if stability_path.exists():
         stability = pd.read_parquet(stability_path)
