@@ -295,6 +295,29 @@ The next Q1 neural grid is forbidden until this gate reports
 42/43/44, existing canonical ConceptFAN-NoAlpha and plain Transformer
 checkpoints, and AUPRC parity near the established 0.82 level.
 
+Current Q1 neural final command:
+
+```bash
+.venv/bin/python scripts/medical/v3_1/run_q1_neural_final.py \
+  --config configs/medical/v3/full.yaml \
+  --output artifacts/medical/q1_neural_final \
+  --package \
+  --zip-output-dir artifacts/medical
+```
+
+The final runner must keep the canonical architecture and training protocol,
+run the model-arm sanity gate before the 30-run grid, produce 150 canonical
+checkpoints, and may report `Q1_EMPIRICAL_EXTENSION_NEURAL_VALIDATED` only for
+the complete 30-run grid with sanity enabled. The release must then pass the
+separate read-only verifier:
+
+```bash
+.venv/bin/python scripts/medical/v3_1/verify_q1_neural_readonly.py \
+  --release artifacts/medical/q1_neural_final \
+  --config configs/medical/v3/full.yaml \
+  --output-json artifacts/medical/q1_neural_final/MANIFESTS/q1_neural_readonly_validation.json
+```
+
 Allowed V3 final statuses:
 
 - `V3_REAL_VALIDATED_NEGATIVE`

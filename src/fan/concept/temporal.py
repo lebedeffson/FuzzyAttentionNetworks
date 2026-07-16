@@ -241,8 +241,8 @@ class MultiSetMembershipLayer(nn.Module):
 
     def __init__(self, n_concepts: int, n_memberships: int = 3, family: str = "gaussian", epsilon: float = 1e-6):
         super().__init__()
-        if n_memberships not in {3, 5}:
-            raise ValueError("n_memberships must be 3 or 5")
+        if n_memberships not in {2, 3, 4, 5}:
+            raise ValueError("n_memberships must be one of 2, 3, 4, 5")
         valid = {"gaussian", "bell", "sigmoid", "mixed"}
         if family not in valid:
             raise ValueError(f"Unknown membership family {family!r}")
@@ -264,14 +264,17 @@ class MultiSetMembershipLayer(nn.Module):
     def initialize_from_quantiles(self, train_concepts: torch.Tensor) -> None:
         if train_concepts.ndim != 2 or train_concepts.shape[1] != self.n_concepts:
             raise ValueError("Expected train concepts [N,K]")
-        qs = torch.tensor([0.2, 0.5, 0.8] if self.n_memberships == 3 else [0.1, 0.3, 0.5, 0.7, 0.9], device=train_concepts.device)
+        qs = torch.linspace(0.1, 0.9, self.n_memberships, device=train_concepts.device)
         centers = torch.quantile(train_concepts.float(), qs, dim=0).T
         centers = torch.clamp(centers, 0.0, 1.0)
         diffs = torch.diff(centers, dim=1).abs()
-        left = diffs[:, :1]
-        right = diffs[:, -1:]
-        middle = 0.5 * (diffs[:, :-1] + diffs[:, 1:]) if self.n_memberships > 2 else diffs
-        widths = torch.cat([left, middle, right], dim=1)
+        if self.n_memberships == 2:
+            widths = diffs.repeat(1, 2)
+        else:
+            left = diffs[:, :1]
+            right = diffs[:, -1:]
+            middle = 0.5 * (diffs[:, :-1] + diffs[:, 1:])
+            widths = torch.cat([left, middle, right], dim=1)
         widths = torch.clamp(widths, min=0.05)
         with torch.no_grad():
             self.centers.copy_(centers.cpu())
