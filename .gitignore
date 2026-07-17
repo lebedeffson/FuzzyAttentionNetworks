@@ -81,3 +81,9 @@ mimic-iv*/
 set-a.zip
 Outcomes-a.txt
 reports/PHYSIONET2012_CONCEPTFAN_LAST_RUN_*.zip
+
+# Full post-hoc attribution tensors remain local; the compact submission package
+# carries the verified summaries, manifests, figures, and article files.
+reports/physionet2012/posthoc_attribution_audit/DATA/
+reports/physionet2012/posthoc_attribution_audit/TABLES/posthoc_pairwise_stability.parquet
+reports/physionet2012/posthoc_attribution_audit/TABLES/posthoc_conservation.parquet

@@ -1,0 +1,193 @@
+{
+  "status": "POSTHOC_ATTRIBUTION_AUDIT_COMPLETE",
+  "created_utc": "2026-07-17T14:18:31.504420+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "check": "technical status is outcome-independent completion",
+      "passed": true,
+      "detail": "POSTHOC_ATTRIBUTION_AUDIT_COMPLETE"
+    },
+    {
+      "check": "30 PlainTransformer checkpoints",
+      "passed": true,
+      "detail": "30"
+    },
+    {
+      "check": "checkpoint SHA256 index matches source",
+      "passed": true,
+      "detail": "30"
+    },
+    {
+      "check": "30 unique parameter SHA256",
+      "passed": true,
+      "detail": "30"
+    },
+    {
+      "check": "channel map SHA256",
+      "passed": true,
+      "detail": "a19b0565c0190da8a14edef9066558ba18a9fdf3b2ab3e93ba0e93aced66b96f"
+    },
+    {
+      "check": "required artifact CONFIG/posthoc_attribution_stability.yaml",
+      "passed": true,
+      "detail": "CONFIG/posthoc_attribution_stability.yaml"
+    },
+    {
+      "check": "required artifact CONFIG/channel_to_proxy_concept_map.csv",
+      "passed": true,
+      "detail": "CONFIG/channel_to_proxy_concept_map.csv"
+    },
+    {
+      "check": "required artifact TABLES/posthoc_attribution_summary.csv",
+      "passed": true,
+      "detail": "TABLES/posthoc_attribution_summary.csv"
+    },
+    {
+      "check": "required artifact TABLES/posthoc_pairwise_stability.csv",
+      "passed": true,
+      "detail": "TABLES/posthoc_pairwise_stability.csv"
+    },
+    {
+      "check": "required artifact TABLES/posthoc_method_comparison.csv",
+      "passed": true,
+      "detail": "TABLES/posthoc_method_comparison.csv"
+    },
+    {
+      "check": "required artifact TABLES/posthoc_completeness.csv",
+      "passed": true,
+      "detail": "TABLES/posthoc_completeness.csv"
+    },
+    {
+      "check": "required artifact TABLES/posthoc_baseline_sensitivity.csv",
+      "passed": true,
+      "detail": "TABLES/posthoc_baseline_sensitivity.csv"
+    },
+    {
+      "check": "required artifact TABLES/posthoc_randomization_control.csv",
+      "passed": true,
+      "detail": "TABLES/posthoc_randomization_control.csv"
+    },
+    {
+      "check": "required artifact TABLES/posthoc_article_table.csv",
+      "passed": true,
+      "detail": "TABLES/posthoc_article_table.csv"
+    },
+    {
+      "check": "required artifact DATA/posthoc_channel_attributions.parquet",
+      "passed": true,
+      "detail": "DATA/posthoc_channel_attributions.parquet"
+    },
+    {
+      "check": "required artifact DATA/posthoc_proxy_concept_attributions.parquet",
+      "passed": true,
+      "detail": "DATA/posthoc_proxy_concept_attributions.parquet"
+    },
+    {
+      "check": "required artifact DATA/posthoc_episode_attributions.parquet",
+      "passed": true,
+      "detail": "DATA/posthoc_episode_attributions.parquet"
+    },
+    {
+      "check": "required artifact FIGURES/posthoc_stability_distribution.svg",
+      "passed": true,
+      "detail": "FIGURES/posthoc_stability_distribution.svg"
+    },
+    {
+      "check": "required artifact FIGURES/posthoc_stability_distribution.pdf",
+      "passed": true,
+      "detail": "FIGURES/posthoc_stability_distribution.pdf"
+    },
+    {
+      "check": "required artifact FIGURES/posthoc_stability_distribution.png",
+      "passed": true,
+      "detail": "FIGURES/posthoc_stability_distribution.png"
+    },
+    {
+      "check": "required artifact FIGURES/posthoc_pairwise_heatmap.svg",
+      "passed": true,
+      "detail": "FIGURES/posthoc_pairwise_heatmap.svg"
+    },
+    {
+      "check": "required artifact FIGURES/posthoc_pairwise_heatmap.pdf",
+      "passed": true,
+      "detail": "FIGURES/posthoc_pairwise_heatmap.pdf"
+    },
+    {
+      "check": "required artifact FIGURES/posthoc_pairwise_heatmap.png",
+      "passed": true,
+      "detail": "FIGURES/posthoc_pairwise_heatmap.png"
+    },
+    {
+      "check": "435 model pairs per exported method/view",
+      "passed": true,
+      "detail": "{('ConceptFAN', 'proxy_concept_v_only', 'absolute'): 435, ('ConceptFAN', 'proxy_concept_v_only', 'signed'): 435, ('gradient_shap', 'full_input_channels', 'absolute'): 435, ('gradient_shap', 'full_input_channels', 'signed'): 435, ('gradient_shap', 'proxy_concept_v_only', 'absolute'): 435, ('gradient_shap', 'proxy_concept_v_only', 'signed'): 435, ('gradient_shap', 'proxy_concept_vmd', 'absolute'): 435, ('gradient_shap', 'proxy_concept_vmd', 'signed'): 435, ('integrated_gradients', 'full_input_channels', 'absolute'): 435, ('integrated_gradients', 'full_input_channels', 'signed'): 435, ('integrated_gradients', 'proxy_concept_v_only', 'absolute'): 435, ('integrated_gradients', 'proxy_concept_v_only', 'signed'): 435, ('integrated_gradients', 'proxy_concept_vmd', 'absolute'): 435, ('integrated_gradients', 'proxy_concept_vmd', 'signed'): 435}"
+    },
+    {
+      "check": "full temporal attribution row count",
+      "passed": true,
+      "detail": "205632000"
+    },
+    {
+      "check": "frozen attribution shape [48,119]",
+      "passed": true,
+      "detail": "{'time_id': 47, 'channel_id': 118}"
+    },
+    {
+      "check": "same 600 episode IDs",
+      "passed": true,
+      "detail": "600"
+    },
+    {
+      "check": "all aggregate attributions finite",
+      "passed": true,
+      "detail": "channel_rows=4284000, proxy_rows=360000"
+    },
+    {
+      "check": "signed and absolute results present",
+      "passed": true,
+      "detail": "['absolute', 'signed']"
+    },
+    {
+      "check": "attribution grouping conserves signed sum",
+      "passed": true,
+      "detail": "{'gradient_shap': 4.440892098500626e-16, 'integrated_gradients': 8.881784197001252e-16}"
+    },
+    {
+      "check": "IG completeness evaluated for all checkpoints",
+      "passed": true,
+      "detail": "30"
+    },
+    {
+      "check": "IG completeness retry policy satisfied",
+      "passed": true,
+      "detail": "{64: 30}"
+    },
+    {
+      "check": "determinism and constant controls pass",
+      "passed": true,
+      "detail": "[{'check': 'determinism', 'model_id': 'run_01_init_11_order_1001', 'method': 'integrated_gradients', 'episodes': 32, 'maximum_difference': 0.0, 'tolerance': 1e-06, 'passed': True}, {'check': 'determinism', 'model_id': 'run_01_init_11_order_1001', 'method': 'gradient_shap', 'episodes': 32, 'maximum_difference': 0.0, 'tolerance': 1e-05, 'passed': True}, {'check': 'determinism', 'model_id': 'run_02_init_11_order_2003', 'method': 'integrated_gradients', 'episodes': 32, 'maximum_difference': 0.0, 'tolerance': 1e-06, 'passed': True}, {'check': 'determinism', 'model_id': 'run_02_init_11_order_2003', 'method': 'gradient_shap', 'episodes': 32, 'maximum_difference': 0.0, 'tolerance': 1e-05, 'passed': True}, {'check': 'constant_input', 'model_id': 'run_01_init_11_order_1001', 'method': 'integrated_gradients', 'episodes': 1, 'maximum_difference': 0.0, 'tolerance': 1e-08, 'passed': True}]"
+    },
+    {
+      "check": "parameter randomization changes attribution",
+      "passed": true,
+      "detail": "[{'model_id': 'run_01_init_11_order_1001', 'episodes': 64, 'randomized_module': 'mortality_head', 'mean_cosine_similarity': 0.3113167225019424, 'mean_relative_l2_change': 0.9779980182647704, 'substantially_changed': True}]"
+    },
+    {
+      "check": "model-level bootstrap has at least 2000 iterations",
+      "passed": true,
+      "detail": "[2000, 2000, 2000, 2000]"
+    },
+    {
+      "check": "article table agrees with summary",
+      "passed": true,
+      "detail": "18"
+    },
+    {
+      "check": "no forbidden instability PASS status",
+      "passed": true,
+      "detail": "POSTHOC_ATTRIBUTION_AUDIT_COMPLETE"
+    }
+  ],
+  "failed_checks": []
+}

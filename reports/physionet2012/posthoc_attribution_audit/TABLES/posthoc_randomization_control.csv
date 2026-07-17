@@ -1,0 +1,2 @@
+model_id,episodes,randomized_module,mean_cosine_similarity,mean_relative_l2_change,substantially_changed
+run_01_init_11_order_1001,64,mortality_head,0.3113167225019424,0.9779980182647705,True

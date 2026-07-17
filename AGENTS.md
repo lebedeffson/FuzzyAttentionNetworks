@@ -427,3 +427,28 @@ Standalone release command:
 
 The release builder must rebuild nested Med-CircuitBench and MIMIC Demo
 archives from current source. Do not aggregate stale nested ZIPs.
+
+## PhysioNet 2012 Post-hoc Attribution Closure
+
+Final technical status:
+
+```text
+POSTHOC_ATTRIBUTION_AUDIT_COMPLETE
+```
+
+The frozen PlainTransformer contract is `[B,48,119]` (37 V, 37 M, 37 D,
+8 static), not the older synthetic `[B,36,27]` contract. The completed audit
+uses 30 existing checkpoints, all 600 frozen test episodes, Integrated
+Gradients, and one fixed GradientSHAP background. Do not retrain or reshape the
+frozen inputs for this article.
+
+Run and verify:
+
+```bash
+PYTHONPATH=src:. .venv/bin/python scripts/medical/physionet2012/run_posthoc_attribution_stability.py --device cuda
+PYTHONPATH=src:. .venv/bin/python scripts/medical/physionet2012/verify_posthoc_attribution_audit.py
+```
+
+The scientific result is outcome-independent from the technical status. In the
+completed run, post-hoc proxy-group attributions were more stable than internal
+ConceptFAN contributions; preserve that result and its comparison boundaries.
