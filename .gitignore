@@ -78,3 +78,5 @@ artifacts/
 # Credentialed/clinical data archives must never be committed.
 mimic-iv*.zip
 mimic-iv*/
+set-a.zip
+Outcomes-a.txt
