@@ -1,0 +1,15 @@
+{
+  "status": "PHYSIONET2012_REPORT_COMPLETE",
+  "numbers": {
+    "conceptfan_auprc": 0.34744913379924713,
+    "conceptfan_auroc": 0.7696814336650276,
+    "conceptfan_spearman": 0.0034685823754789192,
+    "stabilityreg_spearman": 0.0003747126436781651,
+    "mcar20_difference": 0.0021774624589855416,
+    "calibration_nll_delta": -0.05450406903742255
+  },
+  "claims": {
+    "stabilityreg_pareto": false
+  },
+  "report_files": 59
+}

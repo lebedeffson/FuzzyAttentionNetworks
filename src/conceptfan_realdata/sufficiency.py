@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import json
 from pathlib import Path
 
@@ -59,34 +60,41 @@ def build_sufficiency(runs_root: Path, output_path: Path, controls_path: Path) -
                     writer = pq.ParquetWriter(output_path, table.schema, compression="zstd")
                 writer.write_table(table)
                 ranking = np.argsort(-np.abs(matrix), axis=1)
-                for patient_position, record_id in enumerate(contributions["RecordID"].to_numpy()):
-                    for size in [1, 2, 3, 4, 5]:
-                        top_indices = ranking[patient_position, :size]
-                        top_probability = sigmoid(np.asarray([bias[patient_position] + matrix[patient_position, top_indices].sum()]))[0]
-                        removed_probability = sigmoid(np.asarray([bias[patient_position] + matrix[patient_position].sum() - matrix[patient_position, top_indices].sum()]))[0]
-                        random_probabilities = []
-                        for _ in range(100):
-                            random_indices = rng.choice(5, size=size, replace=False)
-                            random_probabilities.append(
-                                sigmoid(np.asarray([bias[patient_position] + matrix[patient_position, random_indices].sum()]))[0]
-                            )
-                        control_rows.append(
+                patient_positions = np.arange(len(matrix))
+                record_ids = contributions["RecordID"].to_numpy(dtype=np.int64)
+                full_sum = matrix.sum(axis=1)
+                for size in [1, 2, 3, 4, 5]:
+                    top_indices = ranking[:, :size]
+                    top_sum = np.take_along_axis(matrix, top_indices, axis=1).sum(axis=1)
+                    top_probability = sigmoid(bias + top_sum)
+                    removed_probability = sigmoid(bias + full_sum - top_sum)
+                    combinations = np.asarray(list(itertools.combinations(range(5), size)), dtype=np.int64)
+                    sampled_combinations = combinations[rng.integers(0, len(combinations), size=(len(matrix), 100))]
+                    sampled_values = matrix[
+                        patient_positions[:, None, None],
+                        sampled_combinations,
+                    ].sum(axis=2)
+                    random_probabilities = sigmoid(bias[:, None] + sampled_values)
+                    control_rows.extend(
+                        pd.DataFrame(
                             {
                                 "model_arm": arm,
                                 "run_id": run_dir.name,
-                                "RecordID": int(record_id),
+                                "RecordID": record_ids,
                                 "M": size,
-                                "top_ranking_probability": float(top_probability),
-                                "random_same_size_probability_mean_100": float(np.mean(random_probabilities)),
-                                "random_same_size_probability_std_100": float(np.std(random_probabilities)),
-                                "clean_probability": float(clean_probability[patient_position]),
-                                "sufficiency_gap": float(clean_probability[patient_position] - top_probability),
-                                "comprehensiveness": float(clean_probability[patient_position] - removed_probability),
-                                "decision_agreement_0_3": int((top_probability >= 0.3) == (clean_probability[patient_position] >= 0.3)),
-                                "decision_agreement_0_5": int((top_probability >= 0.5) == (clean_probability[patient_position] >= 0.5)),
-                                "decision_agreement_0_7": int((top_probability >= 0.7) == (clean_probability[patient_position] >= 0.7)),
+                                "random_draws": 100,
+                                "top_ranking_probability": top_probability,
+                                "random_same_size_probability_mean_100": random_probabilities.mean(axis=1),
+                                "random_same_size_probability_std_100": random_probabilities.std(axis=1),
+                                "clean_probability": clean_probability,
+                                "sufficiency_gap": clean_probability - top_probability,
+                                "comprehensiveness": clean_probability - removed_probability,
+                                "decision_agreement_0_3": (top_probability >= 0.3) == (clean_probability >= 0.3),
+                                "decision_agreement_0_5": (top_probability >= 0.5) == (clean_probability >= 0.5),
+                                "decision_agreement_0_7": (top_probability >= 0.7) == (clean_probability >= 0.7),
                             }
-                        )
+                        ).to_dict("records")
+                    )
     finally:
         if writer is not None:
             writer.close()
@@ -105,6 +113,7 @@ def summarize_sufficiency(exhaustive_path: Path, controls_path: Path) -> tuple[p
     )
     controls_summary = controls.groupby(["model_arm", "M"], as_index=False).agg(
         observations=("RecordID", "size"),
+        random_draws=("random_draws", "min"),
         top_ranking_probability=("top_ranking_probability", "mean"),
         random_same_size_probability=("random_same_size_probability_mean_100", "mean"),
         sufficiency_gap=("sufficiency_gap", "mean"),

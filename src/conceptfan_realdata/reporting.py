@@ -35,8 +35,26 @@ def _write_table(frame: pd.DataFrame, path: Path) -> None:
 def _save_figure(figure: plt.Figure, stem: Path) -> None:
     stem.parent.mkdir(parents=True, exist_ok=True)
     for suffix in ["svg", "pdf", "png"]:
-        figure.savefig(stem.with_suffix(f".{suffix}"), dpi=180, bbox_inches="tight")
+        output_path = stem.with_suffix(f".{suffix}")
+        figure.savefig(output_path, dpi=180, bbox_inches="tight")
+        if suffix == "svg":
+            lines = output_path.read_text(encoding="utf-8").splitlines()
+            output_path.write_text("\n".join(line.rstrip() for line in lines) + "\n", encoding="utf-8")
     plt.close(figure)
+
+
+def write_report_hash_index(report_dir: Path) -> None:
+    hash_rows = []
+    for path in sorted(report_dir.rglob("*")):
+        if path.is_file() and path.name not in {
+            "artifacts_sha256.txt",
+            "archive_validation.json",
+            "final_audit_lite.json",
+        }:
+            hash_rows.append(f"{sha256_file(path)}  {path.relative_to(report_dir)}")
+    manifest_dir = report_dir / "manifests"
+    manifest_dir.mkdir(parents=True, exist_ok=True)
+    (manifest_dir / "artifacts_sha256.txt").write_text("\n".join(hash_rows) + "\n", encoding="utf-8")
 
 
 def _metric_value(summary: pd.DataFrame, arm: str, state: str, metric: str, column: str = "mean") -> float:
@@ -66,29 +84,68 @@ def _primary_calibration_table(predictive: pd.DataFrame) -> pd.DataFrame:
 
 
 def _figure_pipeline(data: PreparedData, report_dir: Path) -> None:
-    fig, ax = plt.subplots(figsize=(11, 4.8))
+    fig, ax = plt.subplots(figsize=(14, 4.6))
     ax.axis("off")
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
     labels = [
         ("PhysioNet 2012 Set A\n4,000 ICU stays", "#DCEAF0"),
-        ("Patient split\n2400 / 600 / 400 / 600", "#E8E8E8"),
-        ("48-hour V / M / D\ntrain-only preprocessing", "#F5E6CC"),
+        ("Patient split\n2400 / 600 /\n400 / 600", "#E8E8E8"),
+        ("48-hour V / M / D\ntrain-only\npreprocessing", "#F5E6CC"),
         ("5 proxy concepts\nsoft trajectories", "#DDEAD1"),
-        ("5 model arms\n30 runs each", "#E8DDF0"),
-        ("Calibration, stability,\nrobustness, sufficiency", "#F4D6D0"),
+        ("5 model arms\n30 runs per arm", "#E8DDF0"),
+        ("Calibration, stability,\nrobustness and\nsufficiency", "#F4D6D0"),
     ]
     for index, (label, color) in enumerate(labels):
-        x = 0.02 + index * 0.162
-        ax.add_patch(plt.Rectangle((x, 0.35), 0.135, 0.3, facecolor=color, edgecolor="#333333", linewidth=1))
-        ax.text(x + 0.0675, 0.5, label, ha="center", va="center", fontsize=9)
+        x = 0.01 + index * 0.165
+        ax.add_patch(plt.Rectangle((x, 0.34), 0.145, 0.32, facecolor=color, edgecolor="#333333", linewidth=1))
+        ax.text(x + 0.0725, 0.5, label, ha="center", va="center", fontsize=8.5)
         if index < len(labels) - 1:
-            ax.annotate("", xy=(x + 0.158, 0.5), xytext=(x + 0.137, 0.5), arrowprops={"arrowstyle": "->"})
+            ax.annotate("", xy=(x + 0.163, 0.5), xytext=(x + 0.147, 0.5), arrowprops={"arrowstyle": "->"})
     ax.text(0.02, 0.14, f"Temporal variables: {len(data.variables)} | Proxy concept observability: {data.concept_mask.mean():.1%}", fontsize=10)
     _save_figure(fig, report_dir / "figures" / "fig_real_pipeline")
 
 
-def _figure_performance(predictive: pd.DataFrame, report_dir: Path) -> None:
+def _reliability_curve(
+    target: np.ndarray,
+    probability: np.ndarray,
+    seed: int,
+    bins: int = 10,
+    bootstrap_repetitions: int = 1000,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    if target.ndim != 2 or probability.shape != target.shape:
+        raise ValueError("Reliability inputs must have shape [runs, patients]")
+    edges = np.linspace(0.0, 1.0, bins + 1)
+    target_flat = target.ravel()
+    probability_flat = probability.ravel()
+    positions = np.clip(np.digitize(probability_flat, edges[1:-1]), 0, bins - 1)
+    predicted: list[float] = []
+    observed: list[float] = []
+    rng = np.random.default_rng(seed)
+    bootstrap_observed = np.full((bootstrap_repetitions, bins), np.nan, dtype=np.float64)
+    for repetition in range(bootstrap_repetitions):
+        sampled_patients = rng.integers(0, target.shape[1], size=target.shape[1])
+        sampled_target = target[:, sampled_patients].ravel()
+        sampled_probability = probability[:, sampled_patients].ravel()
+        sampled_positions = np.clip(np.digitize(sampled_probability, edges[1:-1]), 0, bins - 1)
+        counts = np.bincount(sampled_positions, minlength=bins)
+        sums = np.bincount(sampled_positions, weights=sampled_target, minlength=bins)
+        valid = counts > 0
+        bootstrap_observed[repetition, valid] = sums[valid] / counts[valid]
+    active_bins: list[int] = []
+    for index in range(bins):
+        selected = positions == index
+        if selected.any():
+            active_bins.append(index)
+            predicted.append(float(probability_flat[selected].mean()))
+            observed.append(float(target_flat[selected].mean()))
+    intervals = np.nanquantile(bootstrap_observed[:, active_bins], [0.025, 0.975], axis=0)
+    return np.asarray(predicted), np.asarray(observed), intervals[0], intervals[1]
+
+
+def _figure_performance(predictive: pd.DataFrame, artifacts_root: Path, report_dir: Path) -> None:
     raw = predictive.loc[predictive["calibration_method"].eq("none")]
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
     arms = list(COLORS)
     x = np.arange(len(arms))
     for position, metric in enumerate(["AUPRC", "AUROC"]):
@@ -98,7 +155,40 @@ def _figure_performance(predictive: pd.DataFrame, report_dir: Path) -> None:
         axes[position].set_xticks(x, [arm.replace("ConceptFAN-", "CF-") for arm in arms], rotation=25, ha="right")
         axes[position].set_ylabel(metric)
         axes[position].grid(axis="y", alpha=0.25)
-    fig.suptitle("Held-out predictive performance across 30 runs")
+    run_paths = sorted((artifacts_root / "runs" / "ConceptFAN-NoAlpha").glob("run_*/logits_test.parquet"))
+    if len(run_paths) != 30:
+        raise ValueError(f"Expected 30 ConceptFAN test prediction files, found {len(run_paths)}")
+    logits = [
+        pd.read_parquet(
+            path,
+            columns=["RecordID", "target", "probability_raw", "probability_primary_calibrated"],
+        ).sort_values("RecordID")
+        for path in run_paths
+    ]
+    record_ids = logits[0]["RecordID"].to_numpy()
+    if any(not np.array_equal(frame["RecordID"].to_numpy(), record_ids) for frame in logits[1:]):
+        raise ValueError("ConceptFAN runs do not share the same held-out patient order")
+    target = np.stack([frame["target"].to_numpy(dtype=np.float64) for frame in logits])
+    for seed, column, label, color in [
+        (20260717, "probability_raw", "Raw", COLORS["ConceptFAN-NoAlpha"]),
+        (20260718, "probability_primary_calibrated", "Primary calibrated", COLORS["PureNoFuzzy"]),
+    ]:
+        predicted, observed, low, high = _reliability_curve(
+            target,
+            np.stack([frame[column].to_numpy(dtype=np.float64) for frame in logits]),
+            seed=seed,
+        )
+        axes[2].plot(predicted, observed, marker="o", linewidth=1.5, label=label, color=color)
+        axes[2].fill_between(predicted, low, high, alpha=0.15, color=color)
+    axes[2].plot([0, 1], [0, 1], linestyle="--", linewidth=1, color="#555555", label="Ideal")
+    axes[2].set_xlim(0, 1)
+    axes[2].set_ylim(0, 1)
+    axes[2].set_xlabel("Mean predicted probability")
+    axes[2].set_ylabel("Observed event rate")
+    axes[2].set_title("ConceptFAN reliability (patient bootstrap CI)")
+    axes[2].legend(frameon=False, fontsize=8)
+    axes[2].grid(alpha=0.25)
+    fig.suptitle("Held-out predictive performance and calibration across 30 runs")
     _save_figure(fig, report_dir / "figures" / "fig_calibration")
 
 
@@ -191,7 +281,26 @@ def _write_article_package(report_dir: Path, numbers: dict[str, float], claims: 
         "DISCUSSION_PATCH_RU.md": "# Патч обсуждения\n\nРезультаты оценивают внешнюю эмпирическую переносимость архитектуры и устойчивость объяснений. Они не устанавливают причинный источник остаточного сигнала и не являются клинической валидацией.\n",
         "LIMITATIONS_PATCH_RU.md": "# Ограничения\n\nКонцепты заданы эвристическими proxy-траекториями; Set A является ретроспективной benchmark-выборкой; множественные запуски не заменяют внешнюю проспективную проверку; residual classifier локализует ассоциации, но не причинность.\n",
         "CONCLUSION_PATCH_RU.md": "# Патч заключения\n\n" + ru_result + " Результаты следует трактовать как внешнюю эмпирическую проверку, а не как подтверждение готовности к применению у постели пациента.\n",
-        "TABLE_AND_FIGURE_MAP.md": "# Table and figure map\n\n| Manuscript item | New source | Placement |\n|---|---|---|\n| Real-data cohort | `../tables/table_cohort.csv` | Methods / cohort |\n| Predictive results | `../tables/table_performance.csv` | Main results |\n| Calibration | `../tables/table_calibration.csv` | Main results or supplement |\n| Explanation stability | `../tables/table_stability.csv` | Interpretability results |\n| Robustness | `../tables/table_robustness.csv` | Robustness section |\n| Residual signal | `../tables/table_leakage.csv` | Diagnostic supplement |\n| Figures 1-6 | `../figures/fig_*.svg` | Replace surrogate-only plots |\n",
+        "TABLE_AND_FIGURE_MAP.md": """# Table and figure map
+
+Retain the synthetic benchmark results as mechanistic evidence and add the real-data items below as external empirical evidence.
+
+| Manuscript item | New source | Recommended placement | Proposed caption or update |
+|---|---|---|---|
+| Real-data cohort | `../tables/table_cohort.csv` | Methods, after dataset description | Patient-level frozen split and mortality characteristics for PhysioNet 2012 Set A. |
+| Predictive results | `../tables/table_performance.csv` | Main results, new real-data subsection | Held-out predictive metrics across 30 crossed initialization and data-order seeds. |
+| Calibration | `../tables/table_calibration.csv` | Main results or supplement | Calibration metrics before and after the calibration-split-selected transformation. |
+| Explanation stability | `../tables/table_stability.csv` | Interpretability results | Episode-level cross-retraining agreement with hierarchical bootstrap intervals. |
+| Robustness | `../tables/table_robustness.csv` | Robustness subsection | Deterministic perturbation sensitivity for ConceptFAN and the pure non-fuzzy ablation. |
+| Residual signal | `../tables/table_leakage.csv` | Diagnostic supplement | Associative residual-signal localization across V, V+M, V+D and V+M+D inputs and controls. |
+| StabilityReg comparison | `../tables/table_stability_reg.csv` | Interpretability results | Pre-specified AUPRC non-inferiority and contribution-stability comparison. |
+| Figure 1 | `../figures/fig_real_pipeline.svg` | Methods | Real-data cohort, frozen split, temporal channels and proxy-concept pipeline. |
+| Figure 2 | `../figures/fig_calibration.svg` | Main results | Held-out AUPRC/AUROC and patient-bootstrap reliability curves. |
+| Figure 3 | `../figures/fig_stability_distribution.svg` | Interpretability results | Distribution of episode-level Spearman agreement across retraining pairs. |
+| Figure 4 | `../figures/fig_fuzzy_robustness.svg` | Robustness subsection | AUPRC degradation under value noise and missingness perturbations. |
+| Figure 5 | `../figures/fig_leakage_localization.svg` | Diagnostic supplement | Residual diagnostic AUPRC by input-channel ablation and negative control. |
+| Figure 6 | `../figures/fig_stability_pareto.svg` | Interpretability results | Held-out AUPRC versus signed contribution stability for concept-mediated arms. |
+""",
         "CLAIMS_ALLOWED.md": "# Claims allowed\n\n- Report observed metrics, uncertainty, and paired comparisons.\n- Describe concepts as proxy trajectories.\n- Describe residual results as associative localization.\n- Describe this study as external empirical benchmark validation.\n",
         "CLAIMS_FORBIDDEN.md": "# Claims forbidden\n\n- Clinical readiness or bedside utility.\n- Causal identification of leakage sources.\n- Fuzzy superiority without supported paired statistics.\n- StabilityReg as a solution unless both stability and non-inferiority criteria pass.\n",
     }
@@ -228,7 +337,7 @@ def build_report(data: PreparedData, artifacts_root: Path, report_dir: Path) -> 
     _write_table(stability_reg, report_dir / "tables" / "table_stability_reg.csv")
     _write_table(paired, report_dir / "tables" / "table_paired_statistics.csv")
     _figure_pipeline(data, report_dir)
-    _figure_performance(predictive, report_dir)
+    _figure_performance(predictive, artifacts_root, report_dir)
     _figure_stability(tables_root / "episode_pairwise_stability.parquet", report_dir)
     _figure_robustness(robustness, report_dir)
     _figure_leakage(leakage, report_dir)
@@ -269,6 +378,21 @@ def build_report(data: PreparedData, artifacts_root: Path, report_dir: Path) -> 
         "METHODS_FOR_PAPER.md": "# Methods for paper\n\nWe used the 4,000-patient PhysioNet/CinC 2012 Set A cohort with a frozen patient-level train/validation/calibration/test split of 2400/600/400/600. Models received the first 48 hours represented as values, observation masks, and elapsed-time channels. All normalization and proxy-concept thresholds were estimated on training data only. Five canonical architectures were evaluated across 30 crossed initialization/data-order seeds.\n",
         "RESULTS_FOR_PAPER.md": "# Results for paper\n\n" + result_paragraph + "\n",
         "LIMITATIONS_FOR_PAPER.md": "# Limitations for paper\n\nThe five concepts are heuristic soft proxies rather than diagnoses. Set A is retrospective. Residual classification identifies associations, not causes. Multiple retrainings characterize algorithmic variability but do not establish prospective clinical utility.\n",
+        "REPRODUCE.md": """# Reproduce from raw files
+
+Run from the repository root at commit `e60d9a3da40fc05b66874f89ad61015d6e07d33c` plus the PhysioNet last-run implementation on this branch:
+
+```bash
+bash scripts/run_physionet2012_last_run.sh \\
+  --set-a-zip data/physionet2012/raw/set-a.zip \\
+  --outcomes data/physionet2012/raw/Outcomes-a.txt \\
+  --artifacts-dir artifacts/physionet2012_last_run \\
+  --device cuda \\
+  --resume
+```
+
+If `Outcomes-a.txt` is absent, the pipeline downloads it from the configured official PhysioNet endpoint before the raw-data audit. Raw patient files are never added to the report archive.
+""",
     }
     report_dir.mkdir(parents=True, exist_ok=True)
     for name, content in docs.items():
@@ -284,11 +408,6 @@ def build_report(data: PreparedData, artifacts_root: Path, report_dir: Path) -> 
     (manifests / "environment_lock.txt").write_text(
         f"python={sys.version}\nplatform={platform.platform()}\ntorch={torch.__version__}\nnumpy={np.__version__}\n", encoding="utf-8"
     )
-    hash_rows = []
-    for path in sorted(report_dir.rglob("*")):
-        if path.is_file() and path.name != "artifacts_sha256.txt":
-            hash_rows.append(f"{sha256_file(path)}  {path.relative_to(report_dir)}")
-    (manifests / "artifacts_sha256.txt").write_text("\n".join(hash_rows) + "\n", encoding="utf-8")
     report_manifest = {
         "status": "PHYSIONET2012_REPORT_COMPLETE",
         "numbers": numbers,
@@ -296,4 +415,5 @@ def build_report(data: PreparedData, artifacts_root: Path, report_dir: Path) -> 
         "report_files": len([path for path in report_dir.rglob("*") if path.is_file()]),
     }
     (report_dir / "report_manifest.json").write_text(json.dumps(report_manifest, indent=2), encoding="utf-8")
+    write_report_hash_index(report_dir)
     return report_manifest

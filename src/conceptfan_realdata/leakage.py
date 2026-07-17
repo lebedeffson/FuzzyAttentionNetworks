@@ -105,7 +105,7 @@ def _fit_l2(
 ) -> LogisticRegression:
     best: tuple[float, LogisticRegression] | None = None
     for c_value in [0.01, 0.1, 1.0, 10.0, 100.0]:
-        model = LogisticRegression(C=c_value, penalty="l2", solver="liblinear", max_iter=2000)
+        model = LogisticRegression(C=c_value, solver="liblinear", max_iter=2000)
         model.fit(x_train, y_train)
         score = float(average_precision_score(y_validation, model.predict_proba(x_validation)[:, 1]))
         if best is None or score > best[0]:

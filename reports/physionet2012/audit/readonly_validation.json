@@ -1,0 +1,198 @@
+{
+  "status": "PHYSIONET2012_READONLY_VALIDATION_PASS",
+  "created_utc": "2026-07-17T01:24:23.486534+00:00",
+  "passed": true,
+  "checks": [
+    {
+      "check": "raw audit passes",
+      "passed": true,
+      "detail": "PHYSIONET2012_RAW_AUDIT_PASS"
+    },
+    {
+      "check": "4000 patients audited",
+      "passed": true,
+      "detail": "4000"
+    },
+    {
+      "check": "train-only normalization",
+      "passed": true,
+      "detail": "train_only"
+    },
+    {
+      "check": "no future fill",
+      "passed": true,
+      "detail": "False"
+    },
+    {
+      "check": "split sizes exact",
+      "passed": true,
+      "detail": "{'calibration': 400, 'test': 600, 'train': 2400, 'validation': 600}"
+    },
+    {
+      "check": "30 completed main runs for ConceptFAN-NoAlpha",
+      "passed": true,
+      "detail": "30"
+    },
+    {
+      "check": "30 completed main runs for PureNoFuzzy",
+      "passed": true,
+      "detail": "30"
+    },
+    {
+      "check": "30 completed main runs for PlainTransformer",
+      "passed": true,
+      "detail": "30"
+    },
+    {
+      "check": "30 completed main runs for ConceptFAN-StabilityReg",
+      "passed": true,
+      "detail": "30"
+    },
+    {
+      "check": "30 completed main runs for TemporalCEM",
+      "passed": true,
+      "detail": "30"
+    },
+    {
+      "check": "150 main run manifests",
+      "passed": true,
+      "detail": "150"
+    },
+    {
+      "check": "30 channel-ablation runs",
+      "passed": true,
+      "detail": "30"
+    },
+    {
+      "check": "180 completed run artifacts",
+      "passed": true,
+      "detail": "180"
+    },
+    {
+      "check": "all parameter hashes unique within main grid",
+      "passed": true,
+      "detail": "150"
+    },
+    {
+      "check": "exact decomposition below 1e-5",
+      "passed": true,
+      "detail": "0.0"
+    },
+    {
+      "check": "435 model pairs for ConceptFAN-NoAlpha",
+      "passed": true,
+      "detail": "435"
+    },
+    {
+      "check": "435 model pairs for PureNoFuzzy",
+      "passed": true,
+      "detail": "435"
+    },
+    {
+      "check": "435 model pairs for ConceptFAN-StabilityReg",
+      "passed": true,
+      "detail": "435"
+    },
+    {
+      "check": "32 masks for ConceptFAN-NoAlpha",
+      "passed": true,
+      "detail": "32"
+    },
+    {
+      "check": "32 masks for PureNoFuzzy",
+      "passed": true,
+      "detail": "32"
+    },
+    {
+      "check": "32 masks for ConceptFAN-StabilityReg",
+      "passed": true,
+      "detail": "32"
+    },
+    {
+      "check": "100-draw sufficiency controls M=1..5",
+      "passed": true,
+      "detail": "{'M': [np.int64(1), np.int64(2), np.int64(3), np.int64(4), np.int64(5)], 'random_draws': [np.int64(100)]}"
+    },
+    {
+      "check": "four leakage channel variants",
+      "passed": true,
+      "detail": "['V', 'V+D', 'V+M', 'V+M+D']"
+    },
+    {
+      "check": "test never used for selection",
+      "passed": true,
+      "detail": "all false"
+    },
+    {
+      "check": "report table table_cohort CSV/Parquet",
+      "passed": true,
+      "detail": "table_cohort"
+    },
+    {
+      "check": "report table table_performance CSV/Parquet",
+      "passed": true,
+      "detail": "table_performance"
+    },
+    {
+      "check": "report table table_calibration CSV/Parquet",
+      "passed": true,
+      "detail": "table_calibration"
+    },
+    {
+      "check": "report table table_stability CSV/Parquet",
+      "passed": true,
+      "detail": "table_stability"
+    },
+    {
+      "check": "report table table_robustness CSV/Parquet",
+      "passed": true,
+      "detail": "table_robustness"
+    },
+    {
+      "check": "report table table_leakage CSV/Parquet",
+      "passed": true,
+      "detail": "table_leakage"
+    },
+    {
+      "check": "report table table_stability_reg CSV/Parquet",
+      "passed": true,
+      "detail": "table_stability_reg"
+    },
+    {
+      "check": "figure fig_real_pipeline SVG/PDF/PNG",
+      "passed": true,
+      "detail": "fig_real_pipeline"
+    },
+    {
+      "check": "figure fig_calibration SVG/PDF/PNG",
+      "passed": true,
+      "detail": "fig_calibration"
+    },
+    {
+      "check": "figure fig_stability_distribution SVG/PDF/PNG",
+      "passed": true,
+      "detail": "fig_stability_distribution"
+    },
+    {
+      "check": "figure fig_fuzzy_robustness SVG/PDF/PNG",
+      "passed": true,
+      "detail": "fig_fuzzy_robustness"
+    },
+    {
+      "check": "figure fig_leakage_localization SVG/PDF/PNG",
+      "passed": true,
+      "detail": "fig_leakage_localization"
+    },
+    {
+      "check": "figure fig_stability_pareto SVG/PDF/PNG",
+      "passed": true,
+      "detail": "fig_stability_pareto"
+    },
+    {
+      "check": "article update package complete",
+      "passed": true,
+      "detail": "10"
+    }
+  ],
+  "failed_checks": []
+}

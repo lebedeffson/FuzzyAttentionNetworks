@@ -114,16 +114,22 @@ def build_episode_stability(runs_root: Path, output_path: Path) -> tuple[pd.Data
     return pd.DataFrame(pair_summaries), counts
 
 
-def _hierarchical_ci(values: np.ndarray, repetitions: int, rng: np.random.Generator) -> tuple[float, float]:
+def _hierarchical_ci(
+    values: np.ndarray,
+    repetitions: int,
+    rng: np.random.Generator,
+    chunk_size: int = 16,
+) -> tuple[float, float]:
     pairs, patients = values.shape
     estimates = np.empty(repetitions, dtype=np.float64)
-    for index in range(repetitions):
-        sampled_pairs = rng.integers(0, pairs, size=pairs)
-        pair_means = np.empty(pairs, dtype=np.float64)
-        for output_position, pair_position in enumerate(sampled_pairs):
-            patient_sample = rng.integers(0, patients, size=patients)
-            pair_means[output_position] = values[pair_position, patient_sample].mean()
-        estimates[index] = pair_means.mean()
+    for start in range(0, repetitions, chunk_size):
+        stop = min(start + chunk_size, repetitions)
+        size = stop - start
+        sampled_pairs = rng.integers(0, pairs, size=(size, pairs))
+        selected = values[sampled_pairs]
+        patient_sample = rng.integers(0, patients, size=(size, pairs, patients))
+        sampled = np.take_along_axis(selected, patient_sample, axis=2)
+        estimates[start:stop] = sampled.mean(axis=(1, 2))
     return float(np.quantile(estimates, 0.025)), float(np.quantile(estimates, 0.975))
 
 

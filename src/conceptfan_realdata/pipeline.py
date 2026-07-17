@@ -23,7 +23,7 @@ from .audit import build_archive, validate_archive, validate_release
 from .data import PreparedData, audit_raw, create_split, ensure_outcomes, load_prepared, prepare_dataset
 from .leakage import analyze_residual_signal, summarize_leakage
 from .models import MODEL_ARMS
-from .reporting import build_report
+from .reporting import build_report, write_report_hash_index
 from .robustness import aggregate_robustness, run_robustness
 from .stability import aggregate_stability, build_episode_stability
 from .statistics import (
@@ -169,7 +169,13 @@ def _run_dir(artifacts_root: Path, spec: dict) -> Path:
     return artifacts_root / "runs" / "channel_ablation" / spec["channels"].replace("+", "_") / spec["run_name"]
 
 
-def _progress(artifacts_root: Path, specs: list[dict], failures: list[dict], started: float) -> None:
+def _progress(
+    artifacts_root: Path,
+    specs: list[dict],
+    failures: list[dict],
+    started: float,
+    elapsed_offset: float = 0.0,
+) -> None:
     completed = 0
     for spec in specs:
         manifest = _run_dir(artifacts_root, spec) / "run_manifest.json"
@@ -182,7 +188,7 @@ def _progress(artifacts_root: Path, specs: list[dict], failures: list[dict], sta
         "completed": completed,
         "failed": len(failures),
         "pending": len(specs) - completed - len(failures),
-        "elapsed_seconds": time.perf_counter() - started,
+        "elapsed_seconds": elapsed_offset + time.perf_counter() - started,
     }
     (artifacts_root / "progress.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
@@ -197,14 +203,19 @@ def execute_queue(
     specs = _main_specs(config) + _ablation_specs(config)
     failures: list[dict] = []
     started = time.perf_counter()
-    _progress(artifacts_root, specs, failures, started)
+    progress_path = artifacts_root / "progress.json"
+    elapsed_offset = 0.0
+    if progress_path.exists():
+        previous_progress = json.loads(progress_path.read_text(encoding="utf-8"))
+        elapsed_offset = float(previous_progress.get("elapsed_seconds", 0.0))
+    _progress(artifacts_root, specs, failures, started, elapsed_offset)
     default_batch = int(config["training"]["batch_size"])
     max_retries = int(config["training"]["max_retries"])
     for queue_position, spec in enumerate(specs, start=1):
         run_dir = _run_dir(artifacts_root, spec)
         existing = run_dir / "run_manifest.json"
         if existing.exists() and json.loads(existing.read_text(encoding="utf-8")).get("status") == "RUN_COMPLETE":
-            _progress(artifacts_root, specs, failures, started)
+            _progress(artifacts_root, specs, failures, started, elapsed_offset)
             continue
         batch_size = default_batch
         errors: list[dict] = []
@@ -253,7 +264,7 @@ def execute_queue(
             failures.append(failure)
             run_dir.mkdir(parents=True, exist_ok=True)
             (run_dir / "failure.json").write_text(json.dumps(failure, indent=2), encoding="utf-8")
-        _progress(artifacts_root, specs, failures, started)
+        _progress(artifacts_root, specs, failures, started, elapsed_offset)
     (artifacts_root / "failure_report.json").write_text(
         json.dumps({"status": "NO_RUN_FAILURES" if not failures else "RUN_FAILURES_PRESENT", "failures": failures}, indent=2),
         encoding="utf-8",
@@ -340,6 +351,39 @@ def run_posthoc(data: PreparedData, config: dict, artifacts_root: Path, device: 
     _concept_examples(data, artifacts_root / "concepts" / "concept_examples.pdf")
 
 
+def _write_execution_manifests(
+    artifacts_root: Path,
+    report_dir: Path,
+    device: torch.device,
+    invocation_started: float,
+) -> dict:
+    run_manifests = sorted((artifacts_root / "runs").rglob("run_manifest.json"))
+    elapsed_values = [
+        float(json.loads(path.read_text(encoding="utf-8")).get("elapsed_seconds", 0.0)) for path in run_manifests
+    ]
+    progress = json.loads((artifacts_root / "progress.json").read_text(encoding="utf-8"))
+    failure_report = json.loads((artifacts_root / "failure_report.json").read_text(encoding="utf-8"))
+    execution = {
+        "status": "PHYSIONET2012_EXECUTION_COMPLETE",
+        "created_utc": utc_now(),
+        "device": str(device),
+        "gpu": torch.cuda.get_device_name(device) if device.type == "cuda" else None,
+        "resume_supported": True,
+        "completed_run_artifacts": len(run_manifests),
+        "main_runs": 150,
+        "channel_ablation_runs": 30,
+        "run_failures": len(failure_report.get("failures", [])),
+        "summed_per_run_elapsed_seconds": sum(elapsed_values),
+        "current_finalization_invocation_elapsed_seconds": time.perf_counter() - invocation_started,
+        "queue_progress": progress,
+    }
+    manifest_dir = report_dir / "manifests"
+    manifest_dir.mkdir(parents=True, exist_ok=True)
+    (manifest_dir / "execution_summary.json").write_text(json.dumps(execution, indent=2), encoding="utf-8")
+    (manifest_dir / "failure_report.json").write_text(json.dumps(failure_report, indent=2), encoding="utf-8")
+    return execution
+
+
 def run_full_pipeline(
     repo_root: Path,
     config_path: Path,
@@ -375,11 +419,14 @@ def run_full_pipeline(
         raise RuntimeError(f"Read-only validation failed: {audit['failed_checks']}")
     (artifacts_root / "audit").mkdir(parents=True, exist_ok=True)
     shutil.copy2(audit_path, artifacts_root / "audit" / "readonly_validation.json")
+    execution = _write_execution_manifests(artifacts_root, report_dir, device, started)
+    write_report_hash_index(report_dir)
     archive = repo_root / "reports" / "PHYSIONET2012_CONCEPTFAN_LAST_RUN_e60d9a3.zip"
     archive_result = build_archive(repo_root, artifacts_root, report_dir, archive)
-    archive_validation = validate_archive(archive, report_dir / "audit" / "archive_validation.json")
+    archive_validation = validate_archive(archive, report_dir / "audit" / "final_audit_lite.json")
     if not archive_validation["passed"]:
         raise RuntimeError(f"Archive validation failed: {archive_validation}")
+    shutil.copy2(report_dir / "audit" / "final_audit_lite.json", report_dir / "audit" / "archive_validation.json")
     resource = {
         "status": "PHYSIONET2012_LAST_RUN_RESOURCE_REPORT",
         "created_utc": utc_now(),
@@ -389,6 +436,8 @@ def run_full_pipeline(
         "main_runs": 150,
         "channel_ablation_runs": 30,
         "run_failures": 0,
+        "summed_per_run_elapsed_seconds": execution["summed_per_run_elapsed_seconds"],
+        "execution_summary": str(report_dir / "manifests" / "execution_summary.json"),
         "archive": archive_result,
     }
     (artifacts_root / "resource_report.json").write_text(json.dumps(resource, indent=2), encoding="utf-8")

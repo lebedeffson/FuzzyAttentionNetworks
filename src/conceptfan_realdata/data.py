@@ -251,6 +251,8 @@ def create_split(patient_manifest: pd.DataFrame, output_dir: Path, seed: int = 2
     for split in expected:
         ids_for_split = sorted(frame.loc[frame["split"].eq(split), "RecordID"].astype(int))
         (output_dir / f"{split}_ids.txt").write_text("\n".join(map(str, ids_for_split)) + "\n", encoding="utf-8")
+        if split == "validation":
+            (output_dir / "val_ids.txt").write_text("\n".join(map(str, ids_for_split)) + "\n", encoding="utf-8")
     summary = frame.groupby("split", as_index=False).agg(
         patients=("RecordID", "nunique"),
         deaths=("In-hospital_death", "sum"),

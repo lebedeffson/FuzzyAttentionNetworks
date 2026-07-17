@@ -43,8 +43,16 @@ def validate_release(artifacts_root: Path, report_dir: Path, output_path: Path) 
     for arm in STABILITY_ANALYSIS_ARMS:
         masks = sorted(sufficiency.loc[sufficiency["model_arm"].eq(arm), "mask_id"].unique())
         _check(checks, f"32 masks for {arm}", masks == list(range(32)), len(masks))
-    controls = pd.read_parquet(artifacts_root / "TABLES" / "sufficiency_controls.parquet", columns=["M"])
-    _check(checks, "100-draw sufficiency controls M=1..5", sorted(controls["M"].unique()) == [1, 2, 3, 4, 5], sorted(controls["M"].unique()))
+    controls = pd.read_parquet(
+        artifacts_root / "TABLES" / "sufficiency_controls.parquet", columns=["M", "random_draws"]
+    )
+    controls_valid = sorted(controls["M"].unique()) == [1, 2, 3, 4, 5] and set(controls["random_draws"]) == {100}
+    _check(
+        checks,
+        "100-draw sufficiency controls M=1..5",
+        controls_valid,
+        {"M": sorted(controls["M"].unique()), "random_draws": sorted(controls["random_draws"].unique())},
+    )
     leakage = pd.read_parquet(artifacts_root / "TABLES" / "residual_signal_diagnostics.parquet")
     _check(checks, "four leakage channel variants", sorted(leakage["channels"].unique()) == ["V", "V+D", "V+M", "V+M+D"], sorted(leakage["channels"].unique()))
     _check(checks, "test never used for selection", all(fit.get("test_used_for_selection", pd.Series(False)) == False), "all false")
@@ -82,7 +90,7 @@ def build_archive(repo_root: Path, artifacts_root: Path, report_dir: Path, archi
     archive_path.parent.mkdir(parents=True, exist_ok=True)
     sources: list[tuple[Path, Path]] = []
     for path in sorted(report_dir.rglob("*")):
-        if path.is_file():
+        if path.is_file() and path.name not in {"archive_validation.json", "final_audit_lite.json"}:
             sources.append((path, Path("reports/physionet2012") / path.relative_to(report_dir)))
     for path in sorted((artifacts_root / "TABLES").glob("*")):
         if path.is_file():
@@ -108,6 +116,10 @@ def build_archive(repo_root: Path, artifacts_root: Path, report_dir: Path, archi
         path = repo_root / "scripts" / name
         if path.exists():
             sources.append((path, Path("scripts") / name))
+    for name in ["execution_summary.json", "failure_report.json"]:
+        path = report_dir / "manifests" / name
+        if path.exists():
+            sources.append((path, Path("reports/physionet2012/manifests") / name))
     with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6, allowZip64=True) as archive:
         seen: set[str] = set()
         for source, relative in sources:
@@ -136,6 +148,8 @@ def validate_archive(archive_path: Path, output_path: Path) -> dict:
             "reports/physionet2012/RESULTS_FOR_PAPER.md",
             "artifacts/TABLES/episode_pairwise_stability.parquet",
             "artifacts/TABLES/exhaustive_32_mask_sufficiency.parquet",
+            "reports/physionet2012/manifests/execution_summary.json",
+            "reports/physionet2012/manifests/failure_report.json",
         ]
         forbidden = [name for name in names if name.endswith(".pt") or "set-a.zip" in name or "Outcomes-a.txt" in name]
     report = {
