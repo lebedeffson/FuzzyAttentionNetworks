@@ -1,0 +1,101 @@
+program:
+  name: med_circuitbench_v3
+  date: 2026-07-14
+
+dataset:
+  n_samples: 10000
+  sequence_length: 42
+  observed_window: 36
+  window: 36
+  prediction_horizon: 6
+  horizon: 6
+  target_threshold: 0.0715
+  infection_prevalence: 0.25
+  infection_impulse_strength: 3.0
+
+split:
+  train: 0.60
+  validation: 0.20
+  test: 0.20
+
+model:
+  input_dim: 27
+  d_model: 128
+  latent_dim: 128
+  layers: 4
+  transformer_layers: 4
+  heads: 4
+  transformer_heads: 4
+  d_ffn: 512
+  transformer_ffn: 512
+  dropout: 0.1
+
+training:
+  batch_size: 128
+  optimizer: adamw
+  learning_rate: 0.0001
+  weight_decay: 0.01
+  min_epochs: 10
+  max_epochs: 50
+  concept_epochs: 50
+  patience: 8
+  restore_best_checkpoint: true
+
+seeds: [42, 43, 44]
+
+fan:
+  lambda_c: 2.0
+  lambda_align: 0.001
+  lambda_a: 0.001
+  lambda_sparse: 0.0001
+  lambda_s: 0.0001
+  memberships: [gaussian, bell, sigmoid, mixed]
+  max_validation_iterations: 12
+  n_memberships: [3, 5]
+  freeze_alpha_epochs: 5
+  freeze_membership_epochs: 10
+  gradient_clip: 1.0
+  positive_decision_weights: false
+  alpha_mode: no_alpha
+  gamma_init: 0.5
+  gamma_max: 0.9
+  alpha_ablation_modes: [no_alpha, uniform_alpha, softmax_alpha, residual_floor_alpha]
+  deterministic_restarts_per_seed: 3
+  oracle_lrs:
+    decision_head_lr: 0.0003
+    alpha_lr: 0.0001
+    membership_lr: 0.00003
+    temperature_lr: 0.00001
+  registered_space:
+    concept_scaling: [minmax_train, robust_train]
+    membership_family: [gaussian, bell, sigmoid, mixed]
+    learning_rate: [0.00003, 0.0001, 0.0003]
+    lambda_align: [0.0, 0.001, 0.01]
+    lambda_sparse: [0.0, 0.0001, 0.001]
+    temperature_init: [0.5, 1.0, 2.0]
+    gradient_clip: [0.5, 1.0, 5.0]
+
+shortcut:
+  subsets:
+    - observations_only
+    - masks_only
+    - delta_only
+    - treatments_only
+    - observations_masks
+    - observations_treatments
+    - full_input
+
+sctc:
+  minimum_training_episodes: 2000
+  feature_grid: [128, 256, 512]
+  training_epochs: 6
+  top_features: 16
+  random_null: 1000
+  final_random_null: 10000
+  max_validation_iterations: 8
+  lambda_l1: [0.000001, 0.000003, 0.00001, 0.00003, 0.0001]
+  lambda_behavior: [0.05, 0.10, 0.20]
+  lambda_temporal: [0.0, 0.0001, 0.0003]
+
+paper:
+  title: "Concept-Mediated FAN and SCTC on Med-CircuitBench"

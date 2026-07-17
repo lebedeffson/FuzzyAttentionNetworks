@@ -1,0 +1,4 @@
+datasets:
+  med_circuitbench:
+    root: artifacts/medical/med_circuitbench
+    benchmark_root: artifacts/medical/benchmark

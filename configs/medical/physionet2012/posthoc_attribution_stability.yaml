@@ -1,0 +1,64 @@
+methods:
+  - integrated_gradients
+  - gradient_shap
+
+target:
+  type: mortality_logit
+
+integrated_gradients:
+  n_steps: 64
+  retry_n_steps: 128
+  internal_batch_size: 32
+  completeness_median_threshold: 0.001
+  baseline: zero_standardized
+  sensitivity_baseline: median_training_episode
+
+gradient_shap:
+  n_samples: 32
+  stdevs: 0.0
+  background_size: 32
+  background_seed: 20260717
+
+aggregation:
+  preserve_sign: true
+  report_absolute: true
+  temporal_reduction: sum
+  channel_reduction: none
+  primary_map: physiological_values_only
+  sensitivity_map: values_masks_deltas
+  epsilon: 1.0e-8
+
+evaluation:
+  use_frozen_test_split: true
+  use_all_test_episodes: true
+  checkpoint_count: 30
+  expected_model_input_time: 48
+  expected_model_input_channels: 119
+  requested_template_time: 36
+  requested_template_channels: 27
+  protocol_discrepancy_policy: use_frozen_checkpoint_contract
+
+statistics:
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260717
+  confidence_level: 0.95
+
+mapping_controls:
+  permutations: 100
+  random_same_size: 100
+  seed: 20260717
+
+sanity:
+  determinism_checkpoints: 2
+  determinism_episodes: 32
+  randomization_episodes: 64
+  integrated_gradients_tolerance: 1.0e-6
+  gradient_shap_tolerance: 1.0e-5
+  conservation_tolerance_integrated_gradients: 1.0e-6
+  conservation_tolerance_gradient_shap: 1.0e-5
+
+runtime:
+  test_batch_size: 32
+  gradient_shap_batch_size: 32
+  parquet_compression: zstd
+  resume: true

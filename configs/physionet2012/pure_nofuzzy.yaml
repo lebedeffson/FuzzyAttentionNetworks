@@ -1,0 +1,4 @@
+model_arm: PureNoFuzzy
+fuzzy_evidence: false
+residual_path: false
+lambda_concept: 1.0

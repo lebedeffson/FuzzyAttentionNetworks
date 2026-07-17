@@ -1,0 +1,48 @@
+decoder_coupled_concept_sctc:
+  exact_tied_weights: true
+  conditions:
+    - CORRECT_CONCEPTS
+    - PERMUTED_CONCEPTS
+    - RANDOM_MATCHED_CONCEPTS
+
+  epochs: 40
+  min_epochs: 25
+  patience: 6
+  batch_size: 128
+  learning_rate: 1.0e-4
+
+  lambda_behavior: 0.10
+  lambda_sparse: 1.0e-5
+  lambda_transition: 0.03
+  lambda_interventional: 0.03
+  lambda_concept_decoder: 0.10
+  lambda_decoder_alignment: 0.03
+  lambda_assignment_entropy: 0.01
+  lambda_incoherence: 0.01
+
+  assignment_temperature: 0.10
+
+  selection_loss:
+    reconstruction_loss: 1.0
+    behavior_loss: 0.10
+    decoder_concept_loss: 0.10
+    decoder_alignment_loss: 0.03
+    recovery_metrics_used: false
+
+  gate:
+    delta_auroc_max: 0.01
+    delta_auprc_max: 0.01
+    probability_mae_max: 0.02
+    node_precision_min: 0.80
+    node_recall_min: 0.80
+    direct_edge_precision_min: 0.80
+    direct_edge_recall_min: 0.80
+    direct_edge_f1_min: 0.80
+    total_effect_f1_min: 0.80
+    sign_agreement_min: 0.90
+    direct_negative_control_fpr_max: 0.05
+    reverse_effect_fpr_max: 0.05
+
+  replication:
+    seed: 20260718
+    episodes: 10000

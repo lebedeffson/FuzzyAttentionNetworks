@@ -1,0 +1,9 @@
+{
+  "sctc_loss_total": 0.06409408,
+  "circuit_f1": {
+    "TP": 2,
+    "FP": 1,
+    "FN": 1,
+    "CircuitF1": 0.6666667
+  }
+}

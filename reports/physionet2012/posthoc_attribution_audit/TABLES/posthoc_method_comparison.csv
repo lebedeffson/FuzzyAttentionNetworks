@@ -1,0 +1,5 @@
+reference_method,comparison_method,feature_space,value_view,statistic,bootstrap_iterations,estimate,ci95_low,ci95_high,two_sided_bootstrap_probability,advantage_supported
+ConceptFAN,integrated_gradients,proxy_concept_v_only,signed,difference_in_mean_spearman,2000,0.776015348166169,0.6991446437535856,0.8296724514866392,0.0,True
+ConceptFAN,integrated_gradients,proxy_concept_v_only,signed,difference_in_median_spearman,2000,0.7730104895833331,0.7199124999999998,0.8107260416666664,0.0,True
+ConceptFAN,gradient_shap,proxy_concept_v_only,signed,difference_in_mean_spearman,2000,0.8444342139963262,0.7722184485350106,0.8968632778186757,0.0,True
+ConceptFAN,gradient_shap,proxy_concept_v_only,signed,difference_in_median_spearman,2000,0.8435306249999999,0.7889999999999999,0.8846666666666664,0.0,True

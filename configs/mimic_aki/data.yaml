@@ -1,0 +1,19 @@
+mimic_version: "3.1"
+split_seed: 20260715
+cohort:
+  min_age: 18
+  first_icu_stay_only: true
+  min_icu_hours: 36
+  require_serum_creatinine: true
+  exclude_aki_at_index: true
+  exclude_rrt_before_index: true
+  exclude_esrd_before_index: true
+task:
+  observation_hours: 24
+  prediction_horizon_hours: 12
+  stride_hours: 6
+  secondary_horizons: [6, 24]
+normalization:
+  value: train_zscore
+  missing_value_after_normalization: 0.0
+  delta_time_cap_hours: 48

@@ -1,0 +1,32 @@
+training:
+  seeds: [42, 43, 44]
+  optimizer: AdamW
+  learning_rate: 1.0e-4
+  weight_decay: 1.0e-2
+  batch_size: 128
+  max_epochs: 50
+  patience: 8
+  minimum_epochs: 10
+  gradient_clip: 1.0
+models:
+  standard_transformer:
+    layers: 4
+    d_model: 128
+    heads: 4
+    d_ffn: 512
+    dropout: 0.1
+  fuzzy_temporal_encoder:
+    layers: 4
+    d_model: 128
+    heads: 4
+    d_ffn: 512
+    dropout: 0.1
+    memberships: 3
+    tnorm_primary: product
+    tnorm_control: softmin
+concept_fan:
+  memberships: 3
+  family: gaussian
+  alpha_modes: [no_alpha, softmax_alpha]
+  lambda_concept: 1.0
+  lambda_membership: 0.0

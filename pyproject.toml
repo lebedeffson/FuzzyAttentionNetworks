@@ -1,0 +1,17 @@
+[project]
+name = "fuzzy-attention-networks"
+version = "0.0.0"
+requires-python = ">=3.12"
+dependencies = [
+  "numpy",
+  "pandas",
+  "pyarrow",
+  "scikit-learn",
+  "scipy",
+  "torch",
+  "pyyaml",
+  "pytest",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]

@@ -1,0 +1,4 @@
+model_arm: ConceptFAN-StabilityReg
+paired_replicas: true
+selection: validation_pareto
+auprc_noninferiority_margin: 0.01

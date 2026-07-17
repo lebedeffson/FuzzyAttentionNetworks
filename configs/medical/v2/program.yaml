@@ -1,0 +1,47 @@
+program:
+  name: med_circuitbench_v2
+  date: 2026-07-14
+
+dataset:
+  n_samples: 1800
+  sequence_length: 42
+  window: 36
+  horizon: 6
+  target_threshold: 0.0715
+  infection_prevalence: 0.25
+  infection_impulse_strength: 3.0
+
+model:
+  input_dim: 27
+  latent_dim: 64
+  transformer_layers: 2
+  transformer_heads: 4
+  transformer_ffn: 128
+  dropout: 0.1
+
+training:
+  batch_size: 128
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  max_epochs: 8
+  patience: 3
+
+fan:
+  lambda_c: 2.0
+  lambda_a: 0.05
+  lambda_s: 0.01
+  memberships: [gaussian, bell, sigmoid, mixed]
+
+shortcut:
+  subsets:
+    - observations_only
+    - masks_only
+    - delta_only
+    - treatments_only
+    - observations_masks
+    - observations_treatments
+    - full_input
+
+sctc:
+  minimum_training_episodes: 2000
+  feature_grid: [128, 256, 512]

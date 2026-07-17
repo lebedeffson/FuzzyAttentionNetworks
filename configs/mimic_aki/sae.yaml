@@ -1,0 +1,9 @@
+sae:
+  capacities: [2D, 4D]
+  top_k: [16, 32]
+  lambda_behavior: 0.1
+  gates:
+    delta_auprc_max: 0.01
+    probability_mae_max: 0.02
+    dead_feature_fraction_max: 0.30
+    explained_variance_min: 0.80

@@ -1,0 +1,6 @@
+check,model_id,method,episodes,maximum_difference,tolerance,passed
+determinism,run_01_init_11_order_1001,integrated_gradients,32,0.0,1e-06,True
+determinism,run_01_init_11_order_1001,gradient_shap,32,0.0,1e-05,True
+determinism,run_02_init_11_order_2003,integrated_gradients,32,0.0,1e-06,True
+determinism,run_02_init_11_order_2003,gradient_shap,32,0.0,1e-05,True
+constant_input,run_01_init_11_order_1001,integrated_gradients,1,0.0,1e-08,True

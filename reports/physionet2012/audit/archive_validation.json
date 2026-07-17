@@ -1,0 +1,10 @@
+{
+  "status": "PHYSIONET2012_ARCHIVE_VALIDATION_PASS",
+  "archive_sha256": "17faed9c89d553c3dd971dca92ee078dfb76543ec820e7c674ce128ea240b6f7",
+  "archive_bytes": 133093677,
+  "members": 1898,
+  "corrupt_member": null,
+  "missing_required": [],
+  "forbidden_members": [],
+  "passed": true
+}

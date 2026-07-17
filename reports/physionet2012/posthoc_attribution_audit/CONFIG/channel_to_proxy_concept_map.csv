@@ -1,0 +1,120 @@
+channel_index,channel_name,base_variable,channel_type,proxy_concept,mapping_weight,mapping_source,clinical_rationale,included_in_primary_analysis,sensitivity_proxy_concept
+0,V_ALP,ALP,V,unassigned,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+1,V_ALT,ALT,V,unassigned,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+2,V_AST,AST,V,unassigned,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+3,V_Albumin,Albumin,V,unassigned,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+4,V_BUN,BUN,V,renal_dysfunction,1.0,existing_proxy_formula:BUN,variable used directly or through rolling urine by the frozen renal proxy formula,True,renal_dysfunction
+5,V_Bilirubin,Bilirubin,V,unassigned,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+6,V_Cholesterol,Cholesterol,V,unassigned,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+7,V_Creatinine,Creatinine,V,renal_dysfunction,1.0,existing_proxy_formula:Creatinine,variable used directly or through rolling urine by the frozen renal proxy formula,True,renal_dysfunction
+8,V_DiasABP,DiasABP,V,hemodynamic_instability,1.0,existing_proxy_formula:DiasABP,variable used by the frozen hemodynamic proxy formula,True,hemodynamic_instability
+9,V_FiO2,FiO2,V,respiratory_dysfunction,1.0,"existing_proxy_formula:PFratio(PaO2,FiO2)",variable used directly or through P/F ratio by the frozen respiratory proxy formula,True,respiratory_dysfunction
+10,V_GCS,GCS,V,neurological_dysfunction,1.0,existing_proxy_formula:GCS,variable used by the frozen neurological proxy formula,True,neurological_dysfunction
+11,V_Glucose,Glucose,V,metabolic_inflammatory_dysregulation,1.0,existing_proxy_formula:Glucose,variable used by the frozen metabolic-inflammatory proxy formula,True,metabolic_inflammatory_dysregulation
+12,V_HCO3,HCO3,V,metabolic_inflammatory_dysregulation,1.0,existing_proxy_formula:HCO3,variable used by the frozen metabolic-inflammatory proxy formula,True,metabolic_inflammatory_dysregulation
+13,V_HCT,HCT,V,unassigned,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+14,V_HR,HR,V,hemodynamic_instability,1.0,existing_proxy_formula:HR,variable used by the frozen hemodynamic proxy formula,True,hemodynamic_instability
+15,V_K,K,V,metabolic_inflammatory_dysregulation,1.0,existing_proxy_formula:K,variable used by the frozen metabolic-inflammatory proxy formula,True,metabolic_inflammatory_dysregulation
+16,V_Lactate,Lactate,V,hemodynamic_instability,1.0,existing_proxy_formula:Lactate,variable used by the frozen hemodynamic proxy formula,True,hemodynamic_instability
+17,V_MAP,MAP,V,hemodynamic_instability,1.0,existing_proxy_formula:MAP,variable used by the frozen hemodynamic proxy formula,True,hemodynamic_instability
+18,V_MechVent,MechVent,V,respiratory_dysfunction,1.0,existing_proxy_formula:MechVent,variable used directly or through P/F ratio by the frozen respiratory proxy formula,True,respiratory_dysfunction
+19,V_Mg,Mg,V,unassigned,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+20,V_NIDiasABP,NIDiasABP,V,hemodynamic_instability,1.0,existing_proxy_formula:NIDiasABP,variable used by the frozen hemodynamic proxy formula,True,hemodynamic_instability
+21,V_NIMAP,NIMAP,V,hemodynamic_instability,1.0,existing_proxy_formula:NIMAP,variable used by the frozen hemodynamic proxy formula,True,hemodynamic_instability
+22,V_NISysABP,NISysABP,V,hemodynamic_instability,1.0,existing_proxy_formula:NISysABP,variable used by the frozen hemodynamic proxy formula,True,hemodynamic_instability
+23,V_Na,Na,V,metabolic_inflammatory_dysregulation,1.0,existing_proxy_formula:Na,variable used by the frozen metabolic-inflammatory proxy formula,True,metabolic_inflammatory_dysregulation
+24,V_PaCO2,PaCO2,V,unassigned,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+25,V_PaO2,PaO2,V,respiratory_dysfunction,1.0,"existing_proxy_formula:PFratio(PaO2,FiO2)",variable used directly or through P/F ratio by the frozen respiratory proxy formula,True,respiratory_dysfunction
+26,V_Platelets,Platelets,V,metabolic_inflammatory_dysregulation,1.0,existing_proxy_formula:Platelets,variable used by the frozen metabolic-inflammatory proxy formula,True,metabolic_inflammatory_dysregulation
+27,V_RespRate,RespRate,V,respiratory_dysfunction,1.0,existing_proxy_formula:RespRate,variable used directly or through P/F ratio by the frozen respiratory proxy formula,True,respiratory_dysfunction
+28,V_SaO2,SaO2,V,respiratory_dysfunction,1.0,existing_proxy_formula:SaO2,variable used directly or through P/F ratio by the frozen respiratory proxy formula,True,respiratory_dysfunction
+29,V_SysABP,SysABP,V,hemodynamic_instability,1.0,existing_proxy_formula:SysABP,variable used by the frozen hemodynamic proxy formula,True,hemodynamic_instability
+30,V_Temp,Temp,V,metabolic_inflammatory_dysregulation,1.0,existing_proxy_formula:Temp,variable used by the frozen metabolic-inflammatory proxy formula,True,metabolic_inflammatory_dysregulation
+31,V_TroponinI,TroponinI,V,unassigned,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+32,V_TroponinT,TroponinT,V,unassigned,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+33,V_Urine,Urine,V,renal_dysfunction,1.0,existing_proxy_formula:Urine6h(Urine),variable used directly or through rolling urine by the frozen renal proxy formula,True,renal_dysfunction
+34,V_WBC,WBC,V,metabolic_inflammatory_dysregulation,1.0,existing_proxy_formula:WBC,variable used by the frozen metabolic-inflammatory proxy formula,True,metabolic_inflammatory_dysregulation
+35,V_Weight,Weight,V,unassigned,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+36,V_pH,pH,V,metabolic_inflammatory_dysregulation,1.0,existing_proxy_formula:pH,variable used by the frozen metabolic-inflammatory proxy formula,True,metabolic_inflammatory_dysregulation
+37,M_ALP,ALP,M,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+38,M_ALT,ALT,M,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+39,M_AST,AST,M,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+40,M_Albumin,Albumin,M,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+41,M_BUN,BUN,M,observation_process,0.0,existing_proxy_formula:BUN,variable used directly or through rolling urine by the frozen renal proxy formula,False,renal_dysfunction
+42,M_Bilirubin,Bilirubin,M,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+43,M_Cholesterol,Cholesterol,M,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+44,M_Creatinine,Creatinine,M,observation_process,0.0,existing_proxy_formula:Creatinine,variable used directly or through rolling urine by the frozen renal proxy formula,False,renal_dysfunction
+45,M_DiasABP,DiasABP,M,observation_process,0.0,existing_proxy_formula:DiasABP,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+46,M_FiO2,FiO2,M,observation_process,0.0,"existing_proxy_formula:PFratio(PaO2,FiO2)",variable used directly or through P/F ratio by the frozen respiratory proxy formula,False,respiratory_dysfunction
+47,M_GCS,GCS,M,observation_process,0.0,existing_proxy_formula:GCS,variable used by the frozen neurological proxy formula,False,neurological_dysfunction
+48,M_Glucose,Glucose,M,observation_process,0.0,existing_proxy_formula:Glucose,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+49,M_HCO3,HCO3,M,observation_process,0.0,existing_proxy_formula:HCO3,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+50,M_HCT,HCT,M,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+51,M_HR,HR,M,observation_process,0.0,existing_proxy_formula:HR,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+52,M_K,K,M,observation_process,0.0,existing_proxy_formula:K,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+53,M_Lactate,Lactate,M,observation_process,0.0,existing_proxy_formula:Lactate,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+54,M_MAP,MAP,M,observation_process,0.0,existing_proxy_formula:MAP,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+55,M_MechVent,MechVent,M,observation_process,0.0,existing_proxy_formula:MechVent,variable used directly or through P/F ratio by the frozen respiratory proxy formula,False,respiratory_dysfunction
+56,M_Mg,Mg,M,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+57,M_NIDiasABP,NIDiasABP,M,observation_process,0.0,existing_proxy_formula:NIDiasABP,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+58,M_NIMAP,NIMAP,M,observation_process,0.0,existing_proxy_formula:NIMAP,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+59,M_NISysABP,NISysABP,M,observation_process,0.0,existing_proxy_formula:NISysABP,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+60,M_Na,Na,M,observation_process,0.0,existing_proxy_formula:Na,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+61,M_PaCO2,PaCO2,M,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+62,M_PaO2,PaO2,M,observation_process,0.0,"existing_proxy_formula:PFratio(PaO2,FiO2)",variable used directly or through P/F ratio by the frozen respiratory proxy formula,False,respiratory_dysfunction
+63,M_Platelets,Platelets,M,observation_process,0.0,existing_proxy_formula:Platelets,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+64,M_RespRate,RespRate,M,observation_process,0.0,existing_proxy_formula:RespRate,variable used directly or through P/F ratio by the frozen respiratory proxy formula,False,respiratory_dysfunction
+65,M_SaO2,SaO2,M,observation_process,0.0,existing_proxy_formula:SaO2,variable used directly or through P/F ratio by the frozen respiratory proxy formula,False,respiratory_dysfunction
+66,M_SysABP,SysABP,M,observation_process,0.0,existing_proxy_formula:SysABP,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+67,M_Temp,Temp,M,observation_process,0.0,existing_proxy_formula:Temp,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+68,M_TroponinI,TroponinI,M,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+69,M_TroponinT,TroponinT,M,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+70,M_Urine,Urine,M,observation_process,0.0,existing_proxy_formula:Urine6h(Urine),variable used directly or through rolling urine by the frozen renal proxy formula,False,renal_dysfunction
+71,M_WBC,WBC,M,observation_process,0.0,existing_proxy_formula:WBC,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+72,M_Weight,Weight,M,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+73,M_pH,pH,M,observation_process,0.0,existing_proxy_formula:pH,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+74,D_ALP,ALP,D,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+75,D_ALT,ALT,D,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+76,D_AST,AST,D,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+77,D_Albumin,Albumin,D,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+78,D_BUN,BUN,D,observation_process,0.0,existing_proxy_formula:BUN,variable used directly or through rolling urine by the frozen renal proxy formula,False,renal_dysfunction
+79,D_Bilirubin,Bilirubin,D,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+80,D_Cholesterol,Cholesterol,D,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+81,D_Creatinine,Creatinine,D,observation_process,0.0,existing_proxy_formula:Creatinine,variable used directly or through rolling urine by the frozen renal proxy formula,False,renal_dysfunction
+82,D_DiasABP,DiasABP,D,observation_process,0.0,existing_proxy_formula:DiasABP,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+83,D_FiO2,FiO2,D,observation_process,0.0,"existing_proxy_formula:PFratio(PaO2,FiO2)",variable used directly or through P/F ratio by the frozen respiratory proxy formula,False,respiratory_dysfunction
+84,D_GCS,GCS,D,observation_process,0.0,existing_proxy_formula:GCS,variable used by the frozen neurological proxy formula,False,neurological_dysfunction
+85,D_Glucose,Glucose,D,observation_process,0.0,existing_proxy_formula:Glucose,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+86,D_HCO3,HCO3,D,observation_process,0.0,existing_proxy_formula:HCO3,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+87,D_HCT,HCT,D,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+88,D_HR,HR,D,observation_process,0.0,existing_proxy_formula:HR,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+89,D_K,K,D,observation_process,0.0,existing_proxy_formula:K,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+90,D_Lactate,Lactate,D,observation_process,0.0,existing_proxy_formula:Lactate,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+91,D_MAP,MAP,D,observation_process,0.0,existing_proxy_formula:MAP,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+92,D_MechVent,MechVent,D,observation_process,0.0,existing_proxy_formula:MechVent,variable used directly or through P/F ratio by the frozen respiratory proxy formula,False,respiratory_dysfunction
+93,D_Mg,Mg,D,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+94,D_NIDiasABP,NIDiasABP,D,observation_process,0.0,existing_proxy_formula:NIDiasABP,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+95,D_NIMAP,NIMAP,D,observation_process,0.0,existing_proxy_formula:NIMAP,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+96,D_NISysABP,NISysABP,D,observation_process,0.0,existing_proxy_formula:NISysABP,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+97,D_Na,Na,D,observation_process,0.0,existing_proxy_formula:Na,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+98,D_PaCO2,PaCO2,D,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+99,D_PaO2,PaO2,D,observation_process,0.0,"existing_proxy_formula:PFratio(PaO2,FiO2)",variable used directly or through P/F ratio by the frozen respiratory proxy formula,False,respiratory_dysfunction
+100,D_Platelets,Platelets,D,observation_process,0.0,existing_proxy_formula:Platelets,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+101,D_RespRate,RespRate,D,observation_process,0.0,existing_proxy_formula:RespRate,variable used directly or through P/F ratio by the frozen respiratory proxy formula,False,respiratory_dysfunction
+102,D_SaO2,SaO2,D,observation_process,0.0,existing_proxy_formula:SaO2,variable used directly or through P/F ratio by the frozen respiratory proxy formula,False,respiratory_dysfunction
+103,D_SysABP,SysABP,D,observation_process,0.0,existing_proxy_formula:SysABP,variable used by the frozen hemodynamic proxy formula,False,hemodynamic_instability
+104,D_Temp,Temp,D,observation_process,0.0,existing_proxy_formula:Temp,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+105,D_TroponinI,TroponinI,D,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+106,D_TroponinT,TroponinT,D,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+107,D_Urine,Urine,D,observation_process,0.0,existing_proxy_formula:Urine6h(Urine),variable used directly or through rolling urine by the frozen renal proxy formula,False,renal_dysfunction
+108,D_WBC,WBC,D,observation_process,0.0,existing_proxy_formula:WBC,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+109,D_Weight,Weight,D,observation_process,0.0,frozen_input_schema:unassigned,not used by any frozen proxy formula,False,unassigned
+110,D_pH,pH,D,observation_process,0.0,existing_proxy_formula:pH,variable used by the frozen metabolic-inflammatory proxy formula,False,metabolic_inflammatory_dysregulation
+111,STATIC_0,static_0,STATIC,unassigned,0.0,frozen_input_schema:static,static encoded covariate retained outside temporal physiological proxy groups,False,unassigned
+112,STATIC_1,static_1,STATIC,unassigned,0.0,frozen_input_schema:static,static encoded covariate retained outside temporal physiological proxy groups,False,unassigned
+113,STATIC_2,static_2,STATIC,unassigned,0.0,frozen_input_schema:static,static encoded covariate retained outside temporal physiological proxy groups,False,unassigned
+114,STATIC_3,static_3,STATIC,unassigned,0.0,frozen_input_schema:static,static encoded covariate retained outside temporal physiological proxy groups,False,unassigned
+115,STATIC_4,static_4,STATIC,unassigned,0.0,frozen_input_schema:static,static encoded covariate retained outside temporal physiological proxy groups,False,unassigned
+116,STATIC_5,static_5,STATIC,unassigned,0.0,frozen_input_schema:static,static encoded covariate retained outside temporal physiological proxy groups,False,unassigned
+117,STATIC_6,static_6,STATIC,unassigned,0.0,frozen_input_schema:static,static encoded covariate retained outside temporal physiological proxy groups,False,unassigned
+118,STATIC_7,static_7,STATIC,unassigned,0.0,frozen_input_schema:static,static encoded covariate retained outside temporal physiological proxy groups,False,unassigned

@@ -1,0 +1,15 @@
+mode: demo_engineering
+data: configs/mimic_aki/data.yaml
+models: configs/mimic_aki/models.yaml
+concepts: configs/mimic_aki/concepts.yaml
+sae: configs/mimic_aki/sae.yaml
+steering: configs/mimic_aki/steering.yaml
+output: artifacts/mimic_aki/final_demo
+training:
+  seed: 42
+  max_epochs: 3
+  minimum_epochs: 1
+  patience: 2
+terminal_statuses:
+  - PRACTICE_CLOSED_MIMIC_DEMO_END_TO_END
+  - BLOCKED_FULL_MIMIC_ACCESS

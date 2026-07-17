@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+set -euo pipefail
+python scripts/mimic_aki/run_research_program.py --config configs/mimic_aki/program.yaml --output "${1:-artifacts/mimic_aki/demo}"

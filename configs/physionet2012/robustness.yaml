@@ -1,0 +1,7 @@
+models: [ConceptFAN-NoAlpha, PureNoFuzzy]
+scenarios:
+  gaussian_noise: [0.05, 0.10, 0.20]
+  outliers: [0.01, 0.05]
+  mcar: [0.10, 0.20, 0.30]
+  block_missing: [6, 12]
+  sensor_bias: [-0.25, 0.25]

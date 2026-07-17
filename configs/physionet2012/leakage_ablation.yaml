@@ -1,0 +1,11 @@
+model_arm: ConceptFAN-NoAlpha
+channels: [V, V+M, V+D, V+M+D]
+runs_per_additional_channel: 10
+diagnostic_classifier: l2_logistic_regression
+controls:
+  - shuffled_labels
+  - matched_gaussian_noise
+  - permuted_residual_vectors
+  - missingness_only
+  - delta_time_only
+  - raw_value_only

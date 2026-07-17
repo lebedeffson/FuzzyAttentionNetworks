@@ -1,0 +1,74 @@
+dataset:
+  name: med_circuitbench
+  n_samples: 128
+  sequence_length: 42
+  window: 36
+  horizon: 6
+  seed: 42
+  target_threshold: 0.0715
+  allow_target_fallback: false
+  positive_rate_min: 0.20
+  positive_rate_max: 0.30
+  infection_prevalence: 0.25
+  infection_impulse_strength: 3.0
+
+model:
+  input_dim: 27
+  layers: 2
+  d_model: 32
+  heads: 4
+  d_ffn: 64
+  dropout: 0.1
+
+training:
+  batch_size: 32
+  learning_rate: 0.0001
+  weight_decay: 0.01
+  minimum_epochs: 1
+  maximum_epochs: 2
+  patience: 1
+  gradient_clip: 1.0
+  monitor: validation_auprc
+
+cls:
+  max_layers: 2
+  relative_threshold: 0.40
+  stability_repeats: 2
+  trim_gradient_top_fraction: 0.01
+
+sctc:
+  n_features: 64
+  max_training_windows: 32
+  maximum_epochs: 2
+  patience: 1
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  lambda_1: [0.0001]
+  lambda_b: [0.10]
+  lambda_t: [0.0]
+  minimum_support: 0.01
+  maximum_support: 0.30
+  minimum_eligible_features: 4
+  minimum_eligible_fraction: 0.05
+  maximum_delta_auroc: 1.0
+  maximum_delta_auprc: 1.0
+  maximum_probability_error: 1.0
+
+interventions:
+  top_features: 5
+  candidates_per_feature: 2
+  high_activation_windows: 10
+  random_directions: 10
+  minimum_dr: 0.10
+  minimum_abs_dr: 0.10
+  fdr_alpha: 0.05
+
+circuits:
+  minimum_edges: 1
+  minimum_cie: 0.0
+  minimum_ip: 0.0
+  top_k: 3
+  max_paths: 100
+
+artifacts:
+  root: artifacts/medical_smoke
